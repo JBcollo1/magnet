@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/Header';
@@ -10,8 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
-import { User, ShoppingBag, Star, Settings, MapPin, Edit, Save, Users, Package } from 'lucide-react';
+import { User, ShoppingBag, Star, Settings, MapPin, Edit, Save, Package } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import AdminDashboard, { AdminOverviewCards } from './AdminDashboard';
 
 const Dashboard = () => {
   const { user, isAuthenticated } = useAuth();
@@ -86,6 +86,57 @@ const Dashboard = () => {
     }
   };
 
+  // Regular user overview cards
+  const UserOverviewCards = () => (
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Cart Items</CardTitle>
+          <ShoppingBag className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-purple-600">{totalItemsInCart}</div>
+          <p className="text-xs text-muted-foreground">Items in your cart</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
+          <Package className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-blue-600">{orders.length}</div>
+          <p className="text-xs text-muted-foreground">Your orders</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
+          <Star className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-green-600">
+            KSh {orders.reduce((sum, order) => sum + order.total, 0).toLocaleString()}
+          </div>
+          <p className="text-xs text-muted-foreground">Total value</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <CardTitle className="text-sm font-medium">Account Status</CardTitle>
+          <User className="h-4 w-4 text-muted-foreground" />
+        </CardHeader>
+        <CardContent>
+          <div className="text-2xl font-bold text-green-600">Active</div>
+          <p className="text-xs text-muted-foreground">Account standing</p>
+        </CardContent>
+      </Card>
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/10 dark:to-blue-950/10 dark:bg-background">
       <Header />
@@ -100,53 +151,14 @@ const Dashboard = () => {
 
         {/* Overview Cards */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cart Items</CardTitle>
-              <ShoppingBag className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-purple-600">{totalItemsInCart}</div>
-              <p className="text-xs text-muted-foreground">Items in your cart</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Orders</CardTitle>
-              <Package className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{isAdmin ? allOrders.length : orders.length}</div>
-              <p className="text-xs text-muted-foreground">
-                {isAdmin ? 'All orders' : 'Your orders'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">
-                KSh {isAdmin ? allOrders.reduce((sum, order) => sum + order.total, 0).toLocaleString() : orders.reduce((sum, order) => sum + order.total, 0).toLocaleString()}
-              </div>
-              <p className="text-xs text-muted-foreground">Total value</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Account Status</CardTitle>
-              <User className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{isAdmin ? 'Admin' : 'Active'}</div>
-              <p className="text-xs text-muted-foreground">Account standing</p>
-            </CardContent>
-          </Card>
+          {isAdmin ? (
+            <AdminOverviewCards 
+              allOrders={allOrders} 
+              totalItemsInCart={totalItemsInCart} 
+            />
+          ) : (
+            <UserOverviewCards />
+          )}
         </div>
 
         <Tabs defaultValue={isAdmin ? "overview" : "profile"} className="space-y-6">
@@ -310,91 +322,13 @@ const Dashboard = () => {
             </Card>
           </TabsContent>
 
+          {/* Admin Dashboard Components */}
           {isAdmin && (
-            <TabsContent value="users" className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Users className="w-5 h-5 mr-2" />
-                    User Management
-                  </CardTitle>
-                  <CardDescription>Manage all registered users</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Name</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Total Orders</TableHead>
-                        <TableHead>Total Spent</TableHead>
-                        <TableHead>Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {allUsers.map((user) => (
-                        <TableRow key={user.id}>
-                          <TableCell className="font-medium">{user.name}</TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>{user.orders}</TableCell>
-                          <TableCell>KSh {user.totalSpent.toLocaleString()}</TableCell>
-                          <TableCell>
-                            <Button variant="outline" size="sm">View Details</Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          )}
-
-          {isAdmin && (
-            <TabsContent value="overview" className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Recent Activity</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span className="text-sm">New order from Jane Smith - KSh 1,200</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                        <span className="text-sm">Order ORD-003 shipped to Mike Johnson</span>
-                      </div>
-                      <div className="flex items-center space-x-3">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                        <span className="text-sm">New user registered: John Doe</span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      <Button className="w-full" variant="outline">
-                        Export Orders Report
-                      </Button>
-                      <Button className="w-full" variant="outline">
-                        View Analytics
-                      </Button>
-                      <Button className="w-full" variant="outline">
-                        Manage Inventory
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
+            <AdminDashboard 
+              allUsers={allUsers}
+              allOrders={allOrders}
+              getStatusColor={getStatusColor}
+            />
           )}
         </Tabs>
 
