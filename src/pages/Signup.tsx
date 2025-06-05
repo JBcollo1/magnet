@@ -5,7 +5,6 @@ import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-// Assuming you have a Select component if using Shadcn UI, otherwise, you can use a native <select>
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff, User, Mail, Lock, Phone, Home, MapPin, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
