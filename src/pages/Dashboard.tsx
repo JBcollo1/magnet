@@ -66,7 +66,7 @@ const Dashboard = () => {
   }
 
   const totalItemsInCart = cartItems.reduce((total, item) => total + item.quantity, 0);
-  const isAdmin = user?.email === 'admin@magnetcraft.ke';
+  const isAdmin = user?.email === 'admin123@gmail.com';
 
   const handleSaveDetails = () => {
     // In a real app, this would save to a database
