@@ -5,6 +5,8 @@ import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+// Assuming you have a Select component if using Shadcn UI, otherwise, you can use a native <select>
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff, User, Mail, Lock, Phone, Home, MapPin, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
@@ -18,13 +20,24 @@ const isAxiosErrorType = (error: any): error is { response?: { data?: AxiosError
   return (error as any).isAxiosError === true;
 };
 
+// Define the 47 counties of Kenya
+const kenyanCounties = [
+  "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa",
+  "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi",
+  "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu",
+  "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa",
+  "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
+  "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi",
+  "Trans Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot"
+].sort(); // Sort alphabetically for better user experience
+
 const Signup = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     phone: '',
     address: '',
-    city: '',
+    city: '', // This will now store the selected county
     password: '',
     confirmPassword: ''
   });
@@ -36,11 +49,19 @@ const Signup = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value
+    });
+  };
+
+  // Special handler for Shadcn UI's Select component as it doesn't use standard change events
+  const handleCountyChange = (value: string) => {
+    setFormData({
+      ...formData,
+      city: value
     });
   };
 
@@ -118,7 +139,7 @@ const Signup = () => {
           email: formData.email,
           phone: formData.phone,
           address: formData.address,
-          city: formData.city,
+          city: formData.city, // The selected county
           password: formData.password
         },
         { withCredentials: true }
@@ -252,20 +273,25 @@ const Signup = () => {
                   </div>
                 </div>
 
+                {/* County Dropdown Section */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    City
+                  <label htmlFor="city-select" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    County
                   </label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      type="text"
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      placeholder="Your city"
-                      className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    />
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
+                    <Select onValueChange={handleCountyChange} value={formData.city || ""}>
+                      <SelectTrigger className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
+                        <SelectValue placeholder="Select your county" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {kenyanCounties.map((county) => (
+                          <SelectItem key={county} value={county}>
+                            {county}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
 
@@ -359,7 +385,7 @@ const Signup = () => {
                 <Button
                   type="submit"
                   className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                  disabled={isLoading || !formData.name || !formData.email || !formData.password || !formData.confirmPassword || formData.password !== formData.confirmPassword}
+                  disabled={isLoading || !formData.name || !formData.email || !formData.password || !formData.confirmPassword || formData.password !== formData.confirmPassword || !formData.city}
                 >
                   {isLoading ? (
                     <>
