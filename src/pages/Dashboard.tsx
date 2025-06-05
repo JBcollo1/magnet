@@ -32,6 +32,21 @@ interface UserData {
   totalSpent: number;
 }
 
+interface UserDetails {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  city: string;
+  postalCode: string;
+}
+
+interface ApiResponse<T> {
+  data?: T;
+  success?: boolean;
+  message?: string;
+}
+
 const Dashboard = () => {
   const { user, isAuthenticated, loading: authLoading, refreshUser } = useAuth();
   const { cartItems } = useCart();
@@ -39,7 +54,7 @@ const Dashboard = () => {
   
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [userDetails, setUserDetails] = useState({
+  const [userDetails, setUserDetails] = useState<UserDetails>({
     name: user?.name || '',
     email: user?.email || '',
     phone: '',
@@ -58,8 +73,8 @@ const Dashboard = () => {
     if (user) {
       setUserDetails(prev => ({
         ...prev,
-        name: user.name,
-        email: user.email,
+        name: user.name || '',
+        email: user.email || '',
       }));
     }
   }, [user]);
@@ -74,7 +89,7 @@ const Dashboard = () => {
   // Fetch user profile data
   const fetchUserProfile = async () => {
     try {
-      const response = await axios.get(
+      const response = await axios.get<UserDetails>(
         `${import.meta.env.VITE_API_URL}/profile/details`,
         { withCredentials: true }
       );
@@ -93,11 +108,14 @@ const Dashboard = () => {
   // Fetch user orders
   const fetchUserOrders = async () => {
     try {
-      const response = await axios.get(
+      const response = await axios.get<Order[]>(
         `${import.meta.env.VITE_API_URL}/orders`,
         { withCredentials: true }
       );
-      setOrders(response.data || []);
+      
+      // Type-safe assignment with fallback
+      const ordersData = Array.isArray(response.data) ? response.data : [];
+      setOrders(ordersData);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
       // Use mock data if API fails
@@ -128,12 +146,16 @@ const Dashboard = () => {
 
     try {
       const [usersResponse, ordersResponse] = await Promise.all([
-        axios.get(`${import.meta.env.VITE_API_URL}/admin/users`, { withCredentials: true }),
-        axios.get(`${import.meta.env.VITE_API_URL}/admin/orders`, { withCredentials: true })
+        axios.get<UserData[]>(`${import.meta.env.VITE_API_URL}/admin/users`, { withCredentials: true }),
+        axios.get<Order[]>(`${import.meta.env.VITE_API_URL}/admin/orders`, { withCredentials: true })
       ]);
 
-      setAllUsers(usersResponse.data || []);
-      setAllOrders(ordersResponse.data || []);
+      // Type-safe assignments with fallbacks
+      const usersData = Array.isArray(usersResponse.data) ? usersResponse.data : [];
+      const ordersData = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
+      
+      setAllUsers(usersData);
+      setAllOrders(ordersData);
     } catch (error) {
       console.error('Failed to fetch admin data:', error);
       // Use mock data if API fails
@@ -188,13 +210,13 @@ const Dashboard = () => {
     return null;
   }
 
-  const totalItemsInCart = cartItems.reduce((total, item) => total + item.quantity, 0);
+  const totalItemsInCart = cartItems?.reduce((total, item) => total + item.quantity, 0) ?? 0;
   const isAdmin = user?.email === 'admin123@gmail.com';
 
   const handleSaveDetails = async () => {
     setLoading(true);
     try {
-      await axios.put(
+      await axios.put<ApiResponse<UserDetails>>(
         `${import.meta.env.VITE_API_URL}/profile/details`,
         userDetails,
         { withCredentials: true }

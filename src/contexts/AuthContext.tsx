@@ -17,20 +17,51 @@ interface AuthContextType {
   refreshUser: () => Promise<void>;
 }
 
+interface AuthResponse {
+  user?: User;
+  success?: boolean;
+  message?: string;
+}
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Type guard to validate user data
+  const isValidUser = (data: any): data is User => {
+    return data && 
+           typeof data.id === 'string' && 
+           typeof data.email === 'string' && 
+           typeof data.name === 'string';
+  };
+
   // Function to get current user from backend
   const getCurrentUser = async (): Promise<User | null> => {
     try {
-      const response = await axios.get(
+      const response = await axios.get<User | AuthResponse>(
         `${import.meta.env.VITE_API_URL}/auth/me`,
         { withCredentials: true }
       );
-      return response.data;
+      
+      // Handle different response formats
+      const userData = response.data;
+      
+      // If response.data is directly a User object
+      if (isValidUser(userData)) {
+        return userData;
+      }
+      
+      // If response.data has a user property
+      if (userData && typeof userData === 'object' && 'user' in userData) {
+        const authResponse = userData as AuthResponse;
+        if (authResponse.user && isValidUser(authResponse.user)) {
+          return authResponse.user;
+        }
+      }
+      
+      return null;
     } catch (error) {
       console.error('Failed to get current user:', error);
       return null;
@@ -58,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const response = await axios.post(
+      const response = await axios.post<AuthResponse>(
         `${import.meta.env.VITE_API_URL}/auth/login`,
         { email, password },
         { withCredentials: true }
@@ -81,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signup = async (email: string, password: string, name: string): Promise<boolean> => {
     try {
-      const response = await axios.post(
+      const response = await axios.post<AuthResponse>(
         `${import.meta.env.VITE_API_URL}/auth/signup`,
         { email, password, name },
         { withCredentials: true }
