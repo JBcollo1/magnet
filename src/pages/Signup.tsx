@@ -32,11 +32,9 @@ const kenyanCounties = [
 
 const Signup = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    
     email: '',
-    phone: '',
-    address: '',
-    city: '', // This will now store the selected county
+  
     password: '',
     confirmPassword: ''
   });
@@ -57,23 +55,21 @@ const Signup = () => {
   };
 
   // Special handler for Shadcn UI's Select component as it doesn't use standard change events
-  const handleCountyChange = (value: string) => {
-    setFormData({
-      ...formData,
-      city: value
-    });
-  };
+  // const handleCountyChange = (value: string) => {
+  //   setFormData({
+  //     ...formData,
+  //     city: value
+  //   });
+  // };
 
   const resetFormStates = useCallback(() => {
     setError('');
     setSuccessMessage('');
     setIsLoading(false);
     setFormData({
-      name: '',
+      
       email: '',
-      phone: '',
-      address: '',
-      city: '',
+      
       password: '',
       confirmPassword: ''
     });
@@ -134,11 +130,11 @@ const Signup = () => {
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/auth/register`,
         {
-          name: formData.name,
+          // name: formData.name,
           email: formData.email,
-          phone: formData.phone,
-          address: formData.address,
-          city: formData.city, // The selected county
+          // phone: formData.phone,
+          // address: formData.address,
+          // city: formData.city, // The selected county
           password: formData.password
         },
         { withCredentials: true }
@@ -202,23 +198,7 @@ const Signup = () => {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Full Name
-                  </label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      type="text"
-                      name="name"
-                      value={formData.name}
-                      onChange={handleChange}
-                      placeholder="Your full name"
-                      className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                      required
-                    />
-                  </div>
-                </div>
+                
 
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -238,42 +218,12 @@ const Signup = () => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="Your phone number"
-                      className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    />
-                  </div>
-                </div>
+              
 
-                <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Address
-                  </label>
-                  <div className="relative">
-                    <Home className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <Input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      placeholder="Your address"
-                      className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    />
-                  </div>
-                </div>
+                
 
                 {/* County Dropdown Section */}
-                <div className="space-y-2">
+                {/* <div className="space-y-2">
                   <label htmlFor="city-select" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
                     County
                   </label>
@@ -292,7 +242,7 @@ const Signup = () => {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
+                </div> */}
 
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -384,7 +334,7 @@ const Signup = () => {
                 <Button
                   type="submit"
                   className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                  disabled={isLoading || !formData.name || !formData.email || !formData.password || !formData.confirmPassword || formData.password !== formData.confirmPassword || !formData.city}
+                  disabled={isLoading || !formData.email || !formData.password || !formData.confirmPassword || formData.password !== formData.confirmPassword }
                 >
                   {isLoading ? (
                     <>
