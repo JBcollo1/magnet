@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
-import axios from 'axios'; // Remove isAxiosError from here
+import axios from 'axios';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,25 +8,17 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
-interface AxiosErrorResponse {
-  msg?: string;
-  error?: string;
-}
-
-// Helper function to check if error is an AxiosError
-// Manually implement isAxiosError check
-const isAxiosErrorType = (error: any): error is { response?: { data?: AxiosErrorResponse }; isAxiosError: boolean } => {
-  return (error as any).isAxiosError === true;
+// Helper function to check if error is an Axios error
+const isAxiosError = (error: any): error is any => {
+  return error && error.isAxiosError === true;
 };
-
 
 const Login = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
 
-  const resetTokenFromUrl = searchParams.get('token') ||
-    (location.pathname.match(/\/reset-password\/([^\/]+)/)?.[1]);
+  const resetTokenFromUrl = searchParams.get('token') || (location.pathname.match(/\/reset-password\/([^\/]+)/)?.[1]);
 
   const [currentView, setCurrentView] = useState('signin');
   const [token, setToken] = useState(resetTokenFromUrl || '');
@@ -38,8 +30,11 @@ const Login = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [signInData, setSignInData] = useState({
+    email: '',
+    password: ''
+  });
+
   const [forgotPasswordEmail, setForgotPasswordEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -49,8 +44,7 @@ const Login = () => {
     setSuccessMessage('');
     setIsLoading(false);
     setTokenValidated(false);
-    setEmail('');
-    setPassword('');
+    setSignInData({ email: '', password: '' });
     setForgotPasswordEmail('');
     setNewPassword('');
     setConfirmPassword('');
@@ -59,12 +53,12 @@ const Login = () => {
     setShowConfirmPassword(false);
   }, []);
 
-  const toggleForm = useCallback((view: string) => {
+  const toggleForm = useCallback((view) => {
     setCurrentView(view);
     resetFormStates();
   }, [resetFormStates]);
 
-  const validateResetToken = useCallback(async (tokenToValidate: string) => {
+  const validateResetToken = useCallback(async (tokenToValidate) => {
     setIsLoading(true);
     setError('');
     setSuccessMessage('');
@@ -77,16 +71,15 @@ const Login = () => {
       );
 
       if (response.status === 200) {
-        const data = response.data as AxiosErrorResponse;
-        setSuccessMessage(data.msg || 'Token is valid. You can now reset your password.');
+        const msg = (response.data as { msg?: string }).msg;
+        setSuccessMessage(msg || 'Token is valid. You can now reset your password.');
         setTokenValidated(true);
       }
     } catch (error) {
       console.error('Token validation error:', error);
       let errorMessage = 'Invalid or expired reset token. Please request a new password reset.';
-      if (isAxiosErrorType(error) && error.response?.data) {
-        const errorData = error.response.data as AxiosErrorResponse;
-        errorMessage = errorData.msg || errorMessage;
+      if (isAxiosError(error) && error.response?.data?.msg) {
+        errorMessage = error.response.data.msg;
       }
       setError(errorMessage);
       setTokenValidated(false);
@@ -107,7 +100,12 @@ const Login = () => {
     }
   }, [resetTokenFromUrl, validateResetToken]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSignInChange = (e) => {
+    const { id, value } = e.target;
+    setSignInData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSignIn = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -116,7 +114,7 @@ const Login = () => {
     try {
       const response = await axios.post(
         `${import.meta.env.VITE_API_URL}/auth/login`,
-        { email, password },
+        signInData,
         { withCredentials: true }
       );
 
@@ -130,12 +128,9 @@ const Login = () => {
       }
     } catch (error) {
       let errorMessage = 'An error occurred. Please try again.';
-
-      if (isAxiosErrorType(error) && error.response?.data) {
-        const errorData = error.response.data as AxiosErrorResponse;
-        errorMessage = errorData.error || 'Invalid email or password. Please try again.';
+      if (isAxiosError(error) && error.response?.data?.error) {
+        errorMessage = error.response.data.error;
       }
-
       setError(errorMessage);
       toast({
         title: "Login failed",
@@ -147,7 +142,7 @@ const Login = () => {
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -167,12 +162,9 @@ const Login = () => {
       });
     } catch (error) {
       let errorMessage = 'An unexpected error occurred. Please try again.';
-
-      if (isAxiosErrorType(error) && error.response?.data) {
-        const errorData = error.response.data as AxiosErrorResponse;
-        errorMessage = errorData.msg || 'Failed to send reset link. Please try again.';
+      if (isAxiosError(error) && error.response?.data?.msg) {
+        errorMessage = error.response.data.msg;
       }
-
       setError(errorMessage);
       toast({
         title: "Error",
@@ -184,7 +176,7 @@ const Login = () => {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -227,12 +219,9 @@ const Login = () => {
       }, 2000);
     } catch (error) {
       let errorMessage = 'An unexpected error occurred. Please try again.';
-
-      if (isAxiosErrorType(error) && error.response?.data) {
-        const errorData = error.response.data as AxiosErrorResponse;
-        errorMessage = errorData.msg || 'Failed to reset password. Please try again.';
+      if (isAxiosError(error) && error.response?.data?.msg) {
+        errorMessage = error.response.data.msg;
       }
-
       setError(errorMessage);
       toast({
         title: "Error",
@@ -244,55 +233,11 @@ const Login = () => {
     }
   };
 
-  const handleGoogleLogin = () => {
-    try {
-      const currentUrl = window.location.href;
-      if (typeof Storage !== 'undefined') {
-        localStorage.setItem('preAuthUrl', currentUrl);
-      }
-
-      const googleLoginUrl = `${import.meta.env.VITE_API_URL}/auth/login/google`;
-      window.location.href = googleLoginUrl;
-    } catch (error) {
-      console.error('Error initiating Google login:', error);
-      toast({
-        title: "Error",
-        description: "Failed to initiate Google login. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getPasswordStrength = (password: string) => {
-    if (!password) return { strength: 0, text: '', color: '' };
-
-    let strength = 0;
-    if (password.length >= 8) strength += 1;
-    if (/[a-z]/.test(password)) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/\d/.test(password)) strength += 1;
-    if (/[^a-zA-Z\d]/.test(password)) strength += 1;
-
-    const strengthMap = {
-      0: { text: 'Very Weak', color: 'bg-red-500' },
-      1: { text: 'Weak', color: 'bg-red-400' },
-      2: { text: 'Fair', color: 'bg-yellow-500' },
-      3: { text: 'Good', color: 'bg-blue-500' },
-      4: { text: 'Strong', color: 'bg-green-500' },
-      5: { text: 'Very Strong', color: 'bg-green-600' }
-    };
-
-    return { strength, ...strengthMap[strength as keyof typeof strengthMap] };
-  };
-
-  const passwordStrength = getPasswordStrength(newPassword);
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       <Header />
       <div className="container mx-auto px-4 py-8 md:py-16">
         <div className="max-w-md mx-auto">
-          {/* Sign In Form */}
           {currentView === 'signin' && (
             <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm dark:bg-gray-800/95">
               <CardHeader className="text-center pb-2">
@@ -303,7 +248,7 @@ const Login = () => {
                   Welcome Back
                 </CardTitle>
                 <CardDescription className="text-gray-600 dark:text-gray-300 mt-2">
-                  Sign in to your MagnetCraft Kenya account
+                  Sign in to your account
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -320,17 +265,18 @@ const Login = () => {
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSignIn} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300" htmlFor="email">
                       Email Address
                     </label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
+                        id="email"
                         type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        value={signInData.email}
+                        onChange={handleSignInChange}
                         placeholder="your.email@example.com"
                         className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         required
@@ -339,15 +285,16 @@ const Login = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300" htmlFor="password">
                       Password
                     </label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
+                        id="password"
                         type={showPassword ? "text" : "password"}
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        value={signInData.password}
+                        onChange={handleSignInChange}
                         placeholder="Enter your password"
                         className="pl-10 pr-10 h-12 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                         required
@@ -378,31 +325,6 @@ const Login = () => {
                   </Button>
                 </form>
 
-                <div className="mt-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-gray-200 dark:border-gray-600"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white dark:bg-gray-800 text-gray-500">Or continue with</span>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={handleGoogleLogin}
-                    className="mt-4 w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 hover:border-gray-300 py-3 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-[1.02] shadow-sm"
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24">
-                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
-                      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
-                      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
-                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
-                    </svg>
-                    Sign in with Google
-                  </button>
-                </div>
-
                 <div className="mt-8 text-center space-y-3">
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     Don't have an account?{' '}
@@ -425,7 +347,6 @@ const Login = () => {
             </Card>
           )}
 
-          {/* Forgot Password Form */}
           {currentView === 'forgot-password' && (
             <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm dark:bg-gray-800/95">
               <CardHeader className="text-center pb-2">
@@ -455,12 +376,13 @@ const Login = () => {
 
                 <form onSubmit={handleForgotPassword} className="space-y-6">
                   <div className="space-y-2">
-                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300" htmlFor="forgot-email">
                       Email Address
                     </label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                       <Input
+                        id="forgot-email"
                         type="email"
                         value={forgotPasswordEmail}
                         onChange={(e) => setForgotPasswordEmail(e.target.value)}
@@ -501,7 +423,6 @@ const Login = () => {
             </Card>
           )}
 
-          {/* Reset Password Form */}
           {currentView === 'reset-password' && (
             <Card className="shadow-2xl border-0 bg-white/95 backdrop-blur-sm dark:bg-gray-800/95">
               <CardHeader className="text-center pb-2">
@@ -550,12 +471,13 @@ const Login = () => {
                 {!isLoading && tokenValidated && !error && (
                   <form onSubmit={handleResetPassword} className="space-y-6">
                     <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300" htmlFor="new-password">
                         New Password
                       </label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <Input
+                          id="new-password"
                           type={showNewPassword ? "text" : "password"}
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
@@ -572,39 +494,19 @@ const Login = () => {
                           {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       </div>
-
-                      {newPassword && (
-                        <div className="mt-2">
-                          <div className="flex justify-between items-center mb-1">
-                            <span className="text-xs text-gray-600 dark:text-gray-400">Password strength:</span>
-                            <span className={`text-xs font-medium ${
-                              passwordStrength.strength <= 2 ? 'text-red-500' :
-                              passwordStrength.strength <= 3 ? 'text-yellow-500' : 'text-green-500'
-                            }`}>
-                              {passwordStrength.text}
-                            </span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full transition-all duration-300 ${passwordStrength.color}`}
-                              style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      )}
-
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                         Password must be at least 8 characters long and include both letters and numbers
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300" htmlFor="confirm-password">
                         Confirm New Password
                       </label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
                         <Input
+                          id="confirm-password"
                           type={showConfirmPassword ? "text" : "password"}
                           value={confirmPassword}
                           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -621,21 +523,11 @@ const Login = () => {
                           {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                         </button>
                       </div>
-
-                      {newPassword && confirmPassword && (
-                        <div className="flex items-center gap-2 mt-2">
-                          {newPassword === confirmPassword ? (
-                            <>
-                              <CheckCircle className="w-4 h-4 text-green-500" />
-                              <p className="text-xs text-green-600 dark:text-green-400">Passwords match</p>
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle className="w-4 h-4 text-red-500" />
-                              <p className="text-xs text-red-500">Passwords do not match</p>
-                            </>
-                          )}
-                        </div>
+                      {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                        <p className="text-xs text-red-500">Passwords do not match</p>
+                      )}
+                      {newPassword && confirmPassword && newPassword === confirmPassword && (
+                        <p className="text-xs text-green-600">Passwords match ✓</p>
                       )}
                     </div>
 
