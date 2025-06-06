@@ -20,9 +20,11 @@ const Login = () => {
   const location = useLocation();
   const { login, isAuthenticated } = useAuth();
 
+  // Extract token from URL search params or path
   const resetTokenFromUrl = searchParams.get('token') || (location.pathname.match(/\/reset-password\/([^\/]+)/)?.[1]);
 
-  const [currentView, setCurrentView] = useState('signin');
+  // Determine initial view based on the presence of a reset token in the URL
+  const [currentView, setCurrentView] = useState(resetTokenFromUrl ? 'reset-password' : 'signin');
   const [token, setToken] = useState(resetTokenFromUrl || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -65,7 +67,11 @@ const Login = () => {
   const toggleForm = useCallback((view) => {
     setCurrentView(view);
     resetFormStates();
-  }, [resetFormStates]);
+    // Clear URL search params when changing views away from reset-password
+    if (view !== 'reset-password') {
+      navigate(location.pathname, { replace: true }); // Keep path, remove search params
+    }
+  }, [resetFormStates, navigate, location.pathname]);
 
   const validateResetToken = useCallback(async (tokenToValidate) => {
     setIsLoading(true);
@@ -93,6 +99,7 @@ const Login = () => {
       setError(errorMessage);
       setTokenValidated(false);
 
+      // Redirect to forgot-password after a delay if token is invalid/expired
       setTimeout(() => {
         toggleForm('forgot-password');
       }, 3000);
@@ -101,13 +108,13 @@ const Login = () => {
     }
   }, [toggleForm]);
 
+  // Initial token validation if resetTokenFromUrl exists on component mount
   useEffect(() => {
-    if (resetTokenFromUrl) {
-      setCurrentView('reset-password');
-      setToken(resetTokenFromUrl);
+    if (resetTokenFromUrl && currentView === 'reset-password' && !tokenValidated && !isLoading) {
       validateResetToken(resetTokenFromUrl);
     }
-  }, [resetTokenFromUrl, validateResetToken]);
+  }, [resetTokenFromUrl, currentView, tokenValidated, isLoading, validateResetToken]);
+
 
   const handleSignInChange = (e) => {
     const { id, value } = e.target;
@@ -223,7 +230,7 @@ const Login = () => {
 
       setTimeout(() => {
         toggleForm('signin');
-        navigate('/login');
+        navigate('/login', { replace: true }); // Use replace to prevent back button issues
       }, 2000);
     } catch (error) {
       let errorMessage = 'An unexpected error occurred. Please try again.';
@@ -458,7 +465,7 @@ const Login = () => {
                   </div>
                 )}
 
-                {isLoading && (
+                {isLoading && !error && ( // Only show loader if loading and no immediate error
                   <div className="text-center py-8">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-500 mb-4" />
                     <p className="text-gray-600 dark:text-gray-400">Validating reset link...</p>
