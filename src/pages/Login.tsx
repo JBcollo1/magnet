@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
-import { useAuth } from '@/contexts/AuthContext'; // Import the auth context
+import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 // Helper function to check if error is an Axios error
-const isAxiosError = (error: any): error is any => {
+const isAxiosError = (error) => {
   return error && error.isAxiosError === true;
 };
 
@@ -18,7 +18,7 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated } = useAuth(); // Use auth context
+  const { login, isAuthenticated } = useAuth();
 
   const resetTokenFromUrl = searchParams.get('token') || (location.pathname.match(/\/reset-password\/([^\/]+)/)?.[1]);
 
@@ -62,12 +62,12 @@ const Login = () => {
     setShowConfirmPassword(false);
   }, []);
 
-  const toggleForm = useCallback((view: string) => {
+  const toggleForm = useCallback((view) => {
     setCurrentView(view);
     resetFormStates();
   }, [resetFormStates]);
 
-  const validateResetToken = useCallback(async (tokenToValidate: string) => {
+  const validateResetToken = useCallback(async (tokenToValidate) => {
     setIsLoading(true);
     setError('');
     setSuccessMessage('');
@@ -80,8 +80,8 @@ const Login = () => {
       );
 
       if (response.status === 200) {
-        const msg = (response.data as { msg?: string }).msg;
-        setSuccessMessage(msg || 'Token is valid. You can now reset your password.');
+        const msg = (response.data as { msg?: string }).msg || 'Token is valid. You can now reset your password.';
+        setSuccessMessage(msg);
         setTokenValidated(true);
       }
     } catch (error) {
@@ -109,12 +109,12 @@ const Login = () => {
     }
   }, [resetTokenFromUrl, validateResetToken]);
 
-  const handleSignInChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSignInChange = (e) => {
     const { id, value } = e.target;
     setSignInData(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleSignIn = async (e: React.FormEvent) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -122,14 +122,13 @@ const Login = () => {
 
     try {
       const success = await login(signInData.email, signInData.password);
-      
+
       if (success) {
         setSuccessMessage('Welcome back! You have successfully logged in.');
         toast({
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
-        // Navigation will be handled by the useEffect that watches isAuthenticated
       } else {
         setError('Invalid email or password. Please try again.');
         toast({
@@ -151,7 +150,7 @@ const Login = () => {
     }
   };
 
-  const handleForgotPassword = async (e: React.FormEvent) => {
+  const handleForgotPassword = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -185,7 +184,7 @@ const Login = () => {
     }
   };
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
