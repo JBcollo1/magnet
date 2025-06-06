@@ -80,7 +80,7 @@ const Login = () => {
       );
 
       if (response.status === 200) {
-        const msg = (response.data as { msg?: string }).msg || 'Token is valid. You can now reset your password.';
+        const msg = (response.data as { msg?: string })?.msg || 'Token is valid. You can now reset your password.';
         setSuccessMessage(msg);
         setTokenValidated(true);
       }

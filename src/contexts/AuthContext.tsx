@@ -7,21 +7,23 @@ interface User {
   name: string;
 }
 
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  signup: (email: string, password: string, name: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-  isAuthenticated: boolean;
-  loading: boolean;
-  refreshUser: () => Promise<void>;
-}
-
 interface AuthResponse {
   user?: User;
   success?: boolean;
   message?: string;
   error?: string;
+}
+
+interface AuthContextType {
+  user: User | null;
+  login: (email: string, password: string) => Promise<boolean>;
+  signup: (email: string, password: string, name: string) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<boolean>;
+  resetPassword: (token: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  isAuthenticated: boolean;
+  loading: boolean;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -32,9 +34,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Type guard to validate user data
   const isValidUser = (data: any): data is User => {
-    return data && 
-           typeof data.id === 'string' && 
-           typeof data.email === 'string' && 
+    return data &&
+           typeof data.id === 'string' &&
+           typeof data.email === 'string' &&
            typeof data.name === 'string';
   };
 
@@ -45,15 +47,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         `${import.meta.env.VITE_API_URL}/auth/me`,
         { withCredentials: true }
       );
-      
+
       // Handle different response formats
       const userData = response.data;
-      
+
       // If response.data is directly a User object
       if (isValidUser(userData)) {
         return userData;
       }
-      
+
       // If response.data has a user property
       if (userData && typeof userData === 'object' && 'user' in userData) {
         const authResponse = userData as AuthResponse;
@@ -61,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return authResponse.user;
         }
       }
-      
+
       return null;
     } catch (error) {
       console.error('Failed to get current user:', error);
@@ -99,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.status === 200) {
         // Try to get user data from the response first
         const userData = response.data;
-        
+
         // Check if user data is in the response
         if (userData && typeof userData === 'object' && 'user' in userData) {
           const authResponse = userData as AuthResponse;
@@ -108,23 +110,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return true;
           }
         }
-        
+
         // If user data is directly in response
         if (isValidUser(userData)) {
           setUser(userData);
           return true;
         }
-        
+
         // If no user data in response, try to fetch it
         const userFromApi = await getCurrentUser();
         if (userFromApi) {
           setUser(userFromApi);
           return true;
         }
-        
+
         return false;
       }
-      
+
       return false;
     } catch (error) {
       console.error('Login failed:', error);
@@ -134,44 +136,77 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signup = async (email: string, password: string, name: string): Promise<boolean> => {
-  try {
-    const response = await axios.post<AuthResponse>(
-      `${import.meta.env.VITE_API_URL}/auth/register`, // Changed from /auth/signup
-      { email, password, name },
-      { withCredentials: true }
-    );
+    try {
+      const response = await axios.post<AuthResponse>(
+        `${import.meta.env.VITE_API_URL}/auth/register`,
+        { email, password, name },
+        { withCredentials: true }
+      );
 
-    // Check for 201 status code as well
-    if (response.status === 200 || response.status === 201) {
-      // Your registration might not return user data immediately
-      // If it doesn't, that's fine - the user can login after
-      const userData = response.data;
-      
-      if (userData && typeof userData === 'object' && 'user' in userData) {
-        const authResponse = userData as AuthResponse;
-        if (authResponse.user && isValidUser(authResponse.user)) {
-          setUser(authResponse.user);
+      if (response.status === 200 || response.status === 201) {
+        const userData = response.data;
+
+        if (userData && typeof userData === 'object' && 'user' in userData) {
+          const authResponse = userData as AuthResponse;
+          if (authResponse.user && isValidUser(authResponse.user)) {
+            setUser(authResponse.user);
+            return true;
+          }
+        }
+
+        if (isValidUser(userData)) {
+          setUser(userData);
           return true;
         }
-      }
-      
-      if (isValidUser(userData)) {
-        setUser(userData);
+
+        // If no user data in response, registration was successful
+        // but user needs to login (common for email verification flows)
         return true;
       }
-      
-      // If no user data in response, registration was successful
-      // but user needs to login (which is common for email verification flows)
-      return true;
+
+      return false;
+    } catch (error) {
+      console.error('Signup failed:', error);
+      setUser(null);
+      return false;
     }
-    
-    return false;
-  } catch (error) {
-    console.error('Signup failed:', error);
-    setUser(null);
-    return false;
-  }
-};
+  };
+
+  const forgotPassword = async (email: string): Promise<boolean> => {
+    try {
+      const response = await axios.post<AuthResponse>(
+        `${import.meta.env.VITE_API_URL}/auth/forgot-password`,
+        { email },
+        { withCredentials: true }
+      );
+
+      if (response.status === 200) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Forgot password failed:', error);
+      return false;
+    }
+  };
+
+  const resetPassword = async (token: string, password: string): Promise<boolean> => {
+    try {
+      const response = await axios.post<AuthResponse>(
+        `${import.meta.env.VITE_API_URL}/auth/reset-password/${token}`,
+        { password },
+        { withCredentials: true }
+      );
+
+      if (response.status === 200) {
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Reset password failed:', error);
+      return false;
+    }
+  };
 
   const logout = async (): Promise<void> => {
     try {
@@ -193,6 +228,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     user,
     login,
     signup,
+    forgotPassword,
+    resetPassword,
     logout,
     isAuthenticated: !!user,
     loading,
