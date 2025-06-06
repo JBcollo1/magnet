@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext'; // Import the auth context
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,7 @@ const Login = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const { login, isAuthenticated } = useAuth(); // Use auth context
 
   const resetTokenFromUrl = searchParams.get('token') || (location.pathname.match(/\/reset-password\/([^\/]+)/)?.[1]);
 
@@ -39,6 +41,13 @@ const Login = () => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    }
+  }, [isAuthenticated, navigate]);
+
   const resetFormStates = useCallback(() => {
     setError('');
     setSuccessMessage('');
@@ -53,12 +62,12 @@ const Login = () => {
     setShowConfirmPassword(false);
   }, []);
 
-  const toggleForm = useCallback((view) => {
+  const toggleForm = useCallback((view: string) => {
     setCurrentView(view);
     resetFormStates();
   }, [resetFormStates]);
 
-  const validateResetToken = useCallback(async (tokenToValidate) => {
+  const validateResetToken = useCallback(async (tokenToValidate: string) => {
     setIsLoading(true);
     setError('');
     setSuccessMessage('');
@@ -100,37 +109,37 @@ const Login = () => {
     }
   }, [resetTokenFromUrl, validateResetToken]);
 
-  const handleSignInChange = (e) => {
+  const handleSignInChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
     setSignInData(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleSignIn = async (e) => {
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     setSuccessMessage('');
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/login`,
-        signInData,
-        { withCredentials: true }
-      );
-
-      if (response.status === 200) {
+      const success = await login(signInData.email, signInData.password);
+      
+      if (success) {
         setSuccessMessage('Welcome back! You have successfully logged in.');
         toast({
           title: "Welcome back!",
           description: "You have successfully logged in.",
         });
-        navigate('/dashboard');
+        // Navigation will be handled by the useEffect that watches isAuthenticated
+      } else {
+        setError('Invalid email or password. Please try again.');
+        toast({
+          title: "Login failed",
+          description: "Invalid email or password. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      let errorMessage = 'An error occurred. Please try again.';
-      if (isAxiosError(error) && error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      }
+      const errorMessage = 'An error occurred. Please try again.';
       setError(errorMessage);
       toast({
         title: "Login failed",
@@ -142,7 +151,7 @@ const Login = () => {
     }
   };
 
-  const handleForgotPassword = async (e) => {
+  const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -176,7 +185,7 @@ const Login = () => {
     }
   };
 
-  const handleResetPassword = async (e) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');

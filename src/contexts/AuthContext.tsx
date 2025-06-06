@@ -11,7 +11,7 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string) => Promise<boolean>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
   refreshUser: () => Promise<void>;
@@ -21,6 +21,7 @@ interface AuthResponse {
   user?: User;
   success?: boolean;
   message?: string;
+  error?: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -96,42 +97,81 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
 
       if (response.status === 200) {
-        // After successful login, get user data
-        const userData = await getCurrentUser();
-        if (userData) {
+        // Try to get user data from the response first
+        const userData = response.data;
+        
+        // Check if user data is in the response
+        if (userData && typeof userData === 'object' && 'user' in userData) {
+          const authResponse = userData as AuthResponse;
+          if (authResponse.user && isValidUser(authResponse.user)) {
+            setUser(authResponse.user);
+            return true;
+          }
+        }
+        
+        // If user data is directly in response
+        if (isValidUser(userData)) {
           setUser(userData);
           return true;
         }
+        
+        // If no user data in response, try to fetch it
+        const userFromApi = await getCurrentUser();
+        if (userFromApi) {
+          setUser(userFromApi);
+          return true;
+        }
+        
+        return false;
       }
+      
       return false;
     } catch (error) {
       console.error('Login failed:', error);
+      setUser(null);
       return false;
     }
   };
 
   const signup = async (email: string, password: string, name: string): Promise<boolean> => {
-    try {
-      const response = await axios.post<AuthResponse>(
-        `${import.meta.env.VITE_API_URL}/auth/signup`,
-        { email, password, name },
-        { withCredentials: true }
-      );
+  try {
+    const response = await axios.post<AuthResponse>(
+      `${import.meta.env.VITE_API_URL}/auth/register`, // Changed from /auth/signup
+      { email, password, name },
+      { withCredentials: true }
+    );
 
-      if (response.status === 200 || response.status === 201) {
-        // After successful signup, get user data
-        const userData = await getCurrentUser();
-        if (userData) {
-          setUser(userData);
+    // Check for 201 status code as well
+    if (response.status === 200 || response.status === 201) {
+      // Your registration might not return user data immediately
+      // If it doesn't, that's fine - the user can login after
+      const userData = response.data;
+      
+      if (userData && typeof userData === 'object' && 'user' in userData) {
+        const authResponse = userData as AuthResponse;
+        if (authResponse.user && isValidUser(authResponse.user)) {
+          setUser(authResponse.user);
           return true;
         }
       }
-      return false;
-    } catch (error) {
-      console.error('Signup failed:', error);
-      return false;
+      
+      if (isValidUser(userData)) {
+        setUser(userData);
+        return true;
+      }
+      
+      // If no user data in response, registration was successful
+      // but user needs to login (which is common for email verification flows)
+      return true;
     }
-  };
+    
+    return false;
+  } catch (error) {
+    console.error('Signup failed:', error);
+    setUser(null);
+    return false;
+  }
+};
 
   const logout = async (): Promise<void> => {
     try {
@@ -142,28 +182,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
     } catch (error) {
       console.error('Logout request failed:', error);
-      // Still clear user data even if logout request fails
+      // Continue with logout even if request fails
     } finally {
+      // Always clear user state on logout
       setUser(null);
     }
   };
 
+  const value: AuthContextType = {
+    user,
+    login,
+    signup,
+    logout,
+    isAuthenticated: !!user,
+    loading,
+    refreshUser,
+  };
+
   return (
-    <AuthContext.Provider value={{
-      user,
-      login,
-      signup,
-      logout: logout,
-      isAuthenticated: !!user,
-      loading,
-      refreshUser,
-    }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
+// Custom hook to use the auth context
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');

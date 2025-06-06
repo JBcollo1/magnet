@@ -1,52 +1,31 @@
 import React, { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import { useAuth } from '@/contexts/AuthContext'; // Import the auth context
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from '@/hooks/use-toast';
-import { Eye, EyeOff, User, Mail, Lock, Phone, Home, MapPin, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
-
-interface AxiosErrorResponse {
-  msg?: string;
-  error?: string;
-}
-
-// Helper function to check if error is an AxiosError
-const isAxiosErrorType = (error: any): error is { response?: { data?: AxiosErrorResponse }; isAxiosError: boolean } => {
-  return (error as any).isAxiosError === true;
-};
-
-// Define the 47 counties of Kenya
-const kenyanCounties = [
-  "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo-Marakwet", "Embu", "Garissa",
-  "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi",
-  "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu",
-  "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa",
-  "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
-  "Nyeri", "Samburu", "Siaya", "Taita-Taveta", "Tana River", "Tharaka-Nithi",
-  "Trans Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot"
-].sort(); // Sort alphabetically for better user experience
+import { Eye, EyeOff, User, Mail, Lock, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
-    
+    name: '',
     email: '',
-  
     password: '',
     confirmPassword: ''
   });
 
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  const { signup, loading } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -54,27 +33,18 @@ const Signup = () => {
     });
   };
 
-  // Special handler for Shadcn UI's Select component as it doesn't use standard change events
-  // const handleCountyChange = (value: string) => {
-  //   setFormData({
-  //     ...formData,
-  //     city: value
-  //   });
-  // };
-
   const resetFormStates = useCallback(() => {
     setError('');
     setSuccessMessage('');
-    setIsLoading(false);
     setFormData({
-      
+      name: '',
       email: '',
-      
       password: '',
       confirmPassword: ''
     });
     setShowPassword(false);
     setShowConfirmPassword(false);
+    setIsSubmitting(false);
   }, []);
 
   const getPasswordStrength = (password: string) => {
@@ -104,65 +74,76 @@ const Signup = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Clear previous messages
+    setError('');
+    setSuccessMessage('');
+
+    // Validation
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match.');
+      const errorMsg = 'Passwords do not match.';
+      setError(errorMsg);
       toast({
         title: "Password mismatch",
-        description: "Passwords do not match. Please try again.",
+        description: errorMsg,
         variant: "destructive",
       });
       return;
     }
 
     if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long and contain letters and numbers.');
+      const errorMsg = 'Password must be at least 8 characters long and contain letters and numbers.';
+      setError(errorMsg);
       toast({
         title: "Weak password",
-        description: "Password must be at least 8 characters long and contain letters and numbers.",
+        description: errorMsg,
         variant: "destructive",
       });
       return;
     }
 
-    setIsLoading(true);
+    if (!formData.name.trim()) {
+      const errorMsg = 'Name is required.';
+      setError(errorMsg);
+      toast({
+        title: "Missing information",
+        description: errorMsg,
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/register`,
-        {
-          // name: formData.name,
-          email: formData.email,
-          // phone: formData.phone,
-          // address: formData.address,
-          // city: formData.city, // The selected county
-          password: formData.password
-        },
-        { withCredentials: true }
-      );
+      setIsSubmitting(true);
+      const success = await signup(formData.email, formData.password, formData.name.trim());
 
-      if (response.status === 201) {
-        setSuccessMessage('Account created successfully! Please check your email for verification.');
+      if (success) {
+        setSuccessMessage('Account created successfully! Welcome to MagnetCraft Kenya!');
         toast({
           title: "Account created!",
           description: "Welcome to MagnetCraft Kenya! Your account has been created successfully.",
         });
         resetFormStates();
-        navigate('/login');
+        // Navigate to dashboard or home page since user is now authenticated
+        navigate('/dashboard');
+      } else {
+        const errorMsg = 'Failed to create account. Please try again.';
+        setError(errorMsg);
+        toast({
+          title: "Error",
+          description: errorMsg,
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      let errorMessage = 'An error occurred. Please try again.';
-      if (isAxiosErrorType(error) && error.response?.data) {
-        const errorData = error.response.data as AxiosErrorResponse;
-        errorMessage = errorData.msg || errorMessage;
-      }
-      setError(errorMessage);
+      const errorMsg = 'An unexpected error occurred. Please try again.';
+      setError(errorMsg);
       toast({
         title: "Error",
-        description: errorMessage,
+        description: errorMsg,
         variant: "destructive",
       });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -198,7 +179,23 @@ const Signup = () => {
               )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
-                
+                <div className="space-y-2">
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
+                    Full Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <Input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      placeholder="Enter your full name"
+                      className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                      required
+                    />
+                  </div>
+                </div>
 
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -217,32 +214,6 @@ const Signup = () => {
                     />
                   </div>
                 </div>
-
-              
-
-                
-
-                {/* County Dropdown Section */}
-                {/* <div className="space-y-2">
-                  <label htmlFor="city-select" className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    County
-                  </label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 z-10" />
-                    <Select onValueChange={handleCountyChange} value={formData.city || ""}>
-                      <SelectTrigger className="pl-10 h-12 border-gray-200 dark:border-gray-600 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200">
-                        <SelectValue placeholder="Select your county" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {kenyanCounties.map((county) => (
-                          <SelectItem key={county} value={county}>
-                            {county}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div> */}
 
                 <div className="space-y-2">
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -334,9 +305,9 @@ const Signup = () => {
                 <Button
                   type="submit"
                   className="w-full h-12 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 transform hover:scale-[1.02] shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
-                  disabled={isLoading || !formData.email || !formData.password || !formData.confirmPassword || formData.password !== formData.confirmPassword }
+                  disabled={isSubmitting || loading || !formData.name.trim() || !formData.email || !formData.password || !formData.confirmPassword || formData.password !== formData.confirmPassword}
                 >
-                  {isLoading ? (
+                  {(isSubmitting || loading) ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Creating Account...
