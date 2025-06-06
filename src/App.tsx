@@ -1,3 +1,5 @@
+// App.tsx
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -13,7 +15,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Dashboard from "./pages/Dashboard";
 import Cart from "./pages/Cart";
-import Login from "./pages/Login";
+import Login from "./pages/Login"; // Ensure this import is correct
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 
@@ -34,13 +36,18 @@ const App = () => (
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/cart" element={<Cart />} />
+                {/* Login route - no initialView prop means it defaults to 'signin' */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                
-                {/* Reset Password route using Login component with props */}
+
+                {/* Reset Password route using Login component with ONLY initialView prop */}
                 <Route
                   path="/reset-password/:token"
-                  element={<Login />}
+                  element={
+                    // ONLY initialView is needed here.
+                    // Remove isOpen, onClose, and toast.
+                    <Login initialView="reset-password" />
+                  }
                 />
 
                 <Route path="*" element={<NotFound />} />

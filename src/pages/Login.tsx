@@ -1,3 +1,5 @@
+// Login.tsx
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import axios from 'axios';
@@ -10,11 +12,16 @@ import { toast } from '@/hooks/use-toast';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 // Helper function to check if error is an Axios error
-const isAxiosError = (error) => {
-  return error && error.isAxiosError === true;
+const isAxiosError = (error: any): error is { response?: { data?: { msg: string } }, isAxiosError: true } => {
+  return error && typeof error === 'object' && error.isAxiosError === true;
 };
 
-const Login = () => {
+// Define props interface
+interface LoginProps {
+  initialView?: 'signin' | 'forgot-password' | 'reset-password'; // Make it optional with '?'
+}
+
+const Login: React.FC<LoginProps> = ({ initialView }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -23,8 +30,13 @@ const Login = () => {
   // Extract token from URL search params or path
   const resetTokenFromUrl = searchParams.get('token') || (location.pathname.match(/\/reset-password\/([^\/]+)/)?.[1]);
 
-  // Determine initial view based on the presence of a reset token in the URL
-  const [currentView, setCurrentView] = useState(resetTokenFromUrl ? 'reset-password' : 'signin');
+  // Determine the effective initial view:
+  // 1. Prioritize initialView prop if provided
+  // 2. Fallback to token detection from URL
+  // 3. Default to 'signin'
+  const effectiveInitialView = initialView || (resetTokenFromUrl ? 'reset-password' : 'signin');
+
+  const [currentView, setCurrentView] = useState<LoginProps['initialView']>(effectiveInitialView); // Type for currentView
   const [token, setToken] = useState(resetTokenFromUrl || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -64,16 +76,18 @@ const Login = () => {
     setShowConfirmPassword(false);
   }, []);
 
-  const toggleForm = useCallback((view) => {
+  const toggleForm = useCallback((view: LoginProps['initialView']) => { // Type for view
     setCurrentView(view);
     resetFormStates();
     // Clear URL search params when changing views away from reset-password
+    // This also helps clean up the URL if initialView wasn't 'reset-password'
     if (view !== 'reset-password') {
-      navigate(location.pathname, { replace: true }); // Keep path, remove search params
+      const currentPath = location.pathname.split('/reset-password')[0]; // Remove /reset-password part if present
+      navigate(currentPath, { replace: true });
     }
   }, [resetFormStates, navigate, location.pathname]);
 
-  const validateResetToken = useCallback(async (tokenToValidate) => {
+  const validateResetToken = useCallback(async (tokenToValidate: string) => { // Type for tokenToValidate
     setIsLoading(true);
     setError('');
     setSuccessMessage('');
@@ -86,11 +100,11 @@ const Login = () => {
       );
 
       if (response.status === 200) {
-        const msg = (response.data as { msg?: string }).msg || 'Token is valid. You can now reset your password.';
+        const msg = (response.data as { msg: string }).msg || 'Token is valid. You can now reset your password.'; // Type assertion
         setSuccessMessage(msg);
         setTokenValidated(true);
       }
-    } catch (error) {
+    } catch (error: unknown) { // Use unknown for caught errors
       console.error('Token validation error:', error);
       let errorMessage = 'Invalid or expired reset token. Please request a new password reset.';
       if (isAxiosError(error) && error.response?.data?.msg) {
@@ -108,20 +122,27 @@ const Login = () => {
     }
   }, [toggleForm]);
 
-  // Initial token validation if resetTokenFromUrl exists on component mount
+  // Effect to handle initial view setup and token validation
   useEffect(() => {
-    if (resetTokenFromUrl && currentView === 'reset-password' && !tokenValidated && !isLoading) {
+    // If an initialView prop is provided and it's 'reset-password', ensure token is set and validated
+    if (initialView === 'reset-password' && resetTokenFromUrl && !tokenValidated && !isLoading) {
+      setToken(resetTokenFromUrl); // Ensure token state is set from URL
       validateResetToken(resetTokenFromUrl);
     }
-  }, [resetTokenFromUrl, currentView, tokenValidated, isLoading, validateResetToken]);
+    // If no initialView prop, but URL has a reset token, handle it
+    else if (!initialView && resetTokenFromUrl && !tokenValidated && !isLoading && currentView === 'reset-password') {
+      setToken(resetTokenFromUrl);
+      validateResetToken(resetTokenFromUrl);
+    }
+  }, [initialView, resetTokenFromUrl, validateResetToken, tokenValidated, isLoading, currentView]);
 
 
-  const handleSignInChange = (e) => {
+  const handleSignInChange = (e: React.ChangeEvent<HTMLInputElement>) => { // Type for event
     const { id, value } = e.target;
     setSignInData(prev => ({ ...prev, [id]: value }));
   };
 
-  const handleSignIn = async (e) => {
+  const handleSignIn = async (e: React.FormEvent) => { // Type for event
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -144,7 +165,7 @@ const Login = () => {
           variant: "destructive",
         });
       }
-    } catch (error) {
+    } catch (error: unknown) { // Use unknown for caught errors
       const errorMessage = 'An error occurred. Please try again.';
       setError(errorMessage);
       toast({
@@ -157,7 +178,7 @@ const Login = () => {
     }
   };
 
-  const handleForgotPassword = async (e) => {
+  const handleForgotPassword = async (e: React.FormEvent) => { // Type for event
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -175,7 +196,7 @@ const Login = () => {
         title: "Reset link sent",
         description: "Password reset link sent to your email!",
       });
-    } catch (error) {
+    } catch (error: unknown) { // Use unknown for caught errors
       let errorMessage = 'An unexpected error occurred. Please try again.';
       if (isAxiosError(error) && error.response?.data?.msg) {
         errorMessage = error.response.data.msg;
@@ -191,7 +212,7 @@ const Login = () => {
     }
   };
 
-  const handleResetPassword = async (e) => {
+  const handleResetPassword = async (e: React.FormEvent) => { // Type for event
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -232,7 +253,7 @@ const Login = () => {
         toggleForm('signin');
         navigate('/login', { replace: true }); // Use replace to prevent back button issues
       }, 2000);
-    } catch (error) {
+    } catch (error: unknown) { // Use unknown for caught errors
       let errorMessage = 'An unexpected error occurred. Please try again.';
       if (isAxiosError(error) && error.response?.data?.msg) {
         errorMessage = error.response.data.msg;
@@ -465,14 +486,14 @@ const Login = () => {
                   </div>
                 )}
 
-                {isLoading && !error && ( // Only show loader if loading and no immediate error
+                {isLoading && !error && (
                   <div className="text-center py-8">
                     <Loader2 className="w-8 h-8 animate-spin mx-auto text-blue-500 mb-4" />
                     <p className="text-gray-600 dark:text-gray-400">Validating reset link...</p>
                   </div>
                 )}
 
-                {!isLoading && !tokenValidated && !error && resetTokenFromUrl && (
+                {!isLoading && !tokenValidated && !error && ( // Only show this if not loading, token not validated, no error, and it's initially a reset view
                   <div className="text-center py-8">
                     <div className="animate-pulse">
                       <div className="w-8 h-8 bg-blue-500 rounded-full mx-auto mb-4"></div>
