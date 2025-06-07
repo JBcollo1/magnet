@@ -22,7 +22,7 @@ interface Order {
   total: number;
   status: string;
   paymentMethod: string;
-  customer?: string;
+  customer: string;
 }
 
 interface UserData {
