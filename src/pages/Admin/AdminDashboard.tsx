@@ -25,12 +25,16 @@ interface Order {
   customer: string;
 }
 
+// Updated UserData interface to match what UserManagement expects
 interface UserData {
   id: string;
   name: string;
   email: string;
   orders: number;
   totalSpent: number;
+  role: 'ADMIN' | 'CUSTOMER' | 'STAFF';
+  is_active: boolean;
+  created_at: string;
 }
 
 interface AppUser {
@@ -75,11 +79,38 @@ const AdminDashboard: React.FC = () => {
       setAllOrders(ordersData);
     } catch (error) {
       console.error('Failed to fetch admin data:', error);
-      // Fallback data for demonstration if API fails
+      // Updated fallback data to include the missing properties
       setAllUsers([
-        { id: '1', name: 'John Doe', email: 'john@example.com', orders: 3, totalSpent: 2400 },
-        { id: '2', name: 'Jane Smith', email: 'jane@example.com', orders: 1, totalSpent: 800 },
-        { id: '3', name: 'Mike Johnson', email: 'mike@example.com', orders: 2, totalSpent: 2900 }
+        { 
+          id: '1', 
+          name: 'John Doe', 
+          email: 'john@example.com', 
+          orders: 3, 
+          totalSpent: 2400,
+          role: 'CUSTOMER',
+          is_active: true,
+          created_at: '2024-01-15T10:30:00Z'
+        },
+        { 
+          id: '2', 
+          name: 'Jane Smith', 
+          email: 'jane@example.com', 
+          orders: 1, 
+          totalSpent: 800,
+          role: 'CUSTOMER',
+          is_active: true,
+          created_at: '2024-02-20T14:15:00Z'
+        },
+        { 
+          id: '3', 
+          name: 'Mike Johnson', 
+          email: 'mike@example.com', 
+          orders: 2, 
+          totalSpent: 2900,
+          role: 'CUSTOMER',
+          is_active: false,
+          created_at: '2024-01-08T09:45:00Z'
+        }
       ]);
       setAllOrders([
         { id: 'ORD-001', customer: 'John Doe', items: '4-CUSTOM MAGNETS', total: 800, status: 'delivered', date: '2024-12-01', paymentMethod: 'M-Pesa' },
