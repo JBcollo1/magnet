@@ -13,6 +13,9 @@ import { useCart } from '@/contexts/CartContext';
 import { User, ShoppingBag, Star, Settings, MapPin, Edit, Save, Package, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import AdminDashboard, { AdminOverviewCards } from './AdminDashboard';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 
 interface Order {
   id: string;
@@ -51,7 +54,7 @@ const Dashboard = () => {
   const { user, isAuthenticated, loading: authLoading, refreshUser } = useAuth();
   const { cartItems } = useCart();
   const navigate = useNavigate();
-  
+
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [userDetails, setUserDetails] = useState<UserDetails>({
@@ -93,7 +96,7 @@ const Dashboard = () => {
         `${import.meta.env.VITE_API_URL}/profile/details`,
         { withCredentials: true }
       );
-      
+
       if (response.data) {
         setUserDetails(prev => ({
           ...prev,
@@ -112,13 +115,11 @@ const Dashboard = () => {
         `${import.meta.env.VITE_API_URL}/orders`,
         { withCredentials: true }
       );
-      
-      // Type-safe assignment with fallback
+
       const ordersData = Array.isArray(response.data) ? response.data : [];
       setOrders(ordersData);
     } catch (error) {
       console.error('Failed to fetch orders:', error);
-      // Use mock data if API fails
       setOrders([
         {
           id: 'ORD-001',
@@ -150,15 +151,13 @@ const Dashboard = () => {
         axios.get<Order[]>(`${import.meta.env.VITE_API_URL}/admin/orders`, { withCredentials: true })
       ]);
 
-      // Type-safe assignments with fallbacks
       const usersData = Array.isArray(usersResponse.data) ? usersResponse.data : [];
       const ordersData = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
-      
+
       setAllUsers(usersData);
       setAllOrders(ordersData);
     } catch (error) {
       console.error('Failed to fetch admin data:', error);
-      // Use mock data if API fails
       setAllUsers([
         { id: '1', name: 'John Doe', email: 'john@example.com', orders: 3, totalSpent: 2400 },
         { id: '2', name: 'Jane Smith', email: 'jane@example.com', orders: 1, totalSpent: 800 },
@@ -177,7 +176,7 @@ const Dashboard = () => {
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
-      
+
       setDataLoading(true);
       try {
         await Promise.all([
@@ -222,9 +221,8 @@ const Dashboard = () => {
         { withCredentials: true }
       );
 
-      // Refresh user data from backend
       await refreshUser();
-      
+
       setIsEditing(false);
       toast({
         title: "Details updated",
@@ -251,7 +249,6 @@ const Dashboard = () => {
     }
   };
 
-  // Regular user overview cards
   const UserOverviewCards = () => (
     <>
       <Card>
@@ -305,7 +302,7 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/10 dark:to-blue-950/10 dark:bg-background">
       <Header />
-      
+
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Welcome back, {user?.name}!</h1>
@@ -314,7 +311,6 @@ const Dashboard = () => {
           </p>
         </div>
 
-        {/* Show loading spinner while fetching data */}
         {dataLoading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-8 w-8 animate-spin mr-2" />
@@ -322,12 +318,11 @@ const Dashboard = () => {
           </div>
         ) : (
           <>
-            {/* Overview Cards */}
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
               {isAdmin ? (
-                <AdminOverviewCards 
-                  allOrders={allOrders} 
-                  totalItemsInCart={totalItemsInCart} 
+                <AdminOverviewCards
+                  allOrders={allOrders}
+                  totalItemsInCart={totalItemsInCart}
                 />
               ) : (
                 <UserOverviewCards />
@@ -371,7 +366,7 @@ const Dashboard = () => {
                     <CardContent className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Full Name</label>
+                          <Label className="text-sm font-medium text-gray-500">Full Name</Label>
                           {isEditing ? (
                             <Input
                               value={userDetails.name}
@@ -382,7 +377,7 @@ const Dashboard = () => {
                           )}
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Email</label>
+                          <Label className="text-sm font-medium text-gray-500">Email</Label>
                           {isEditing ? (
                             <Input
                               value={userDetails.email}
@@ -394,7 +389,7 @@ const Dashboard = () => {
                         </div>
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Phone Number</label>
+                        <Label className="text-sm font-medium text-gray-500">Phone Number</Label>
                         {isEditing ? (
                           <Input
                             value={userDetails.phone}
@@ -406,7 +401,7 @@ const Dashboard = () => {
                         )}
                       </div>
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Member Since</label>
+                        <Label className="text-sm font-medium text-gray-500">Member Since</Label>
                         <p className="font-medium">December 2024</p>
                       </div>
                     </CardContent>
@@ -422,7 +417,7 @@ const Dashboard = () => {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
-                        <label className="text-sm font-medium text-gray-500">Street Address</label>
+                        <Label className="text-sm font-medium text-gray-500">Street Address</Label>
                         {isEditing ? (
                           <Textarea
                             value={userDetails.address}
@@ -436,7 +431,7 @@ const Dashboard = () => {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="text-sm font-medium text-gray-500">City</label>
+                          <Label className="text-sm font-medium text-gray-500">City</Label>
                           {isEditing ? (
                             <Input
                               value={userDetails.city}
@@ -448,7 +443,7 @@ const Dashboard = () => {
                           )}
                         </div>
                         <div>
-                          <label className="text-sm font-medium text-gray-500">Postal Code</label>
+                          <Label className="text-sm font-medium text-gray-500">Postal Code</Label>
                           {isEditing ? (
                             <Input
                               value={userDetails.postalCode}
@@ -493,9 +488,9 @@ const Dashboard = () => {
                             <TableCell>{order.items}</TableCell>
                             <TableCell>KSh {order.total.toLocaleString()}</TableCell>
                             <TableCell>
-                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
+                              <Badge className={getStatusColor(order.status)}>
                                 {order.status}
-                              </span>
+                              </Badge>
                             </TableCell>
                             <TableCell>{order.date}</TableCell>
                           </TableRow>
@@ -506,9 +501,8 @@ const Dashboard = () => {
                 </Card>
               </TabsContent>
 
-              {/* Admin Dashboard Components */}
               {isAdmin && (
-                <AdminDashboard 
+                <AdminDashboard
                   allUsers={allUsers}
                   allOrders={allOrders}
                   getStatusColor={getStatusColor}
