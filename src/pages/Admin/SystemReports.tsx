@@ -644,7 +644,8 @@
 // };
 
 // export default SystemReports;
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -674,11 +675,172 @@ interface Order {
   customer: string;
 }
 
-// Define the SystemReportsProps interface
+// Interface for a single report object received from the backend
+interface Report {
+  id: string;
+  report_name: string;
+  start_date: string | null;
+  end_date: string | null;
+  total_orders: number;
+  total_revenue: number;
+  generated_at: string;
+}
+
+// Interface for pagination data
+interface Pagination {
+  total: number;
+  pages: number;
+  currentPage: number;
+}
+
+// Props for the main SystemReports component
 interface SystemReportsProps {
   allOrders: Order[];
   getStatusColor: (status: string) => string;
 }
+
+// Report API Integration
+const reportAPI = {
+  generateReport: async (reportData: { reportName: string; startDate: string | null; endDate: string | null }) => {
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/admin/reports`, {
+        report_name: reportData.reportName,
+        start_date: reportData.startDate,
+        end_date: reportData.endDate
+      }, { withCredentials: true });
+
+      return {
+        success: response.status === 200 || response.status === 201,
+        data: response.data,
+        message: (response.data as any).message || 'Report generated successfully'
+      };
+    } catch (error: any) {
+      console.error('Error generating report:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to generate report',
+        error: error.message
+      };
+    }
+  },
+
+  getAllReports: async (page: number = 1, perPage: number = 10) => {
+    try {
+      interface GetAllReportsResponse {
+        reports: Report[];
+        pagination?: {
+          total: number;
+          pages: number;
+          current_page: number;
+        };
+        message?: string;
+      }
+
+      const response = await axios.get<GetAllReportsResponse>(
+        `${import.meta.env.VITE_API_URL}/admin/reports?page=${page}&per_page=${perPage}`,
+        { withCredentials: true }
+      );
+
+      return {
+        success: response.status === 200,
+        reports: response.data.reports || [],
+        pagination: response.data.pagination ? {
+          total: response.data.pagination.total,
+          pages: response.data.pagination.pages,
+          currentPage: response.data.pagination.current_page
+        } : null,
+        message: response.data.message || 'Reports fetched successfully'
+      };
+    } catch (error: any) {
+      console.error('Error fetching reports:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Network error occurred while fetching reports',
+        reports: [],
+        pagination: null,
+        error: error.message
+      };
+    }
+  },
+
+  downloadReportPDF: async (reportId: string, reportName: string = 'report') => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/admin/reports/${reportId}/download`, {
+        withCredentials: true,
+        responseType: 'blob'
+      });
+
+      if (response.status !== 200) {
+        throw new Error('Failed to download report');
+      }
+
+      const blob = new Blob([response.data as BlobPart], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${reportName}_${reportId}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      return { success: true, message: 'Report downloaded successfully' };
+    } catch (error: any) {
+      console.error('Error downloading report:', error);
+      return { success: false, message: error.response?.data?.message || error.message || 'Failed to download report' };
+    }
+  },
+
+  sendReportEmail: async (reportId: string, emailData: { recipientEmail: string; senderEmail?: string }) => {
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_API_URL}/admin/reports/${reportId}/email`, {
+        recipient_email: emailData.recipientEmail,
+        sender_email: emailData.senderEmail
+      }, { withCredentials: true });
+
+      return {
+        success: response.status === 200,
+        data: response.data,
+        message: (response.data as any).message || 'Email sent successfully'
+      };
+    } catch (error: any) {
+      console.error('Error sending email:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to send email',
+        error: error.message
+      };
+    }
+  },
+
+  downloadChart: async (reportId: string, chartType: 'revenue' | 'products', reportName: string = 'chart') => {
+    try {
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/admin/reports/${reportId}/charts/${chartType}`, {
+        withCredentials: true,
+        responseType: 'blob'
+      });
+
+      if (response.status !== 200) {
+        throw new Error(`Failed to download ${chartType} chart`);
+      }
+
+      const blob = new Blob([response.data as BlobPart], { type: response.headers['content-type'] });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${chartType}_chart_${reportName}_${reportId}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      return { success: true, message: `${chartType} chart downloaded successfully` };
+    } catch (error: any) {
+      console.error('Error downloading chart:', error);
+      return { success: false, message: error.response?.data?.message || error.message || `Failed to download ${chartType} chart` };
+    }
+  }
+};
 
 // Mock data for demonstration
 const mockRevenueData = [
@@ -1023,31 +1185,14 @@ const ReportsAnalytics = ({ allOrders, getStatusColor }) => {
 };
 
 const ReportManagement = () => {
-  const [reports, setReports] = useState([
-    {
-      id: '1',
-      report_name: 'Q4 Sales Report',
-      start_date: '2024-10-01',
-      end_date: '2024-12-31',
-      total_orders: 1245,
-      total_revenue: 328000,
-      generated_at: '2024-12-15'
-    },
-    {
-      id: '2',
-      report_name: 'Monthly Performance',
-      start_date: '2024-11-01',
-      end_date: '2024-11-30',
-      total_orders: 456,
-      total_revenue: 128000,
-      generated_at: '2024-12-01'
-    }
-  ]);
+  const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pagination, setPagination] = useState<Pagination | null>(null);
   const [showGenerateForm, setShowGenerateForm] = useState(false);
-  const [emailModal, setEmailModal] = useState({ show: false, reportId: null, reportName: '' });
+  const [emailModal, setEmailModal] = useState<{ show: boolean; reportId: string | null; reportName: string }>({ show: false, reportId: null, reportName: '' });
 
   const [reportForm, setReportForm] = useState({
     reportName: '',
@@ -1060,7 +1205,26 @@ const ReportManagement = () => {
     senderEmail: ''
   });
 
-  const handleGenerateReport = async (e) => {
+  useEffect(() => {
+    loadReports();
+  }, [currentPage]);
+
+  const loadReports = async () => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    const result = await reportAPI.getAllReports(currentPage, 10);
+
+    if (result.success) {
+      setReports(result.reports);
+      setPagination(result.pagination);
+    } else {
+      setError(result.message);
+    }
+    setLoading(false);
+  };
+
+  const handleGenerateReport = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reportForm.reportName.trim()) {
       setError('Report name is required');
@@ -1071,44 +1235,82 @@ const ReportManagement = () => {
     setError('');
     setSuccess('');
 
-    setTimeout(() => {
-      const newReport = {
-        id: (reports.length + 1).toString(),
-        report_name: reportForm.reportName,
-        start_date: reportForm.startDate || null,
-        end_date: reportForm.endDate || null,
-        total_orders: Math.floor(Math.random() * 1000) + 100,
-        total_revenue: Math.floor(Math.random() * 100000) + 50000,
-        generated_at: new Date().toISOString().split('T')[0]
-      };
+    const formattedData = {
+      reportName: reportForm.reportName,
+      startDate: reportForm.startDate ? new Date(reportForm.startDate).toISOString() : null,
+      endDate: reportForm.endDate ? new Date(reportForm.endDate).toISOString() : null
+    };
 
-      setReports([newReport, ...reports]);
-      setSuccess('Report generated successfully!');
+    const result = await reportAPI.generateReport(formattedData);
+
+    if (result.success) {
+      setSuccess(result.message);
       setShowGenerateForm(false);
       setReportForm({ reportName: '', startDate: '', endDate: '' });
-      setLoading(false);
-    }, 2000);
+      loadReports();
+    } else {
+      setError(result.message);
+    }
+    setLoading(false);
   };
 
-  const handleDownloadPDF = (reportId, reportName) => {
-    setSuccess(`Downloading ${reportName}...`);
-    setTimeout(() => setSuccess(''), 3000);
-  };
-
-  const handleSendEmail = (e) => {
-    e.preventDefault();
+  const handleDownloadPDF = async (reportId: string, reportName: string) => {
     setLoading(true);
-    setTimeout(() => {
+    setError('');
+    setSuccess('');
+    const result = await reportAPI.downloadReportPDF(reportId, reportName);
+
+    if (result.success) {
+      setSuccess(result.message);
+    } else {
+      setError(result.message);
+    }
+    setLoading(false);
+  };
+
+  const handleDownloadChart = async (reportId: string, chartType: 'revenue' | 'products', reportName: string) => {
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    const result = await reportAPI.downloadChart(reportId, chartType, reportName);
+
+    if (result.success) {
+      setSuccess(result.message);
+    } else {
+      setError(result.message);
+    }
+    setLoading(false);
+  };
+
+  const handleSendEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!emailForm.recipientEmail.trim()) {
+      setError('Recipient email is required');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+    const result = await reportAPI.sendReportEmail(emailModal.reportId!, emailForm);
+
+    if (result.success) {
       setSuccess(`Report sent successfully to ${emailForm.recipientEmail}`);
       setEmailModal({ show: false, reportId: null, reportName: '' });
       setEmailForm({ recipientEmail: '', senderEmail: '' });
-      setLoading(false);
-    }, 1500);
+    } else {
+      setError(result.message);
+    }
+    setLoading(false);
   };
 
-  const formatDate = (dateString) => {
+  const formatDate = (dateString: string | null) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString();
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return dateString;
+    }
+    return date.toLocaleDateString();
   };
 
   return (
@@ -1229,81 +1431,117 @@ const ReportManagement = () => {
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="font-semibold">Report Name</TableHead>
-                  <TableHead className="font-semibold">Date Range</TableHead>
-                  <TableHead className="font-semibold">Orders</TableHead>
-                  <TableHead className="font-semibold">Revenue</TableHead>
-                  <TableHead className="font-semibold">Generated</TableHead>
-                  <TableHead className="font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {reports.map((report) => (
-                  <TableRow key={report.id} className="hover:bg-gray-50 transition-colors">
-                    <TableCell className="font-medium text-gray-900">
-                      {report.report_name}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">
-                        {formatDate(report.start_date)} - {formatDate(report.end_date)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                        {report.total_orders.toLocaleString()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-semibold text-green-600">
-                      KSh {report.total_revenue.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-sm text-gray-600">
-                      {formatDate(report.generated_at)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDownloadPDF(report.id, report.report_name)}
-                          disabled={loading}
-                          title="Download PDF"
-                          className="hover:bg-blue-50 hover:border-blue-300"
-                        >
-                          <Download className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => setEmailModal({
-                            show: true,
-                            reportId: report.id,
-                            reportName: report.report_name
-                          })}
-                          disabled={loading}
-                          title="Send via Email"
-                          className="hover:bg-green-50 hover:border-green-300"
-                        >
-                          <Mail className="w-3 h-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleDownloadPDF(report.id, `${report.report_name}_revenue_chart`)}
-                          disabled={loading}
-                          title="Download Revenue Chart"
-                          className="hover:bg-purple-50 hover:border-purple-300"
-                        >
-                          <BarChart3 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            {loading && reports.length === 0 ? (
+              <div className="flex justify-center py-8">
+                <Loader2 className="w-6 h-6 animate-spin" />
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {reports.length === 0 && !loading && !error ? (
+                  <p className="text-center text-muted-foreground py-4">No reports generated yet.</p>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="font-semibold">Report Name</TableHead>
+                        <TableHead className="font-semibold">Date Range</TableHead>
+                        <TableHead className="font-semibold">Orders</TableHead>
+                        <TableHead className="font-semibold">Revenue</TableHead>
+                        <TableHead className="font-semibold">Generated</TableHead>
+                        <TableHead className="font-semibold">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {reports.map((report) => (
+                        <TableRow key={report.id} className="hover:bg-gray-50 transition-colors">
+                          <TableCell className="font-medium text-gray-900">
+                            {report.report_name}
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {formatDate(report.start_date)} - {formatDate(report.end_date)}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                              {report.total_orders.toLocaleString()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-semibold text-green-600">
+                            KSh {report.total_revenue.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-sm text-gray-600">
+                            {formatDate(report.generated_at)}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDownloadPDF(report.id, report.report_name)}
+                                disabled={loading}
+                                title="Download PDF"
+                                className="hover:bg-blue-50 hover:border-blue-300"
+                              >
+                                <Download className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setEmailModal({
+                                  show: true,
+                                  reportId: report.id,
+                                  reportName: report.report_name
+                                })}
+                                disabled={loading}
+                                title="Send via Email"
+                                className="hover:bg-green-50 hover:border-green-300"
+                              >
+                                <Mail className="w-3 h-3" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDownloadChart(report.id, 'revenue', report.report_name)}
+                                disabled={loading}
+                                title="Download Revenue Chart"
+                                className="hover:bg-purple-50 hover:border-purple-300"
+                              >
+                                <BarChart3 className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+
+                {pagination && pagination.pages > 1 && (
+                  <div className="flex justify-center space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1 || loading}
+                    >
+                      Previous
+                    </Button>
+                    <span className="px-3 py-2 text-sm">
+                      Page {currentPage} of {pagination.pages}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentPage(Math.min(pagination.pages, currentPage + 1))}
+                      disabled={currentPage === pagination.pages || loading}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
