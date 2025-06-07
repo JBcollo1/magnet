@@ -36,20 +36,26 @@ const App = () => (
                 <Route path="/contact" element={<Contact />} />
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/cart" element={<Cart />} />
-                {/* Login route - no initialView prop means it defaults to 'signin' */}
+
+                {/* Default Login route: renders 'signin' view */}
                 <Route path="/login" element={<Login />} />
+
+                {/* Signup route */}
                 <Route path="/signup" element={<Signup />} />
 
-                {/* Reset Password route using Login component with ONLY initialView prop */}
+                {/* Reset Password route: Login handles 'reset-password' view using the token */}
                 <Route
                   path="/reset-password/:token"
-                  element={
-                    // ONLY initialView is needed here.
-                    // Remove isOpen, onClose, and toast.
-                    <Login initialView="reset-password" />
-                  }
+                  element={<Login initialView="reset-password" />}
                 />
 
+                {/* Optional: Support /reset-password?token=... as well */}
+                <Route
+                  path="/reset-password"
+                  element={<Login initialView="reset-password" />}
+                />
+
+                {/* Fallback 404 page */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
