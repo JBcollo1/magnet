@@ -1380,199 +1380,6 @@ const ReportManagement = () => {
   );
 };
 
-const BusinessInsights = () => {
-  const insights = [
-    {
-      id: 1,
-      title: "Revenue Growth Trend",
-      description: "Monthly revenue has increased by 12.5% compared to last month",
-      impact: "positive",
-      recommendation: "Continue current marketing strategies and consider expanding to new customer segments",
-      priority: "high"
-    },
-    {
-      id: 2,
-      title: "Order Processing Efficiency",
-      description: "65% of orders are being delivered successfully, indicating good fulfillment",
-      impact: "positive",
-      recommendation: "Optimize the remaining 35% by improving processing times for pending orders",
-      priority: "medium"
-    },
-    {
-      id: 3,
-      title: "Average Order Value Decline",
-      description: "AOV has decreased by 3.1% which may indicate customer behavior changes",
-      impact: "negative",
-      recommendation: "Implement upselling strategies and bundle products to increase order values",
-      priority: "high"
-    },
-    {
-      id: 4,
-      title: "Customer Acquisition Success",
-      description: "Active customer base has grown by 15.3%, showing strong market expansion",
-      impact: "positive",
-      recommendation: "Focus on customer retention programs to maintain this growth momentum",
-      priority: "medium"
-    }
-  ];
-
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800 border-red-200';
-      case 'medium': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'low': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getImpactIcon = (impact) => {
-    return impact === 'positive' ?
-      <TrendingUp className="w-5 h-5 text-green-600" /> :
-      <TrendingDown className="w-5 h-5 text-red-600" />;
-  };
-
-  return (
-    <div className="space-y-6">
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-        <CardHeader>
-          <CardTitle className="text-2xl text-blue-900">
-            AI-Powered Business Insights
-          </CardTitle>
-          <CardDescription className="text-blue-700 text-base">
-            Automated analysis and actionable recommendations based on your business data
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-green-700">Performance Score</p>
-                <p className="text-3xl font-bold text-green-900">87%</p>
-                <p className="text-xs text-green-600 mt-1">Above industry average</p>
-              </div>
-              <div className="p-3 bg-green-100 rounded-full">
-                <CheckCircle className="w-6 h-6 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-700">Growth Rate</p>
-                <p className="text-3xl font-bold text-blue-900">+12.5%</p>
-                <p className="text-xs text-blue-600 mt-1">Month over month</p>
-              </div>
-              <div className="p-3 bg-blue-100 rounded-full">
-                <TrendingUp className="w-6 h-6 text-blue-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-700">Customer Satisfaction</p>
-                <p className="text-3xl font-bold text-purple-900">4.8/5</p>
-                <p className="text-xs text-purple-600 mt-1">Based on reviews</p>
-              </div>
-              <div className="p-3 bg-purple-100 rounded-full">
-                <Users className="w-6 h-6 text-purple-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-orange-700">Market Position</p>
-                <p className="text-3xl font-bold text-orange-900">#3</p>
-                <p className="text-xs text-orange-600 mt-1">In your category</p>
-              </div>
-              <div className="p-3 bg-orange-100 rounded-full">
-                <BarChart3 className="w-6 h-6 text-orange-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {insights.map((insight) => (
-          <Card key={insight.id} className="hover:shadow-lg transition-shadow duration-300">
-            <CardHeader>
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-3">
-                  {getImpactIcon(insight.impact)}
-                  <CardTitle className="text-lg">{insight.title}</CardTitle>
-                </div>
-                <Badge className={`${getPriorityColor(insight.priority)} border`}>
-                  {insight.priority} priority
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-gray-700">{insight.description}</p>
-              <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded">
-                <p className="text-sm font-medium text-blue-900 mb-1">Recommendation:</p>
-                <p className="text-sm text-blue-800">{insight.recommendation}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <AlertCircle className="w-5 h-5 mr-2" />
-            Recommended Actions
-          </CardTitle>
-          <CardDescription>
-            Priority actions to improve your business performance
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {[
-              { action: "Implement upselling strategies for existing customers", urgency: "high", impact: "Revenue increase of 15-20%" },
-              { action: "Optimize order processing workflow", urgency: "medium", impact: "Reduce delivery time by 2-3 days" },
-              { action: "Launch customer retention program", urgency: "medium", impact: "Increase repeat purchase rate by 25%" },
-              { action: "Analyze and improve low-performing products", urgency: "low", impact: "Better inventory management" }
-            ].map((item, index) => (
-              <div key={index} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
-                <div className="flex-shrink-0 mt-1">
-                  <div className={`w-3 h-3 rounded-full ${
-                    item.urgency === 'high' ? 'bg-red-500' :
-                    item.urgency === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
-                  }`} />
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-900">{item.action}</p>
-                  <p className="text-sm text-gray-600 mt-1">Expected impact: {item.impact}</p>
-                </div>
-                <Button variant="outline" size="sm">
-                  <Eye className="w-4 h-4 mr-1" />
-                  Details
-                </Button>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
 const SystemReports: React.FC<SystemReportsProps> = ({ allOrders, getStatusColor }) => {
   const [activeTab, setActiveTab] = useState('analytics');
 
@@ -1597,7 +1404,7 @@ const SystemReports: React.FC<SystemReportsProps> = ({ allOrders, getStatusColor
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3 bg-white border border-gray-200 p-1 rounded-lg shadow-sm">
+          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:grid-cols-2 bg-white border border-gray-200 p-1 rounded-lg shadow-sm">
             <TabsTrigger
               value="analytics"
               className="flex items-center space-x-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
@@ -1614,14 +1421,6 @@ const SystemReports: React.FC<SystemReportsProps> = ({ allOrders, getStatusColor
               <span className="hidden sm:inline">Report Management</span>
               <span className="sm:hidden">Reports</span>
             </TabsTrigger>
-            <TabsTrigger
-              value="insights"
-              className="flex items-center space-x-2 data-[state=active]:bg-blue-600 data-[state=active]:text-white"
-            >
-              <Activity className="w-4 h-4" />
-              <span className="hidden sm:inline">Business Insights</span>
-              <span className="sm:hidden">Insights</span>
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics" className="space-y-6">
@@ -1630,10 +1429,6 @@ const SystemReports: React.FC<SystemReportsProps> = ({ allOrders, getStatusColor
 
           <TabsContent value="reports" className="space-y-6">
             <ReportManagement />
-          </TabsContent>
-
-          <TabsContent value="insights" className="space-y-6">
-            <BusinessInsights />
           </TabsContent>
         </Tabs>
       </div>
