@@ -1,14 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 
+// 1. Update the User interface to include 'role'
 interface User {
   id: string;
   email: string;
   name: string;
+  role: 'ADMIN' | 'CUSTOMER' | 'STAFF'; // Add the role property with possible string literal types
+  // Add any other user-specific properties you expect from your backend, e.g.:
+  // dateJoined?: string;
+  // phone?: string;
+  // address?: string;
 }
 
 interface AuthResponse {
-  user?: User;
+  user?: User; // This will now correctly include the role
   success?: boolean;
   message?: string;
   error?: string;
@@ -32,12 +38,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Type guard to validate user data
+  // 2. Update isValidUser to validate the 'role' property
   const isValidUser = (data: any): data is User => {
     return data &&
            typeof data.id === 'string' &&
            typeof data.email === 'string' &&
-           typeof data.name === 'string';
+           typeof data.name === 'string' &&
+           (data.role === 'ADMIN' || data.role === 'CUSTOMER' || data.role === 'STAFF'); // Validate role
+           // Add checks for other mandatory properties if any
   };
 
   // Function to get current user from backend
@@ -48,15 +56,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { withCredentials: true }
       );
 
-      // Handle different response formats
       const userData = response.data;
 
-      // If response.data is directly a User object
+      // Ensure that if the backend returns a user object, it includes the role
       if (isValidUser(userData)) {
         return userData;
       }
 
-      // If response.data has a user property
       if (userData && typeof userData === 'object' && 'user' in userData) {
         const authResponse = userData as AuthResponse;
         if (authResponse.user && isValidUser(authResponse.user)) {
@@ -99,10 +105,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
 
       if (response.status === 200) {
-        // Try to get user data from the response first
         const userData = response.data;
 
-        // Check if user data is in the response
         if (userData && typeof userData === 'object' && 'user' in userData) {
           const authResponse = userData as AuthResponse;
           if (authResponse.user && isValidUser(authResponse.user)) {
@@ -111,13 +115,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // If user data is directly in response
         if (isValidUser(userData)) {
           setUser(userData);
           return true;
         }
 
-        // If no user data in response, try to fetch it
         const userFromApi = await getCurrentUser();
         if (userFromApi) {
           setUser(userFromApi);
@@ -159,9 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return true;
         }
 
-        // If no user data in response, registration was successful
-        // but user needs to login (common for email verification flows)
-        return true;
+        return true; // Registration was successful, but no user data returned (e.g., email verification)
       }
 
       return false;
@@ -251,4 +251,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-

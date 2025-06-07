@@ -757,6 +757,7 @@
 
 // export default Dashboard;
 
+// src/pages/Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -783,6 +784,13 @@ interface Order {
   paymentMethod: string;
   trackingNumber?: string;
   estimatedDelivery?: string;
+}
+
+interface AppUser {
+  id: string;
+  name: string;
+  email: string;
+  role: 'ADMIN' | 'CUSTOMER' | 'STAFF';
 }
 
 interface UserDetails {
@@ -815,7 +823,7 @@ const Dashboard = () => {
     address: '',
     city: '',
     postalCode: '',
-    dateJoined: 'December 2024'
+    dateJoined: 'December 2024' // Consider fetching this dynamically from backend
   });
 
   const [orders, setOrders] = useState<Order[]>([]);
@@ -825,104 +833,117 @@ const Dashboard = () => {
   const totalSpent = orders.reduce((sum, order) => sum + order.total, 0);
   const recentOrders = orders.slice(0, 3);
 
-  useEffect(() => {
-    if (user) {
-      setUserDetails(prev => ({
-        ...prev,
-        name: user.name || '',
-        email: user.email || '',
-      }));
-    }
-  }, [user]);
+  // --- START OF NEW/MODIFIED LOGIC ---
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      navigate('/login');
-    }
-  }, [isAuthenticated, authLoading, navigate]);
-
-  const fetchUserProfile = async () => {
-    try {
-      const response = await axios.get<UserDetails>(
-        `${import.meta.env.VITE_API_URL}/profile/details`,
-        { withCredentials: true }
-      );
-
-      if (response.data) {
+    if (!authLoading) {
+      if (!isAuthenticated) {
+        navigate('/login');
+      } else if ((user as AppUser)?.role === 'ADMIN') { // <--- CRITICAL CHECK
+        // If the user is an admin, redirect them to the admin dashboard
+        navigate('/admin');
+      } else {
+        // If it's a regular user, set initial user details and fetch data
         setUserDetails(prev => ({
           ...prev,
-          ...response.data
+          name: user?.name || '',
+          email: user?.email || '',
+          // You might also want to set dateJoined from user if available in AuthContext
+          // dateJoined: user.dateJoined || 'December 2024'
         }));
+        const loadData = async () => {
+          setDataLoading(true);
+          try {
+            await Promise.all([
+              fetchUserProfile(),
+              fetchUserOrders()
+            ]);
+          } finally {
+            setDataLoading(false);
+          }
+        };
+        loadData();
       }
-    } catch (error) {
-      console.error('Failed to fetch user profile:', error);
+    }
+  }, [isAuthenticated, authLoading, user, navigate]); // Add user to dependencies
+
+  // Removed the separate useEffect for initial userDetails setting, merged into the main one.
+
+  // --- END OF NEW/MODIFIED LOGIC ---
+
+
+  const fetchUserProfile = async () => {
+    // Only fetch if user is not admin
+    if ((user as AppUser)?.role !== 'ADMIN') {
+      try {
+        const response = await axios.get<UserDetails>(
+          `${import.meta.env.VITE_API_URL}/profile/details`,
+          { withCredentials: true }
+        );
+
+        if (response.data) {
+          setUserDetails(prev => ({
+            ...prev,
+            ...response.data
+          }));
+        }
+      } catch (error) {
+        console.error('Failed to fetch user profile:', error);
+      }
     }
   };
 
   const fetchUserOrders = async () => {
-    try {
-      const response = await axios.get<Order[]>(
-        `${import.meta.env.VITE_API_URL}/orders`,
-        { withCredentials: true }
-      );
+    // Only fetch if user is not admin
+    if ((user as AppUser)?.role !== 'ADMIN') {
+      try {
+        const response = await axios.get<Order[]>(
+          `${import.meta.env.VITE_API_URL}/orders`,
+          { withCredentials: true }
+        );
 
-      const ordersData = Array.isArray(response.data) ? response.data : [];
-      setOrders(ordersData);
-    } catch (error) {
-      console.error('Failed to fetch orders:', error);
-      // Fallback demo data
-      setOrders([
-        {
-          id: 'ORD-001',
-          date: '2024-12-01',
-          items: '4-CUSTOM MAGNETS',
-          total: 800,
-          status: 'Delivered',
-          paymentMethod: 'M-Pesa',
-          trackingNumber: 'TRK001234',
-          estimatedDelivery: '2024-12-05'
-        },
-        {
-          id: 'ORD-002',
-          date: '2024-12-15',
-          items: '6-CUSTOM MAGNETS',
-          total: 1200,
-          status: 'Processing',
-          paymentMethod: 'M-Pesa',
-          trackingNumber: 'TRK001235',
-          estimatedDelivery: '2024-12-20'
-        },
-        {
-          id: 'ORD-003',
-          date: '2024-11-28',
-          items: '2-CUSTOM MAGNETS',
-          total: 400,
-          status: 'Shipped',
-          paymentMethod: 'Card',
-          trackingNumber: 'TRK001236',
-          estimatedDelivery: '2024-12-02'
-        }
-      ]);
+        const ordersData = Array.isArray(response.data) ? response.data : [];
+        setOrders(ordersData);
+      } catch (error) {
+        console.error('Failed to fetch orders:', error);
+        // Fallback demo data (consider removing for production)
+        setOrders([
+          {
+            id: 'ORD-001',
+            date: '2024-12-01',
+            items: '4-CUSTOM MAGNETS',
+            total: 800,
+            status: 'Delivered',
+            paymentMethod: 'M-Pesa',
+            trackingNumber: 'TRK001234',
+            estimatedDelivery: '2024-12-05'
+          },
+          {
+            id: 'ORD-002',
+            date: '2024-12-15',
+            items: '6-CUSTOM MAGNETS',
+            total: 1200,
+            status: 'Processing',
+            paymentMethod: 'M-Pesa',
+            trackingNumber: 'TRK001235',
+            estimatedDelivery: '2024-12-20'
+          },
+          {
+            id: 'ORD-003',
+            date: '2024-11-28',
+            items: '2-CUSTOM MAGNETS',
+            total: 400,
+            status: 'Shipped',
+            paymentMethod: 'Card',
+            trackingNumber: 'TRK001236',
+            estimatedDelivery: '2024-12-02'
+          }
+        ]);
+      }
     }
   };
 
-  useEffect(() => {
-    const loadData = async () => {
-      if (!user) return;
-
-      setDataLoading(true);
-      try {
-        await Promise.all([
-          fetchUserProfile(),
-          fetchUserOrders()
-        ]);
-      } finally {
-        setDataLoading(false);
-      }
-    };
-
-    loadData();
-  }, [user]);
+  // Removed the separate useEffect for loadData, merged into the main one.
 
   if (authLoading) {
     return (
@@ -935,8 +956,12 @@ const Dashboard = () => {
     );
   }
 
-  if (!isAuthenticated || !user) {
-    return null;
+  // If isAuthenticated is false, the useEffect above will redirect to login.
+  // If user is null but not loading, it means not logged in.
+  // If user is admin, useEffect will redirect to /admin.
+  // So, at this point, we should only have a regular authenticated user.
+  if (!user || (user as AppUser).role === 'ADMIN') { // Added user.role === 'ADMIN' check for redundant safety
+    return null; // or a tiny spinner, as the redirect is happening
   }
 
   const handleSaveDetails = async () => {
