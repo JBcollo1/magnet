@@ -8,18 +8,16 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, DollarSign, Package, Users, BarChart } from 'lucide-react'; // Added icons for overview cards
+import { Loader2, DollarSign, Package, Users, BarChart } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
 // Import the sub-components that will be rendered inside tabs
-// Removed AdminStats import
-import AdminOrder from './AdminOrder'; // New Import
-import AdminPayment from './AdminPayment'; // New Import
-import AdminPickupPoint from './AdminPickupPoint'; // New Import
-import AdminProduct from './AdminProduct'; // New Import
+import AdminOrder from './AdminOrder';
+import AdminPayment from './AdminPayment';
+import AdminPickupPoint from './AdminPickupPoint';
+import AdminProduct from './AdminProduct';
 import SystemReports from './SystemReports';
 import UserManagement from './UserManagement';
-
 
 interface Order {
     id: string;
@@ -29,7 +27,19 @@ interface Order {
     status: string;
     paymentMethod: string;
     customer: string;
+    order_number: string;
+    customer_name: string;
+    notes?: string; // Add notes as it's used in AdminOrder for editing
 }
+
+// NEW: Interface for the paginated order response
+interface PaginatedOrdersResponse {
+    orders: Order[];
+    total: number;
+    pages: number;
+    current_page: number;
+}
+
 
 interface Product {
     id: string;
@@ -49,8 +59,6 @@ interface PickupPoint {
     contactPhone: string;
 }
 
-
-// Updated UserData interface to match what UserManagement expects
 interface UserData {
     id: string;
     name: string;
@@ -75,8 +83,9 @@ const AdminDashboard: React.FC = () => {
 
     const [allUsers, setAllUsers] = useState<UserData[]>([]);
     const [allOrders, setAllOrders] = useState<Order[]>([]);
-    const [allProducts, setAllProducts] = useState<Product[]>([]); // New state for products
-    const [allPickupPoints, setAllPickupPoints] = useState<PickupPoint[]>([]); // New state for pickup points
+    const [ordersPagination, setOrdersPagination] = useState({ total: 0, pages: 1, current_page: 1 }); // NEW State for pagination
+    const [allProducts, setAllProducts] = useState<Product[]>([]);
+    const [allPickupPoints, setAllPickupPoints] = useState<PickupPoint[]>([]);
 
     const [dataLoading, setDataLoading] = useState(true);
 
@@ -86,30 +95,41 @@ const AdminDashboard: React.FC = () => {
         if (!authLoading && !isAuthenticated) {
             navigate('/login');
         } else if (!authLoading && isAuthenticated && !isAdmin) {
-            // Redirect non-admin users if they try to access the admin dashboard
-            navigate('/dashboard'); // or home page
+            navigate('/dashboard');
         }
     }, [isAuthenticated, authLoading, navigate, isAdmin]);
 
-    const fetchAdminData = async () => {
-        if (!isAdmin) return; // Only fetch if user is admin
+    // NEW: currentPage state for orders (to be passed to AdminOrder)
+    const [currentOrdersPage, setCurrentOrdersPage] = useState(1);
 
+    const fetchAdminData = async (page: number = 1) => { // Modified to accept a page parameter
+        if (!isAdmin) return;
+
+        setDataLoading(true); // Moved here to cover all fetches
         try {
             const [usersResponse, ordersResponse, productsResponse, pickupPointsResponse] = await Promise.all([
                 axios.get<UserData[]>(`${import.meta.env.VITE_API_URL}/admin/users`, { withCredentials: true }),
-                axios.get<Order[]>(`${import.meta.env.VITE_API_URL}/admin/orders`, { withCredentials: true }),
-                axios.get<Product[]>(`${import.meta.env.VITE_API_URL}/admin/products`, { withCredentials: true }), // Fetch products
-                axios.get<PickupPoint[]>(`${import.meta.env.VITE_API_URL}/admin/pickup-points`, { withCredentials: true }) // Fetch pickup points
+                // UPDATED: Expecting PaginatedOrdersResponse
+                axios.get<PaginatedOrdersResponse>(`${import.meta.env.VITE_API_URL}/admin/orders?page=${page}`, { withCredentials: true }),
+                axios.get<Product[]>(`${import.meta.env.VITE_API_URL}/admin/products`, { withCredentials: true }),
+                axios.get<PickupPoint[]>(`${import.meta.env.VITE_API_URL}/admin/pickup-points`, { withCredentials: true })
             ]);
 
             const usersData = Array.isArray(usersResponse.data) ? usersResponse.data : [];
-            const ordersData = Array.isArray(ordersResponse.data) ? ordersResponse.data : [];
+            // UPDATED: Extract orders and pagination info
+            const ordersData = ordersResponse.data.orders;
+            const ordersPaginationData = {
+                total: ordersResponse.data.total,
+                pages: ordersResponse.data.pages,
+                current_page: ordersResponse.data.current_page,
+            };
+
             const productsData = Array.isArray(productsResponse.data) ? productsResponse.data : [];
             const pickupPointsData = Array.isArray(pickupPointsResponse.data) ? pickupPointsResponse.data : [];
 
-
             setAllUsers(usersData);
             setAllOrders(ordersData);
+            setOrdersPagination(ordersPaginationData); // Set pagination state
             setAllProducts(productsData);
             setAllPickupPoints(pickupPointsData);
 
@@ -148,12 +168,14 @@ const AdminDashboard: React.FC = () => {
                     created_at: '2024-01-08T09:45:00Z'
                 }
             ]);
+            // UPDATED: Fallback for orders needs to match PaginatedOrdersResponse
             setAllOrders([
-                { id: 'ORD-001', customer: 'John Doe', items: '4-CUSTOM MAGNETS', total: 800, status: 'delivered', date: '2024-12-01', paymentMethod: 'M-Pesa' },
-                { id: 'ORD-002', customer: 'Jane Smith', items: '6-CUSTOM MAGNETS', total: 1200, status: 'pending', date: '2024-12-15', paymentMethod: 'M-Pesa' },
-                { id: 'ORD-003', customer: 'Mike Johnson', items: '12-CUSTOM MAGNETS', total: 2200, status: 'shipped', date: '2024-12-10', paymentMethod: 'M-Pesa' },
-                { id: 'ORD-004', customer: 'Mike Johnson', items: '9-CUSTOM MAGNETS', total: 1700, status: 'delivered', date: '2024-11-28', paymentMethod: 'M-Pesa' }
+                { id: 'ORD-001', order_number: 'ORD-001', customer_name: 'John Doe', customer: 'John Doe', items: '4-CUSTOM MAGNETS', total: 800, status: 'delivered', date: '2024-12-01', paymentMethod: 'M-Pesa', notes: '' },
+                { id: 'ORD-002', order_number: 'ORD-002', customer_name: 'Jane Smith', customer: 'Jane Smith', items: '6-CUSTOM MAGNETS', total: 1200, status: 'pending', date: '2024-12-15', paymentMethod: 'M-Pesa', notes: '' },
+                { id: 'ORD-003', order_number: 'ORD-003', customer_name: 'Mike Johnson', customer: 'Mike Johnson', items: '12-CUSTOM MAGNETS', total: 2200, status: 'shipped', date: '2024-12-10', paymentMethod: 'M-Pesa', notes: '' },
+                { id: 'ORD-004', order_number: 'ORD-004', customer_name: 'Mike Johnson', customer: 'Mike Johnson', items: '9-CUSTOM MAGNETS', total: 1700, status: 'delivered', date: '2024-11-28', paymentMethod: 'M-Pesa', notes: '' }
             ]);
+            setOrdersPagination({ total: 4, pages: 1, current_page: 1 }); // Fallback pagination
             setAllProducts([
                 { id: 'PROD-001', name: 'Standard Magnet', description: 'Classic custom magnet', price: 150, stock: 100, imageUrl: '/images/magnet1.jpg' },
                 { id: 'PROD-002', name: 'Premium Magnet', description: 'High-quality durable magnet', price: 250, stock: 50, imageUrl: '/images/magnet2.jpg' }
@@ -169,20 +191,18 @@ const AdminDashboard: React.FC = () => {
 
     useEffect(() => {
         if (user && isAdmin) {
-            setDataLoading(true);
-            fetchAdminData();
+            fetchAdminData(currentOrdersPage); // Fetch data for the current page
         }
-    }, [user, isAdmin]);
+    }, [user, isAdmin, currentOrdersPage]); // Depend on currentOrdersPage
 
     // Derived statistics for overview
     const totalRevenue = useMemo(() => {
         return allOrders.reduce((sum, order) => sum + order.total, 0);
     }, [allOrders]);
 
-    const totalOrders = allOrders.length;
+    const totalOrders = ordersPagination.total; // Use total from pagination
     const totalCustomers = allUsers.filter(u => u.role === 'CUSTOMER').length;
     const totalProducts = allProducts.length;
-
 
     if (authLoading || dataLoading) {
         return (
@@ -205,6 +225,7 @@ const AdminDashboard: React.FC = () => {
             case 'shipped': return 'text-blue-600 bg-blue-100';
             case 'processing':
             case 'pending': return 'text-orange-600 bg-orange-100';
+            case 'cancelled': return 'text-red-600 bg-red-100'; // Added for completeness
             default: return 'text-gray-600 bg-gray-100';
         }
     };
@@ -221,9 +242,8 @@ const AdminDashboard: React.FC = () => {
                     </p>
                 </div>
 
-                {/* This is the primary navigation using Tabs */}
                 <Tabs defaultValue="overview" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-7"> {/* Adjusted grid-cols to 7 */}
+                    <TabsList className="grid w-full grid-cols-7">
                         <TabsTrigger value="overview">Overview</TabsTrigger>
                         <TabsTrigger value="orders">Orders</TabsTrigger>
                         <TabsTrigger value="products">Products</TabsTrigger>
@@ -242,7 +262,7 @@ const AdminDashboard: React.FC = () => {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">KSh {totalRevenue.toLocaleString()}</div>
-                                    <p className="text-xs text-muted-foreground">+20.1% from last month</p> {/* Placeholder */}
+                                    <p className="text-xs text-muted-foreground">+20.1% from last month</p>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -252,7 +272,7 @@ const AdminDashboard: React.FC = () => {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{totalOrders.toLocaleString()}</div>
-                                    <p className="text-xs text-muted-foreground">+180.1% from last month</p> {/* Placeholder */}
+                                    <p className="text-xs text-muted-foreground">+180.1% from last month</p>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -262,7 +282,7 @@ const AdminDashboard: React.FC = () => {
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{totalCustomers.toLocaleString()}</div>
-                                    <p className="text-xs text-muted-foreground">+19% from last month</p> {/* Placeholder */}
+                                    <p className="text-xs text-muted-foreground">+19% from last month</p>
                                 </CardContent>
                             </Card>
                             <Card>
@@ -277,7 +297,6 @@ const AdminDashboard: React.FC = () => {
                             </Card>
                         </div>
 
-
                         <div className="grid lg:grid-cols-2 gap-6 mt-6">
                             <Card>
                                 <CardHeader>
@@ -289,8 +308,8 @@ const AdminDashboard: React.FC = () => {
                                         {allOrders.slice(0, 5).map((order) => (
                                             <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                                 <div className="flex-1">
-                                                    <p className="font-medium">{order.id}</p>
-                                                    <p className="text-sm text-gray-600">{order.customer}</p>
+                                                    <p className="font-medium">{order.order_number}</p>
+                                                    <p className="text-sm text-gray-600">{order.customer_name}</p>
                                                     <p className="text-xs text-gray-500">{order.items}</p>
                                                 </div>
                                                 <div className="text-right">
@@ -313,7 +332,7 @@ const AdminDashboard: React.FC = () => {
                                 <CardContent>
                                     <div className="space-y-4">
                                         {allUsers
-                                            .filter(u => u.role === 'CUSTOMER') // Only show customers here
+                                            .filter(u => u.role === 'CUSTOMER')
                                             .sort((a, b) => b.totalSpent - a.totalSpent)
                                             .slice(0, 5)
                                             .map((customer, index) => (
@@ -340,24 +359,31 @@ const AdminDashboard: React.FC = () => {
                     </TabsContent>
 
                     <TabsContent value="orders" className="space-y-6">
-                        <AdminOrder allOrders={allOrders} fetchAdminData={fetchAdminData} getStatusColor={getStatusColor} />
+                        {/* Pass pagination props to AdminOrder */}
+                        <AdminOrder
+                            allOrders={allOrders}
+                            fetchAdminData={fetchAdminData} // This function now accepts a page number
+                            getStatusColor={getStatusColor}
+                            totalOrders={ordersPagination.total} // NEW
+                            totalPages={ordersPagination.pages} // NEW
+                            currentPage={ordersPagination.current_page} // NEW
+                            onPageChange={setCurrentOrdersPage} // NEW
+                        />
                     </TabsContent>
 
                     <TabsContent value="products" className="space-y-6">
-                        <AdminProduct allProducts={allProducts} fetchAdminData={fetchAdminData} />
+                        <AdminProduct allProducts={allProducts} fetchAdminData={() => fetchAdminData()} /> {/* Wrap fetchAdminData for other components */}
                     </TabsContent>
 
                     <TabsContent value="payments" className="space-y-6">
-                        <AdminPayment allOrders={allOrders} fetchAdminData={fetchAdminData} /> {/* Pass allOrders for payment status */}
+                        <AdminPayment allOrders={allOrders} fetchAdminData={() => fetchAdminData()} />
                     </TabsContent>
 
                     <TabsContent value="pickup-points" className="space-y-6">
-                        <AdminPickupPoint allPickupPoints={allPickupPoints} fetchAdminData={fetchAdminData} />
+                        <AdminPickupPoint allPickupPoints={allPickupPoints} fetchAdminData={() => fetchAdminData()} />
                     </TabsContent>
 
-                    
                     <TabsContent value="users" className="space-y-6">
-                        {/* UserManagement component receives allUsers as a prop */}
                         <UserManagement allUsers={allUsers} />
                     </TabsContent>
 
