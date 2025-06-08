@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { User, Search, Filter, Eye, RefreshCw, AlertCircle } from 'lucide-react';
+import { User, Search, Filter, Eye, RefreshCw, AlertCircle, X } from 'lucide-react';
 
 interface UserData {
   id: string;
@@ -19,6 +19,26 @@ interface UserData {
 interface UserManagementProps {
   allUsers: UserData[];
 }
+
+const Modal = ({ isOpen, onClose, children }) => {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-full overflow-y-auto">
+        <div className="p-4 border-b flex justify-between items-center">
+          <h3 className="text-lg font-semibold">User Details</h3>
+          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <div className="p-4">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
   const [users, setUsers] = useState<UserData[]>(allUsers);
@@ -240,53 +260,39 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
         </CardContent>
       </Card>
 
-      {selectedUser && (
-        <Card>
-          <CardHeader>
-            <CardTitle>User Details</CardTitle>
-            <CardDescription>Detailed information for {selectedUser.name}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold mb-2">Basic Information</h4>
-                <div className="space-y-2 text-sm">
-                  <p><strong>ID:</strong> {selectedUser.id}</p>
-                  <p><strong>Name:</strong> {selectedUser.name}</p>
-                  <p><strong>Email:</strong> {selectedUser.email}</p>
-                  <p><strong>Phone:</strong> {selectedUser.phone || 'Not provided'}</p>
-                </div>
-              </div>
-              <div>
-                <h4 className="font-semibold mb-2">Account Status</h4>
-                <div className="space-y-2 text-sm">
-                  <p><strong>Role:</strong>
-                    <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(selectedUser.role)}`}>
-                      {selectedUser.role}
-                    </span>
-                  </p>
-                  <p><strong>Status:</strong>
-                    <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                      selectedUser.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {selectedUser.is_active ? 'Active' : 'Inactive'}
-                    </span>
-                  </p>
-                  <p><strong>Joined:</strong> {formatDate(selectedUser.created_at)}</p>
-                </div>
+      <Modal isOpen={!!selectedUser} onClose={() => setSelectedUser(null)}>
+        {selectedUser && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 className="font-semibold mb-2">Basic Information</h4>
+              <div className="space-y-2 text-sm">
+                <p><strong>ID:</strong> {selectedUser.id}</p>
+                <p><strong>Name:</strong> {selectedUser.name}</p>
+                <p><strong>Email:</strong> {selectedUser.email}</p>
+                <p><strong>Phone:</strong> {selectedUser.phone || 'Not provided'}</p>
               </div>
             </div>
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={() => setSelectedUser(null)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                Close
-              </button>
+            <div>
+              <h4 className="font-semibold mb-2">Account Status</h4>
+              <div className="space-y-2 text-sm">
+                <p><strong>Role:</strong>
+                  <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(selectedUser.role)}`}>
+                    {selectedUser.role}
+                  </span>
+                </p>
+                <p><strong>Status:</strong>
+                  <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                    selectedUser.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  }`}>
+                    {selectedUser.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </p>
+                <p><strong>Joined:</strong> {formatDate(selectedUser.created_at)}</p>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 };
