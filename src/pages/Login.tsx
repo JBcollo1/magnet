@@ -1,16 +1,13 @@
 // src/pages/Login.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useNavigate, useLocation, Link } from 'react-router-dom';
-// No need for axios here anymore for auth operations
-import { useAuth } from '@/contexts/AuthContext'; // Import useAuth hook
+import { useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-// No need for toast directly in Login for auth operations, as AuthContext handles it
 import { Eye, EyeOff, Mail, Lock, ArrowLeft, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
-// Define props interface - no longer need the function props as they come from context
 interface LoginProps {
   initialView?: 'signin' | 'forgot-password' | 'reset-password';
 }
@@ -19,7 +16,7 @@ const Login: React.FC<LoginProps> = ({ initialView }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, isAuthenticated, forgotPassword, resetPassword, validateResetToken } = useAuth(); // Destructure functions from useAuth
+  const { login, isAuthenticated, forgotPassword, resetPassword, validateResetToken } = useAuth();
 
   const resetTokenFromUrl = searchParams.get('token') || (location.pathname.match(/\/reset-password\/([^\/]+)/)?.[1]);
 
@@ -44,6 +41,7 @@ const Login: React.FC<LoginProps> = ({ initialView }) => {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  // Redirect if authenticated
   useEffect(() => {
     if (isAuthenticated) {
       navigate('/dashboard');
@@ -54,7 +52,7 @@ const Login: React.FC<LoginProps> = ({ initialView }) => {
     setError('');
     setSuccessMessage('');
     setIsLoading(false);
-    setTokenValidated(false);
+    setTokenValidated(false); // Reset token validation state
     setSignInData({ email: '', password: '' });
     setForgotPasswordEmail('');
     setNewPassword('');
@@ -80,12 +78,13 @@ const Login: React.FC<LoginProps> = ({ initialView }) => {
     setTokenValidated(false);
 
     try {
-      const msg = await validateResetToken(tokenToValidate); // Call context function
+      const msg = await validateResetToken(tokenToValidate);
       setSuccessMessage(msg);
       setTokenValidated(true);
-    } catch (err: any) { // Catch the error thrown by AuthContext
+    } catch (err: any) {
       setError(err.message);
       setTokenValidated(false);
+      // Automatically redirect to forgot password after an error
       setTimeout(() => {
         toggleForm('forgot-password');
       }, 3000);
@@ -94,15 +93,14 @@ const Login: React.FC<LoginProps> = ({ initialView }) => {
     }
   }, [validateResetToken, toggleForm]);
 
+  // Effect to trigger token validation on mount if it's a reset-password view
   useEffect(() => {
-    if (initialView === 'reset-password' && resetTokenFromUrl && !tokenValidated && !isLoading) {
-      setToken(resetTokenFromUrl);
-      handleValidateResetToken(resetTokenFromUrl);
-    } else if (!initialView && resetTokenFromUrl && !tokenValidated && !isLoading && currentView === 'reset-password') {
+    if (currentView === 'reset-password' && resetTokenFromUrl && !tokenValidated && !isLoading) {
       setToken(resetTokenFromUrl);
       handleValidateResetToken(resetTokenFromUrl);
     }
-  }, [initialView, resetTokenFromUrl, handleValidateResetToken, tokenValidated, isLoading, currentView]);
+  }, [currentView, resetTokenFromUrl, handleValidateResetToken, tokenValidated, isLoading]);
+
 
   const handleSignInChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { id, value } = e.target;
@@ -116,18 +114,17 @@ const Login: React.FC<LoginProps> = ({ initialView }) => {
     setSuccessMessage('');
 
     try {
-      const success = await login(signInData.email, signInData.password); // Call context login
+      const success = await login(signInData.email, signInData.password);
 
       if (success) {
         setSuccessMessage('Welcome back! You have successfully logged in.');
-        // Toast is already handled by AuthContext if you moved it there,
-        // but can be kept here for specific Login success messages.
+        // AuthContext handles the main toast, but you can keep this for specific Login success messages.
       } else {
-        // AuthContext login should ideally throw an error if it fails,
-        // so you can catch a more specific message. If not, this fallback is fine.
-        setError('Invalid email or password. Please try again.');
+        // This path might be hit if AuthContext.login returns false without throwing an error
+        setError('Login failed. Please check your credentials.');
       }
-    } catch (error: any) { // Catch error thrown by login if it exists
+    } catch (error: any) {
+      // Catch error thrown by login if it exists
       setError(error.message || 'An error occurred during sign in. Please try again.');
     } finally {
       setIsLoading(false);
@@ -141,9 +138,9 @@ const Login: React.FC<LoginProps> = ({ initialView }) => {
     setSuccessMessage('');
 
     try {
-      await forgotPassword(forgotPasswordEmail); // Call context forgotPassword
+      await forgotPassword(forgotPasswordEmail);
       setSuccessMessage('Password reset link sent to your email!');
-    } catch (err: any) { // Catch the error thrown by AuthContext
+    } catch (err: any) {
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -176,13 +173,13 @@ const Login: React.FC<LoginProps> = ({ initialView }) => {
     }
 
     try {
-      await resetPassword(token, newPassword); // Call context resetPassword
+      await resetPassword(token, newPassword);
       setSuccessMessage('Password reset successful! Redirecting to sign in...');
       setTimeout(() => {
         toggleForm('signin');
-        navigate('/login', { replace: true });
+        navigate('/login', { replace: true }); // Ensure clean URL
       }, 2000);
-    } catch (err: any) { // Catch the error thrown by AuthContext
+    } catch (err: any) {
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -413,15 +410,14 @@ const Login: React.FC<LoginProps> = ({ initialView }) => {
                   </div>
                 )}
 
+                {/* Removed the 'pulse' animation for non-loading state as it implies activity */}
                 {!isLoading && !tokenValidated && !error && (
-                  <div className="text-center py-8">
-                    <div className="animate-pulse">
-                      <div className="w-8 h-8 bg-blue-500 rounded-full mx-auto mb-4"></div>
+                    <div className="text-center py-8">
+                        <AlertCircle className="w-8 h-8 mx-auto text-yellow-500 mb-4" />
+                        <p className="text-gray-600 dark:text-gray-400">
+                            Please wait while we validate your reset link, or it might be invalid/expired.
+                        </p>
                     </div>
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Please wait while we validate your reset link, or it might be invalid/expired.
-                    </p>
-                  </div>
                 )}
 
                 {!isLoading && tokenValidated && !error && (
