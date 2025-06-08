@@ -1,4 +1,3 @@
-// frontend/magnet/src/pages/Admin/AdminPayment.tsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-// import { useToast } from '@/components/ui/use-toast'; // Uncomment if you have toast notifications
 
 interface Payment {
     id: string;
@@ -18,26 +16,25 @@ interface Payment {
     amount: number;
     method: 'M-Pesa' | 'Card' | 'Cash on Delivery';
     status: 'Pending' | 'Completed' | 'Failed' | 'Refunded';
-    transactionId?: string; // For M-Pesa or card
+    transactionId?: string;
     paymentDate: string;
     customerEmail: string;
 }
 
-// Assuming orders have a link to payment status
 interface Order {
     id: string;
     date: string;
     items: string;
     total: number;
-    status: string; // Order status
+    status: string;
     paymentMethod: string;
-    paymentStatus?: 'Pending' | 'Completed' | 'Failed' | 'Refunded'; // Add payment status to order
-    mpesaRef?: string; // M-Pesa transaction reference
+    paymentStatus?: 'Pending' | 'Completed' | 'Failed' | 'Refunded';
+    mpesaRef?: string;
     customer: string;
 }
 
 interface AdminPaymentProps {
-    allOrders: Order[]; // We'll derive payment info from orders for now
+    allOrders: Order[];
     fetchAdminData: () => void;
 }
 
@@ -48,31 +45,27 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
     const [newPaymentStatus, setNewPaymentStatus] = useState('');
     const [loading, setLoading] = useState(false);
 
-    // const { toast } = useToast(); // Uncomment if you have toast notifications
-
     useEffect(() => {
-        // Derive payment data from orders for display purposes.
-        // In a real app, you might have a separate payments endpoint.
         const derivedPayments: Payment[] = allOrders.map(order => ({
-            id: `PAY-${order.id}`, // Fictional payment ID
+            id: `PAY-${order.id}`,
             orderId: order.id,
             amount: order.total,
             method: order.paymentMethod as 'M-Pesa' | 'Card' | 'Cash on Delivery',
-            status: order.paymentStatus || (order.status === 'delivered' ? 'Completed' : 'Pending'), // Infer status
-            transactionId: order.mpesaRef, // Use mpesaRef as transactionId
+            status: order.paymentStatus || (order.status === 'delivered' ? 'Completed' : 'Pending'),
+            transactionId: order.mpesaRef,
             paymentDate: order.date,
-            customerEmail: `${order.customer.toLowerCase().replace(/\s/g, '.')}@example.com` // Fictional email
+            customerEmail: `${order.customer.toLowerCase().replace(/\s/g, '.')}@example.com`
         }));
         setPayments(derivedPayments);
     }, [allOrders]);
 
     const getPaymentStatusColor = (status: string) => {
         switch (status.toLowerCase()) {
-            case 'completed': return 'text-green-600 bg-green-100';
-            case 'pending': return 'text-orange-600 bg-orange-100';
+            case 'completed': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+            case 'pending': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
             case 'failed':
-            case 'refunded': return 'text-red-600 bg-red-100';
-            default: return 'text-gray-600 bg-gray-100';
+            case 'refunded': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200';
+            default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200';
         }
     };
 
@@ -87,141 +80,157 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
 
         setLoading(true);
         try {
-            // In a real scenario, this would call an API endpoint like:
-            // /admin/payments/{paymentId}/status or /admin/orders/{orderId}/payment-status
-            await axios.put(`${import.meta.env.VITE_API_URL}/admin/payments/${selectedPayment.id}/status`,
-                { status: newPaymentStatus, orderId: selectedPayment.orderId }, // Also send orderId if needed
+            await axios.put(
+                `${import.meta.env.VITE_API_URL}/admin/payments/${selectedPayment.id}/status`,
+                { status: newPaymentStatus, orderId: selectedPayment.orderId },
                 { withCredentials: true }
             );
-            // toast({ title: 'Payment Status Updated', description: `Payment for Order ${selectedPayment.orderId} updated to ${newPaymentStatus}.` }); // Uncomment
-            fetchAdminData(); // Re-fetch orders to update payment status in dashboard
+            fetchAdminData();
             setIsVerifyDialogOpen(false);
         } catch (error) {
             console.error('Failed to update payment status:', error);
-            // toast({ title: 'Error', description: 'Failed to update payment status.', variant: 'destructive' }); // Uncomment
         } finally {
             setLoading(false);
         }
     };
 
-    // M-Pesa specific management (could be a sub-tab or modal)
     const handleCheckMpesaStatus = async (transactionId: string) => {
         setLoading(true);
         try {
-            const response = await axios.post(`${import.meta.env.VITE_API_URL}/admin/mpesa/check-status`,
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/admin/mpesa/check-status`,
                 { transactionId },
                 { withCredentials: true }
             );
-            // toast({ title: 'M-Pesa Status', description: `Transaction ${transactionId}: ${response.data.status}` }); // Uncomment
-            alert(`M-Pesa Transaction Status for ${transactionId}: ${(response.data as { status: string }).status}`); // For demo
-            fetchAdminData(); // Refresh data in case status changed
+            alert(`M-Pesa Transaction Status for ${transactionId}: ${(response.data as { status: string }).status}`);
+            fetchAdminData();
         } catch (error: any) {
             console.error('Failed to check M-Pesa status:', error);
-            // toast({ title: 'Error', description: `Failed to check M-Pesa status: ${error.response?.data?.message || error.message}`, variant: 'destructive' }); // Uncomment
-            alert(`Failed to check M-Pesa status: ${error.response?.data?.message || error.message}`); // For demo
+            alert(`Failed to check M-Pesa status: ${error.response?.data?.message || error.message}`);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Payment Management</CardTitle>
-                <CardDescription>Verify payments and manage M-Pesa transaction statuses.</CardDescription>
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <CardHeader className="bg-gray-50 dark:bg-gray-700">
+                <CardTitle className="text-gray-900 dark:text-gray-100">Payment Management</CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-300">
+                    Verify payments and manage M-Pesa transaction statuses.
+                </CardDescription>
             </CardHeader>
             <CardContent>
-                {loading && !selectedPayment ? ( // Only show global loader if not in dialog
+                {loading && !selectedPayment ? (
                     <div className="flex justify-center items-center h-48">
-                        <Loader2 className="h-6 w-6 animate-spin" />
-                        <p className="ml-2">Loading payments...</p>
+                        <Loader2 className="h-6 w-6 animate-spin text-gray-900 dark:text-gray-100" />
+                        <p className="ml-2 text-gray-700 dark:text-gray-300">Loading payments...</p>
                     </div>
                 ) : (
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Order ID</TableHead>
-                                <TableHead>Customer Email</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Method</TableHead>
-                                <TableHead>Transaction ID</TableHead>
-                                <TableHead>Payment Date</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {payments.map((payment) => (
-                                <TableRow key={payment.id}>
-                                    <TableCell className="font-medium">{payment.orderId}</TableCell>
-                                    <TableCell>{payment.customerEmail}</TableCell>
-                                    <TableCell>KSh {payment.amount.toLocaleString()}</TableCell>
-                                    <TableCell>{payment.method}</TableCell>
-                                    <TableCell>{payment.transactionId || 'N/A'}</TableCell>
-                                    <TableCell>{payment.paymentDate}</TableCell>
-                                    <TableCell>
-                                        <Badge className={getPaymentStatusColor(payment.status)}>
-                                            {payment.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex gap-2">
-                                            <Button variant="outline" size="sm" onClick={() => handleVerifyClick(payment)}>
-                                                Verify/Update
-                                            </Button>
-                                            {payment.method === 'M-Pesa' && payment.transactionId && (
-                                                <Button
-                                                    variant="secondary"
-                                                    size="sm"
-                                                    onClick={() => handleCheckMpesaStatus(payment.transactionId!)}
-                                                    disabled={loading}
-                                                >
-                                                    {loading && selectedPayment?.id === payment.id ? (
-                                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    ) : 'Check M-Pesa'}
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </TableCell>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <Table>
+                            <TableHeader>
+                                <TableRow className="bg-gray-100 dark:bg-gray-700">
+                                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Order ID</TableHead>
+                                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Customer Email</TableHead>
+                                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Amount</TableHead>
+                                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Method</TableHead>
+                                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Transaction ID</TableHead>
+                                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Payment Date</TableHead>
+                                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Status</TableHead>
+                                    <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Actions</TableHead>
                                 </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                            </TableHeader>
+                            <TableBody>
+                                {payments.map((payment) => (
+                                    <TableRow key={payment.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                                        <TableCell className="font-medium text-gray-900 dark:text-gray-100">{payment.orderId}</TableCell>
+                                        <TableCell className="text-gray-700 dark:text-gray-300">{payment.customerEmail}</TableCell>
+                                        <TableCell className="text-gray-700 dark:text-gray-300">KSh {payment.amount.toLocaleString()}</TableCell>
+                                        <TableCell className="text-gray-700 dark:text-gray-300">{payment.method}</TableCell>
+                                        <TableCell className="text-gray-700 dark:text-gray-300">{payment.transactionId || 'N/A'}</TableCell>
+                                        <TableCell className="text-gray-700 dark:text-gray-300">{payment.paymentDate}</TableCell>
+                                        <TableCell>
+                                            <Badge className={getPaymentStatusColor(payment.status)}>
+                                                {payment.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={() => handleVerifyClick(payment)}
+                                                    className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100"
+                                                >
+                                                    Verify/Update
+                                                </Button>
+                                                {payment.method === 'M-Pesa' && payment.transactionId && (
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        onClick={() => handleCheckMpesaStatus(payment.transactionId!)}
+                                                        disabled={loading}
+                                                        className="hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                    >
+                                                        {loading && selectedPayment?.id === payment.id ? (
+                                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                        ) : 'Check M-Pesa'}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
                 )}
             </CardContent>
 
-            {/* Verify/Update Payment Dialog */}
             <Dialog open={isVerifyDialogOpen} onOpenChange={setIsVerifyDialogOpen}>
-                <DialogContent>
+                <DialogContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700">
                     <DialogHeader>
-                        <DialogTitle>Update Payment Status for Order: {selectedPayment?.orderId}</DialogTitle>
-                        <DialogDescription>
+                        <DialogTitle className="text-gray-900 dark:text-gray-100">
+                            Update Payment Status for Order: {selectedPayment?.orderId}
+                        </DialogTitle>
+                        <DialogDescription className="text-gray-600 dark:text-gray-300">
                             Manually update the status of this payment.
                         </DialogDescription>
                     </DialogHeader>
                     {selectedPayment && (
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="amount" className="text-right">
+                                <Label htmlFor="amount" className="text-right text-gray-700 dark:text-gray-300">
                                     Amount
                                 </Label>
-                                <Input id="amount" value={`KSh ${selectedPayment.amount.toLocaleString()}`} readOnly className="col-span-3" />
+                                <Input
+                                    id="amount"
+                                    value={`KSh ${selectedPayment.amount.toLocaleString()}`}
+                                    readOnly
+                                    className="col-span-3 bg-white dark:bg-gray-700 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                                />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="transactionId" className="text-right">
+                                <Label htmlFor="transactionId" className="text-right text-gray-700 dark:text-gray-300">
                                     Transaction ID
                                 </Label>
-                                <Input id="transactionId" value={selectedPayment.transactionId || 'N/A'} readOnly className="col-span-3" />
+                                <Input
+                                    id="transactionId"
+                                    value={selectedPayment.transactionId || 'N/A'}
+                                    readOnly
+                                    className="col-span-3 bg-white dark:bg-gray-700 dark:text-gray-100 border-gray-300 dark:border-gray-600"
+                                />
                             </div>
                             <div className="grid grid-cols-4 items-center gap-4">
-                                <Label htmlFor="status" className="text-right">
+                                <Label htmlFor="status" className="text-right text-gray-700 dark:text-gray-300">
                                     Status
                                 </Label>
                                 <Select onValueChange={setNewPaymentStatus} value={newPaymentStatus}>
-                                    <SelectTrigger className="col-span-3">
+                                    <SelectTrigger className="col-span-3 bg-white dark:bg-gray-700 dark:text-gray-100 border-gray-300 dark:border-gray-600">
                                         <SelectValue placeholder="Select payment status" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 border-gray-300 dark:border-gray-600">
                                         <SelectItem value="Pending">Pending</SelectItem>
                                         <SelectItem value="Completed">Completed</SelectItem>
                                         <SelectItem value="Failed">Failed</SelectItem>
@@ -232,8 +241,18 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
                         </div>
                     )}
                     <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsVerifyDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleUpdatePaymentStatus} disabled={loading}>
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsVerifyDialogOpen(false)}
+                            className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleUpdatePaymentStatus}
+                            disabled={loading}
+                            className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                        >
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Changes'}
                         </Button>
                     </DialogFooter>
