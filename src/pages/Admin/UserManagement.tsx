@@ -107,8 +107,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
   const getRoleBadgeColor = (role: string) => {
     switch (role.toUpperCase()) {
       case 'ADMIN': return 'bg-red-100 text-red-800';
-      case 'MANAGER': return 'bg-blue-100 text-blue-800';
-      case 'USER': return 'bg-green-100 text-green-800';
+      case 'CUSTOMER': return 'bg-green-100 text-green-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -168,8 +167,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
             >
               <option value="">All Roles</option>
               <option value="ADMIN">Admin</option>
-              <option value="MANAGER">Manager</option>
-              <option value="USER">User</option>
+              <option value="MANAGER">CUSTOMER</option>
+             
             </select>
             <select
               value={activeFilter}
