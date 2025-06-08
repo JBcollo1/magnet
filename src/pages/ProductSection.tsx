@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCart } from '@/contexts/CartContext';
-import { ShoppingCart, Upload, X } from 'lucide-react';
+import { ShoppingCart, Upload, X, Loader2, AlertCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface CustomImage {
   id: string | number;
   url: string;
   name: string;
+  file?: File; // Keep reference to original file for upload
 }
 
 interface Product {
@@ -23,44 +25,43 @@ interface Product {
 
 const ProductSection = () => {
   const { addToCart } = useCart();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [uploadedImages, setUploadedImages] = useState<CustomImage[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const products = [
-    {
-      id: 1,
-      name: "4-CUSTOM MAGNETS",
-      price: 800,
-      quantity: 4,
-      image: "https://images.unsplash.com/photo-1618160702438-9b02ab6515c9?w=400&h=300&fit=crop",
-      description: "You get 4 separate custom magnets, each magnet can feature a different image/design or the same one repeated"
-    },
-    {
-      id: 2,
-      name: "6-CUSTOM MAGNETS",
-      price: 1200,
-      quantity: 6,
-      image: "https://images.unsplash.com/photo-1487252665478-49b61b47f302?w=400&h=300&fit=crop",
-      description: "You get 6 custom-made magnets with your own designs"
-    },
-    {
-      id: 3,
-      name: "9-CUSTOM MAGNETS",
-      price: 1700,
-      quantity: 9,
-      image: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?w=400&h=300&fit=crop",
-      description: "You get 9 custom magnets perfect for larger collections"
-    },
-    {
-      id: 4,
-      name: "12-CUSTOM MAGNETS",
-      price: 2200,
-      quantity: 12,
-      image: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=300&fit=crop",
-      description: "You get 12 custom magnets ideal for families or businesses"
-    }
-  ];
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        const response = await axios.get<{ products?: Product[] } | Product[]>(`${import.meta.env.VITE_API_URL}/products`,  { withCredentials: true });
+        const data = response.data;
+        if (Array.isArray(data)) {
+          setProducts(data as Product[]);
+        } else if (data && Array.isArray((data as { products?: Product[] }).products)) {
+          setProducts((data as { products: Product[] }).products);
+        } else {
+          setProducts([]);
+        }
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching products:', err);
+        setError('Failed to load products. Please try again later.');
+        toast({
+          title: "Error",
+          description: "Failed to load products. Please refresh the page.",
+          variant: "destructive"
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
 
   const handleProductClick = (product: Product) => {
     setSelectedProduct(product);
@@ -80,13 +81,34 @@ const ProductSection = () => {
     }
 
     files.forEach((file: File) => {
+      // Validate file size (e.g., max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "File too large",
+          description: `${file.name} is too large. Please use images under 5MB.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid file type",
+          description: `${file.name} is not a valid image file.`,
+          variant: "destructive"
+        });
+        return;
+      }
+
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
           setUploadedImages(prev => [...prev, {
             id: Date.now() + Math.random(),
             url: event.target!.result as string,
-            name: file.name
+            name: file.name,
+            file: file // Keep reference to original file
           }]);
         }
       };
@@ -110,10 +132,16 @@ const ProductSection = () => {
 
     if (!selectedProduct) return;
 
+    // Generate a temporary session ID for this cart item
+    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     const customProduct = {
       ...selectedProduct,
       customImages: uploadedImages,
-      name: `${selectedProduct.name} (${uploadedImages.length} custom designs)`
+      sessionId, // Add session ID to track this order
+      name: `${selectedProduct.name} (${uploadedImages.length} custom designs)`,
+      // Add timestamp for cleanup purposes
+      addedAt: new Date().toISOString()
     };
 
     addToCart(customProduct);
@@ -125,6 +153,42 @@ const ProductSection = () => {
     setSelectedProduct(null);
     setUploadedImages([]);
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <section className="py-20 bg-card">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-primary" />
+              <p className="text-muted-foreground">Loading products...</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <section className="py-20 bg-card">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-destructive" />
+              <p className="text-destructive font-semibold mb-2">Error Loading Products</p>
+              <p className="text-muted-foreground mb-4">{error}</p>
+              <Button onClick={() => window.location.reload()}>
+                Try Again
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="py-20 bg-card">
@@ -142,6 +206,10 @@ const ProductSection = () => {
                     src={product.image}
                     alt={product.name}
                     className="w-full h-56 object-cover transition-transform duration-300 hover:scale-110"
+                    onError={(e) => {
+                      // Fallback image if product image fails to load
+                      e.currentTarget.src = '/placeholder-product.jpg';
+                    }}
                   />
                   <div className="absolute top-4 right-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-semibold">
                     {product.quantity} Magnets
@@ -197,6 +265,9 @@ const ProductSection = () => {
                           <p className="text-muted-foreground">or drag and drop your images here</p>
                           <p className="text-sm text-muted-foreground mt-2">
                             {uploadedImages.length} of {selectedProduct?.quantity} images uploaded
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Max 5MB per image • JPG, PNG, GIF supported
                           </p>
                         </label>
                       </div>
