@@ -167,7 +167,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
             >
               <option value="">All Roles</option>
               <option value="ADMIN">Admin</option>
-              <option value="MANAGER">CUSTOMER</option>
+              <option value="CUSTOMER">Customer</option>
              
             </select>
             <select
