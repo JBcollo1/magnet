@@ -40,7 +40,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
       if (activeFilter) params.append('is_active', activeFilter);
 
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/auth/admin/users?${params.toString()}`,
+        `${import.meta.env.VITE_API_URL}/auth/users?${params.toString()}`,
         { withCredentials: true }
       );
 
@@ -60,7 +60,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
   const fetchUserDetails = async (userId: string) => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/auth/admin/users/${userId}`,
+        `${import.meta.env.VITE_API_URL}/auth/users/${userId}`,
         { withCredentials: true }
       );
 
@@ -97,7 +97,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    return new Date(dateString).toLocaleDateString('KEN', {
       year: 'numeric',
       month: 'short',
       day: 'numeric'
