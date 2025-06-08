@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from 'axios'; // Still import axios, but we'll conditionally use it or mock its behavior
 import {
   Loader2,
   CreditCard,
@@ -38,8 +38,7 @@ const AdminPayment: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-
-  // Mock data for demonstration - useful for development if backend is not yet ready
+  // Mock data for demonstration
   const mockPayments: Payment[] = [
     {
       id: '1',
@@ -76,7 +75,7 @@ const AdminPayment: React.FC = () => {
       orderId: 'ORD-004',
       amount: 500,
       method: 'M-Pesa',
-      status: 'Completed',
+      status: 'Pending', // Changed to Pending for better verification demo
       transactionId: 'MP87654321',
       paymentDate: '2023-09-25',
       customerEmail: 'alice.brown@example.com'
@@ -93,24 +92,35 @@ const AdminPayment: React.FC = () => {
     }
   ];
 
+  // Function to determine whether to use mock data or real API
+  const USE_MOCK_DATA = !import.meta.env.VITE_API_URL; // If API URL is not set, use mock data
+
   const fetchPayments = async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get<{ payments: Payment[] }>(`${import.meta.env.VITE_API_URL}/admin/payments`, {
-        withCredentials: true
-      });
-      if (response.data.payments && response.data.payments.length > 0) {
-        setPayments(response.data.payments);
-        setFilteredPayments(response.data.payments);
-      } else {
+      if (USE_MOCK_DATA) {
+        console.log("Using mock data for payments.");
         setPayments(mockPayments);
         setFilteredPayments(mockPayments);
-        console.warn("Backend returned no payments, using mock data.");
+      } else {
+        console.log("Attempting to fetch payments from backend.");
+        const response = await axios.get<{ payments: Payment[] }>(`${import.meta.env.VITE_API_URL}/admin/payments`, {
+          withCredentials: true
+        });
+        if (response.data.payments && response.data.payments.length > 0) {
+          setPayments(response.data.payments);
+          setFilteredPayments(response.data.payments);
+        } else {
+          // Fallback to mock data if backend returns empty or non-array
+          setPayments(mockPayments);
+          setFilteredPayments(mockPayments);
+          console.warn("Backend returned no payments or invalid data, using mock data.");
+        }
       }
     } catch (error) {
       console.error('Error fetching payments:', error);
-      setError("Failed to fetch payments. Using mock data.");
+      setError("Failed to fetch payments from backend. Using mock data.");
       setPayments(mockPayments);
       setFilteredPayments(mockPayments);
     } finally {
@@ -164,13 +174,14 @@ const AdminPayment: React.FC = () => {
     switch (method) {
       case 'M-Pesa': return <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">M</div>;
       case 'Card': return <CreditCard className="w-4 h-4 text-blue-500" />;
+      case 'Cash on Delivery': return <DollarSign className="w-4 h-4 text-gray-500" />;
       default: return <DollarSign className="w-4 h-4 text-gray-500" />;
     }
   };
 
   const handleVerifyClick = (payment: Payment) => {
     setSelectedPayment(payment);
-    setNewPaymentStatus(payment.status);
+    setNewPaymentStatus(payment.status); // Pre-fill with current status
     setIsVerifyDialogOpen(true);
   };
 
@@ -180,23 +191,36 @@ const AdminPayment: React.FC = () => {
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
-    try {
-      const response = await axios.put(
-        `${import.meta.env.VITE_API_URL}/admin/payments/${selectedPayment.id}`, // Updated endpoint for editing
-        { status: newPaymentStatus },
-        { withCredentials: true }
-      );
 
-      if (response.status === 200) {
+    try {
+      if (USE_MOCK_DATA) {
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 800));
+
         const updatedPayments = payments.map(p =>
           p.id === selectedPayment.id ? { ...p, status: newPaymentStatus as Payment['status'] } : p
         );
         setPayments(updatedPayments);
-        setSuccessMessage(`Payment ${selectedPayment.orderId} status updated to ${newPaymentStatus}.`);
-        setIsVerifyDialogOpen(false);
+        setSuccessMessage(`Payment ${selectedPayment.orderId} status updated to ${newPaymentStatus} (mock data).`);
       } else {
-        throw new Error('Failed to update payment status.');
+        // Real API call
+        const response = await axios.put(
+          `${import.meta.env.VITE_API_URL}/admin/payments/${selectedPayment.id}`,
+          { status: newPaymentStatus },
+          { withCredentials: true }
+        );
+
+        if (response.status === 200) {
+          const updatedPayments = payments.map(p =>
+            p.id === selectedPayment.id ? { ...p, status: newPaymentStatus as Payment['status'] } : p
+          );
+          setPayments(updatedPayments);
+          setSuccessMessage(`Payment ${selectedPayment.orderId} status updated to ${newPaymentStatus} (backend).`);
+        } else {
+          throw new Error('Failed to update payment status on backend.');
+        }
       }
+      setIsVerifyDialogOpen(false);
     } catch (error) {
       console.error('Failed to update payment status:', error);
       setError("Failed to update payment status. Please try again.");
@@ -205,25 +229,56 @@ const AdminPayment: React.FC = () => {
     }
   };
 
-  const handleCheckMpesaStatus = async (transactionId: string) => {
+  const handleCheckMpesaStatus = async (paymentId: string, transactionId: string) => {
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
+
     try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/admin/payments/mpesa/verify?transactionId=${transactionId}`, // Updated endpoint for M-Pesa verification
-        { withCredentials: true }
-      );
-      if (response.status === 200) {
-        setSuccessMessage(`M-Pesa Transaction Status for ${transactionId}: Verified successfully.`);
-        // Optionally, refresh payments to reflect any status changes on the backend
-        fetchPayments();
+      if (USE_MOCK_DATA) {
+        // Simulate API call delay
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        let newStatus: Payment['status'] = 'Failed';
+        let message = `M-Pesa Transaction Status for ${transactionId}: Not found.`;
+
+        // Simulate success for specific transaction IDs or based on current status
+        if (transactionId === 'MP12345678' || transactionId === 'MP87654321') {
+          newStatus = 'Completed';
+          message = `M-Pesa Transaction Status for ${transactionId}: Verified successfully! (mock data)`;
+        } else {
+           newStatus = 'Failed';
+           message = `M-Pesa Transaction Status for ${transactionId}: Verification failed. (mock data)`;
+        }
+
+        const updatedPayments = payments.map(p =>
+          p.id === paymentId ? { ...p, status: newStatus } : p
+        );
+        setPayments(updatedPayments);
+        setSuccessMessage(message);
+
       } else {
-        throw new Error('Failed to verify M-Pesa transaction.');
+        // Real API call
+        const response = await axios.get(
+          `${import.meta.env.VITE_API_URL}/admin/payments/mpesa/verify?transactionId=${transactionId}`,
+          { withCredentials: true }
+        );
+
+        const data = response.data as { status: Payment['status'] };
+        if (response.status === 200 && data.status) { // Assuming backend returns a status
+            const receivedStatus = data.status;
+            const updatedPayments = payments.map(p =>
+                p.id === paymentId ? { ...p, status: receivedStatus } : p
+            );
+            setPayments(updatedPayments);
+            setSuccessMessage(`M-Pesa Transaction Status for ${transactionId}: ${receivedStatus} (backend).`);
+        } else {
+            throw new Error('M-Pesa verification failed or returned unexpected data.');
+        }
       }
     } catch (error) {
       console.error('Failed to check M-Pesa status:', error);
-      setError("Failed to verify M-Pesa transaction. Please check the transaction ID.");
+      setError("Failed to verify M-Pesa transaction. Please check the transaction ID or network.");
     } finally {
       setLoading(false);
     }
@@ -244,7 +299,7 @@ const AdminPayment: React.FC = () => {
             Payment Dashboard
           </h1>
           <p className="text-muted-foreground text-sm">
-            Monitor and manage all payment transactions with ease
+            Monitor and manage all payment transactions with ease {USE_MOCK_DATA && <span className="font-semibold text-blue-500">(Using Mock Data)</span>}
           </p>
         </div>
       </div>
@@ -253,7 +308,7 @@ const AdminPayment: React.FC = () => {
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded relative" role="alert">
           <strong className="font-bold">Error!</strong>
           <span className="block sm:inline"> {error}</span>
-          <span className="absolute top-0 bottom-0 right-0 px-3 py-2" onClick={() => setError(null)}>
+          <span className="absolute top-0 bottom-0 right-0 px-3 py-2 cursor-pointer" onClick={() => setError(null)}>
             <XCircle className="h-4 w-4 fill-current" />
           </span>
         </div>
@@ -263,7 +318,7 @@ const AdminPayment: React.FC = () => {
         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded relative" role="alert">
           <strong className="font-bold">Success!</strong>
           <span className="block sm:inline"> {successMessage}</span>
-          <span className="absolute top-0 bottom-0 right-0 px-3 py-2" onClick={() => setSuccessMessage(null)}>
+          <span className="absolute top-0 bottom-0 right-0 px-3 py-2 cursor-pointer" onClick={() => setSuccessMessage(null)}>
             <CheckCircle className="h-4 w-4 fill-current" />
           </span>
         </div>
@@ -467,18 +522,19 @@ const AdminPayment: React.FC = () => {
                     <div className="flex justify-end gap-1">
                       <button
                         onClick={() => handleVerifyClick(payment)}
-                        className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+                        className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors rounded-sm"
+                        title="Edit Payment Status"
                       >
                         <Eye className="h-3 w-3" />
                       </button>
                       {payment.method === 'M-Pesa' && payment.transactionId && (
                         <button
-                          onClick={() => handleCheckMpesaStatus(payment.transactionId!)}
+                          onClick={() => handleCheckMpesaStatus(payment.id, payment.transactionId!)}
                           disabled={loading}
-                          className="h-6 w-6 p-0 hover:bg-green-100 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 transition-colors"
+                          className="h-6 w-6 p-0 hover:bg-green-100 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 transition-colors rounded-sm"
                           title="Verify M-Pesa Transaction"
                         >
-                          {loading ? (
+                          {loading && selectedPayment?.id === payment.id ? ( // Only show spinner for the current action
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
                             <RefreshCw className="h-3 w-3" />
@@ -498,7 +554,7 @@ const AdminPayment: React.FC = () => {
       {isVerifyDialogOpen && selectedPayment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Verify Payment for Order: {selectedPayment.orderId}</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Edit Payment for Order: {selectedPayment.orderId}</h3>
             <div className="mb-4">
               <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Current Status: <span className={`font-semibold ${getPaymentStatusColor(selectedPayment.status)} px-2 py-0.5 rounded-full`}>{selectedPayment.status}</span></p>
               <label htmlFor="paymentStatus" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
