@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import {
   Loader2,
   CreditCard,
@@ -37,11 +38,10 @@ interface Payment {
 }
 
 interface AdminPaymentProps {
-  allOrders: Order[];
   fetchAdminData: () => Promise<void>;
 }
 
-const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }) => {
+const AdminPayment: React.FC<AdminPaymentProps> = ({ fetchAdminData }) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false);
@@ -52,19 +52,20 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
   const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
-    const derivedPayments: Payment[] = allOrders.map(order => ({
-      id: `PAY-${order.id}`,
-      orderId: order.id,
-      amount: order.total,
-      method: order.paymentMethod as 'M-Pesa' | 'Card' | 'Cash on Delivery',
-      status: order.paymentStatus || (order.status === 'delivered' ? 'Completed' : 'Pending'),
-      transactionId: order.mpesaRef,
-      paymentDate: order.date,
-      customerEmail: `${order.customer.toLowerCase().replace(/\s/g, '.')}@example.com`
-    }));
-    setPayments(derivedPayments);
-    setFilteredPayments(derivedPayments);
-  }, [allOrders]);
+    const fetchPayments = async () => {
+      try {
+        const response = await axios.get<{ payments: Payment[] }>(`${import.meta.env.VITE_API_URL}/admin/payments`, {
+          withCredentials: true
+        });
+        setPayments(response.data.payments);
+        setFilteredPayments(response.data.payments);
+      } catch (error) {
+        console.error('Error fetching payments:', error);
+      }
+    };
+
+    fetchPayments();
+  }, []);
 
   useEffect(() => {
     let filtered = payments;
@@ -123,7 +124,11 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
 
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/payments/${selectedPayment.id}/verify`,
+        { status: newPaymentStatus },
+        { withCredentials: true }
+      );
 
       const updatedPayments = payments.map(p =>
         p.id === selectedPayment.id ? { ...p, status: newPaymentStatus as any } : p
@@ -140,7 +145,10 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
   const handleCheckMpesaStatus = async (transactionId: string) => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await axios.get(
+        `${import.meta.env.VITE_API_URL}/payments/mpesa/verify?transactionId=${transactionId}`,
+        { withCredentials: true }
+      );
       alert(`M-Pesa Transaction Status for ${transactionId}: Verified`);
     } catch (error) {
       console.error('Failed to check M-Pesa status:', error);
