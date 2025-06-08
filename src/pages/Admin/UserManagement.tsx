@@ -25,14 +25,14 @@ const Modal = ({ isOpen, onClose, children }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-lg w-full max-w-2xl max-h-full overflow-y-auto">
-        <div className="p-4 border-b flex justify-between items-center">
-          <h3 className="text-lg font-semibold">User Details</h3>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+      <div className="bg-card rounded-lg shadow-lg w-full max-w-2xl max-h-full overflow-y-auto">
+        <div className="p-4 border-b border-border flex justify-between items-center">
+          <h3 className="text-lg font-semibold text-card-foreground">User Details</h3>
+          <button onClick={onClose} className="text-card-foreground hover:text-sidebar-primary">
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="p-4">
+        <div className="p-4 text-card-foreground">
           {children}
         </div>
       </div>
@@ -123,9 +123,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
 
   const getRoleBadgeColor = (role: string) => {
     switch (role.toUpperCase()) {
-      case 'ADMIN': return 'bg-red-100 text-red-800';
-      case 'CUSTOMER': return 'bg-green-100 text-green-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'ADMIN': return 'bg-destructive text-destructive-foreground';
+      case 'CUSTOMER': return 'bg-primary text-primary-foreground';
+      default: return 'bg-secondary text-secondary-foreground';
     }
   };
 
@@ -133,13 +133,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
+          <CardTitle className="flex items-center text-card-foreground">
             <User className="w-5 h-5 mr-2" />
             User Management
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-8">
+          <div className="flex items-center justify-center py-8 text-card-foreground">
             <RefreshCw className="w-6 h-6 animate-spin mr-2" />
             Loading users...
           </div>
@@ -150,14 +150,14 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="bg-card text-card-foreground">
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <div className="flex items-center">
               <User className="w-5 h-5 mr-2" />
               User Management
             </div>
-            <Button onClick={handleRefresh} variant="outline" size="sm" disabled={loading}>
+            <Button onClick={handleRefresh} variant="outline" size="sm" disabled={loading} className="text-card-foreground">
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
@@ -167,19 +167,19 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search by name, email, or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
               />
             </div>
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-40"
+              className="px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground w-full sm:w-40"
             >
               <option value="">All Roles</option>
               <option value="ADMIN">Admin</option>
@@ -188,7 +188,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
             <select
               value={activeFilter}
               onChange={(e) => setActiveFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-40"
+              className="px-3 py-2 border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground w-full sm:w-40"
             >
               <option value="">All Status</option>
               <option value="true">Active</option>
@@ -197,38 +197,38 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
           </div>
 
           {error && (
-            <div className="flex items-center p-4 mb-4 text-red-700 bg-red-100 rounded-lg">
+            <div className="flex items-center p-4 mb-4 text-destructive bg-destructive/10 rounded-lg">
               <AlertCircle className="w-5 h-5 mr-2" />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="overflow-x-auto border rounded-lg">
+          <div className="overflow-x-auto border border-input rounded-lg">
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-muted">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phone</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Name</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Phone</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Joined</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-card divide-y divide-border">
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan={7} className="px-6 py-8 text-center text-muted-foreground">
                       No users found
                     </td>
                   </tr>
                 ) : (
                   users.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900">{user.name}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.email}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-500">{user.phone || '-'}</td>
+                    <tr key={user.id} className="hover:bg-muted/50">
+                      <td className="px-6 py-4 whitespace-nowrap font-medium text-foreground">{user.name}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">{user.email}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">{user.phone || '-'}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user.role)}`}>
                           {user.role}
@@ -236,16 +236,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          user.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          user.is_active ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
                         }`}>
                           {user.is_active ? 'Active' : 'Inactive'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-gray-500">{formatDate(user.created_at)}</td>
+                      <td className="px-6 py-4 whitespace-nowrap text-muted-foreground">{formatDate(user.created_at)}</td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <Button
                           onClick={() => handleViewDetails(user)}
-                          className="inline-flex items-center px-3 py-1 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                          className="inline-flex items-center px-3 py-1 text-sm font-medium bg-background text-foreground border border-input rounded-md hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring"
                         >
                           <Eye className="w-4 h-4 mr-1" />
                           View
@@ -282,7 +282,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
                 </p>
                 <p><strong>Status:</strong>
                   <span className={`ml-2 inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                    selectedUser.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                    selectedUser.is_active ? 'bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100' : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100'
                   }`}>
                     {selectedUser.is_active ? 'Active' : 'Inactive'}
                   </span>
