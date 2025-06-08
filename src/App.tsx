@@ -1,12 +1,13 @@
+import React from "react"; // Ensure React is imported
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom"; // Import Navigate
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+
 import { CartProvider } from "./contexts/CartContext";
-import { AuthProvider, useAuth } from "./contexts/AuthContext"; // Import useAuth
+import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import React from 'react'; // Ensure React is imported
 
 // Pages
 import Index from "./pages/Index";
@@ -17,14 +18,16 @@ import Cart from "./pages/Cart";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
-import AdminDashboard from "./pages/Admin/AdminDashboard"; // Import AdminDashboard
+import AdminDashboard from "./pages/Admin/AdminDashboard";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
 // A simple PrivateRoute component for basic authentication/authorization
 interface PrivateRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('ADMIN' | 'CUSTOMER' | 'STAFF')[]; // Optional: define allowed roles
+  allowedRoles?: ("ADMIN" | "CUSTOMER" | "STAFF")[]; // Optional: define allowed roles
 }
 
 const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, allowedRoles }) => {
@@ -39,16 +42,13 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, allowedRoles }) =
   }
 
   if (!isAuthenticated) {
-    // Not authenticated, redirect to login
     return <Navigate to="/login" replace />;
   }
 
-  // If roles are specified, check if the user's role is allowed
   if (allowedRoles && user) {
-    const userRole = (user as any).role; // Assuming user.role exists
+    const userRole = (user as any).role;
     if (!allowedRoles.includes(userRole)) {
-      // Authenticated but not authorized for this role, redirect to a safe page
-      return <Navigate to="/dashboard" replace />; // or a 403 Forbidden page
+      return <Navigate to="/dashboard" replace />;
     }
   }
 
@@ -73,37 +73,31 @@ const App = () => (
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
 
-                {/* Password Reset Routes */}
-                <Route
-                  path="/reset-password/:token"
-                  element={<Login initialView="reset-password" />}
-                />
-                <Route
-                  path="/reset-password"
-                  element={<Login initialView="reset-password" />}
-                />
+                {/* Auth Password Reset Routes */}
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-                {/* Authenticated User Routes */}
+                {/* Protected User Routes */}
                 <Route
                   path="/dashboard"
                   element={
-                    <PrivateRoute allowedRoles={['CUSTOMER', 'ADMIN', 'STAFF']}>
+                    <PrivateRoute allowedRoles={["CUSTOMER", "ADMIN", "STAFF"]}>
                       <Dashboard />
                     </PrivateRoute>
                   }
                 />
 
-                {/* Admin Routes - Protected */}
+                {/* Protected Admin Route */}
                 <Route
                   path="/admin"
                   element={
-                    <PrivateRoute allowedRoles={['ADMIN']}>
+                    <PrivateRoute allowedRoles={["ADMIN"]}>
                       <AdminDashboard />
                     </PrivateRoute>
                   }
                 />
 
-                {/* Fallback 404 page */}
+                {/* Fallback Not Found */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

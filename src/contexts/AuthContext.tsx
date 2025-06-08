@@ -1,20 +1,22 @@
+// src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { toast } from '@/hooks/use-toast'; // Assuming you have this toast utility
 
-// 1. Update the User interface to include 'role'
+// Helper function to check if error is an Axios error
+const isAxiosError = (error: any): error is { response?: { data?: { msg: string } }, isAxiosError: true } => {
+  return error && typeof error === 'object' && error.isAxiosError === true;
+};
+
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'ADMIN' | 'CUSTOMER' | 'STAFF'; // Add the role property with possible string literal types
-  // Add any other user-specific properties you expect from your backend, e.g.:
-  // dateJoined?: string;
-  // phone?: string;
-  // address?: string;
+  role: 'ADMIN' | 'CUSTOMER' | 'STAFF';
 }
 
 interface AuthResponse {
-  user?: User; // This will now correctly include the role
+  user?: User;
   success?: boolean;
   message?: string;
   error?: string;
@@ -24,8 +26,9 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string) => Promise<boolean>;
-  forgotPassword: (email: string) => Promise<boolean>;
-  resetPassword: (token: string, password: string) => Promise<boolean>;
+  forgotPassword: (email: string) => Promise<void>; // Changed to void, will throw on error
+  resetPassword: (token: string, password: string) => Promise<void>; // Changed to void, will throw on error
+  validateResetToken: (token: string) => Promise<string>; // New function for token validation
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
@@ -38,17 +41,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // 2. Update isValidUser to validate the 'role' property
   const isValidUser = (data: any): data is User => {
     return data &&
            typeof data.id === 'string' &&
            typeof data.email === 'string' &&
            typeof data.name === 'string' &&
-           (data.role === 'ADMIN' || data.role === 'CUSTOMER' || data.role === 'STAFF'); // Validate role
-           // Add checks for other mandatory properties if any
+           (data.role === 'ADMIN' || data.role === 'CUSTOMER' || data.role === 'STAFF');
   };
 
-  // Function to get current user from backend
   const getCurrentUser = async (): Promise<User | null> => {
     try {
       const response = await axios.get<User | AuthResponse>(
@@ -58,7 +58,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       const userData = response.data;
 
-      // Ensure that if the backend returns a user object, it includes the role
       if (isValidUser(userData)) {
         return userData;
       }
@@ -77,7 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Function to refresh user data
   const refreshUser = async (): Promise<void> => {
     setLoading(true);
     try {
@@ -91,7 +89,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Check for existing authentication on mount
   useEffect(() => {
     refreshUser();
   }, []);
@@ -161,7 +158,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return true;
         }
 
-        return true; // Registration was successful, but no user data returned (e.g., email verification)
+        return true;
       }
 
       return false;
@@ -172,39 +169,98 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const forgotPassword = async (email: string): Promise<boolean> => {
+  const forgotPassword = async (email: string): Promise<void> => {
     try {
       const response = await axios.post<AuthResponse>(
         `${import.meta.env.VITE_API_URL}/auth/forgot-password`,
         { email },
         { withCredentials: true }
       );
-
       if (response.status === 200) {
-        return true;
+        toast({
+          title: "Reset link sent",
+          description: "Password reset link sent to your email!",
+        });
+      } else {
+        throw new Error(response.data.message || "Failed to send reset link.");
       }
-      return false;
-    } catch (error) {
-      console.error('Forgot password failed:', error);
-      return false;
+    } catch (error: unknown) {
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      if (isAxiosError(error) && error.response?.data?.msg) {
+        errorMessage = error.response.data.msg;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw new Error(errorMessage); // Re-throw for component to catch
     }
   };
 
-  const resetPassword = async (token: string, password: string): Promise<boolean> => {
+  const resetPassword = async (token: string, password: string): Promise<void> => {
     try {
       const response = await axios.post<AuthResponse>(
         `${import.meta.env.VITE_API_URL}/auth/reset-password/${token}`,
         { password },
         { withCredentials: true }
       );
-
       if (response.status === 200) {
-        return true;
+        toast({
+          title: "Password reset successful",
+          description: "Password reset successful! Redirecting to sign in...",
+        });
+      } else {
+        throw new Error(response.data.message || "Failed to reset password.");
       }
-      return false;
-    } catch (error) {
-      console.error('Reset password failed:', error);
-      return false;
+    } catch (error: unknown) {
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      if (isAxiosError(error) && error.response?.data?.msg) {
+        errorMessage = error.response.data.msg;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw new Error(errorMessage); // Re-throw for component to catch
+    }
+  };
+
+  // New function to validate the reset token
+  const validateResetToken = async (token: string): Promise<string> => {
+    try {
+      const response = await axios.get<AuthResponse>(
+        `${import.meta.env.VITE_API_URL}/auth/reset-password/${token}`,
+        { withCredentials: true }
+      );
+      if (response.status === 200) {
+        const msg = response.data.message || 'Token is valid. You can now reset your password.';
+        toast({
+          title: "Token Validated",
+          description: msg,
+        });
+        return msg;
+      } else {
+        throw new Error(response.data.message || "Invalid or expired reset token.");
+      }
+    } catch (error: unknown) {
+      let errorMessage = 'Invalid or expired reset token. Please request a new password reset.';
+      if (isAxiosError(error) && error.response?.data?.msg) {
+        errorMessage = error.response.data.msg;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast({
+        title: "Error",
+        description: errorMessage,
+        variant: "destructive",
+      });
+      throw new Error(errorMessage); // Re-throw for component to catch
     }
   };
 
@@ -217,9 +273,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
     } catch (error) {
       console.error('Logout request failed:', error);
-      // Continue with logout even if request fails
     } finally {
-      // Always clear user state on logout
       setUser(null);
     }
   };
@@ -230,6 +284,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signup,
     forgotPassword,
     resetPassword,
+    validateResetToken, // Include the new function
     logout,
     isAuthenticated: !!user,
     loading,
@@ -243,7 +298,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
-// Custom hook to use the auth context
 export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
