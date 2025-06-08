@@ -1,5 +1,5 @@
 // frontend/magnet/src/pages/Admin/AdminProduct.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -9,269 +9,218 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2 } from 'lucide-react';
+// import { useToast } from '@/components/ui/use-toast';
 
+// Ensure this Product interface is defined here or imported from a common types file
 interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  stock: number;
-  imageUrl: string;
+    id: string;
+    name: string;
+    description: string;
+    price: number;
+    stock: number;
+    imageUrl: string;
 }
 
-const AdminProduct: React.FC = () => {
-  const [allProducts, setAllProducts] = useState<Product[]>([]);
-  const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
-  const [formState, setFormState] = useState<Omit<Product, 'id'>>({
-    name: '',
-    description: '',
-    price: 0,
-    stock: 0,
-    imageUrl: ''
-  });
-  const [loading, setLoading] = useState(false);
+// **Crucial: Define the props interface for THIS component**
+interface AdminProductProps {
+    allProducts: Product[];
+    fetchAdminData: () => Promise<void>; // Or just () => void if fetchAdminData is not async
+}
 
-  const fetchProducts = async () => {
-    try {
-      const response = await axios.get(`${import.meta.env.VITE_API_URL}/admin/products`, {
-        withCredentials: true
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
-      throw error;
-    }
-  };
+// Use React.FC with your defined props interface
+const AdminProduct: React.FC<AdminProductProps> = ({ allProducts, fetchAdminData }) => {
+    const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
+    const [formState, setFormState] = useState<Omit<Product, 'id'>>({
+        name: '',
+        description: '',
+        price: 0,
+        stock: 0,
+        imageUrl: ''
+    });
+    const [loading, setLoading] = useState(false);
 
-  const createProduct = async (productData: Omit<Product, 'id'>) => {
-    try {
-      const response = await axios.post(`${import.meta.env.VITE_API_URL}/admin/products`, productData, {
-        withCredentials: true
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to create product:', error);
-      throw error;
-    }
-  };
+    // const { toast } = useToast();
 
-  const updateProduct = async (productId: string, productData: Omit<Product, 'id'>) => {
-    try {
-      const response = await axios.put(`${import.meta.env.VITE_API_URL}/admin/products/${productId}`, productData, {
-        withCredentials: true
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to update product:', error);
-      throw error;
-    }
-  };
+    const handleCreateClick = () => {
+        setCurrentProduct(null);
+        setFormState({ name: '', description: '', price: 0, stock: 0, imageUrl: '' });
+        setIsFormDialogOpen(true);
+    };
 
-  const deleteProduct = async (productId: string) => {
-    try {
-      const response = await axios.delete(`${import.meta.env.VITE_API_URL}/admin/products/${productId}`, {
-        withCredentials: true
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Failed to delete product:', error);
-      throw error;
-    }
-  };
+    const handleEditClick = (product: Product) => {
+        setCurrentProduct(product);
+        setFormState({ ...product, price: Number(product.price), stock: Number(product.stock) });
+        setIsFormDialogOpen(true);
+    };
 
-  const fetchAdminData = async () => {
-    setLoading(true);
-    try {
-      const products = await fetchProducts();
-      setAllProducts(products as Product[]);
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const handleDeleteClick = (product: Product) => {
+        setCurrentProduct(product);
+        setIsDeleteDialogOpen(true);
+    };
 
-  useEffect(() => {
-    fetchAdminData();
-  }, []);
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { id, value } = e.target;
+        setFormState(prevState => ({
+            ...prevState,
+            [id]: id === 'price' || id === 'stock' ? Number(value) : value
+        }));
+    };
 
-  const handleCreateClick = () => {
-    setCurrentProduct(null);
-    setFormState({ name: '', description: '', price: 0, stock: 0, imageUrl: '' });
-    setIsFormDialogOpen(true);
-  };
+    const handleSubmit = async () => {
+        setLoading(true);
+        try {
+            if (currentProduct) {
+                await axios.put(`${import.meta.env.VITE_API_URL}/admin/products/${currentProduct.id}`,
+                    formState,
+                    { withCredentials: true }
+                );
+                // toast({ title: 'Product Updated', description: `${formState.name} has been updated.` });
+            } else {
+                await axios.post(`${import.meta.env.VITE_API_URL}/admin/products`,
+                    formState,
+                    { withCredentials: true }
+                );
+                // toast({ title: 'Product Created', description: `${formState.name} has been added.` });
+            }
+            fetchAdminData();
+            setIsFormDialogOpen(false);
+        } catch (error) {
+            console.error('Failed to save product:', error);
+            // toast({ title: 'Error', description: 'Failed to save product.', variant: 'destructive' });
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleEditClick = (product: Product) => {
-    setCurrentProduct(product);
-    setFormState(product);
-    setIsFormDialogOpen(true);
-  };
+    const confirmDelete = async () => {
+        if (!currentProduct) return;
+        setLoading(true);
+        try {
+            await axios.delete(`${import.meta.env.VITE_API_URL}/admin/products/${currentProduct.id}`,
+                { withCredentials: true }
+            );
+            // toast({ title: 'Product Deleted', description: `${currentProduct.name} has been deleted.` });
+            fetchAdminData();
+            setIsDeleteDialogOpen(false);
+        } catch (error) {
+            console.error('Failed to delete product:', error);
+            // toast({ title: 'Error', description: 'Failed to delete product.', variant: 'destructive' });
+        } finally {
+            setLoading(false);
+        }
+    };
 
-  const handleDeleteClick = (product: Product) => {
-    setCurrentProduct(product);
-    setIsDeleteDialogOpen(true);
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    setFormState(prevState => ({
-      ...prevState,
-      [id]: id === 'price' || id === 'stock' ? Number(value) : value
-    }));
-  };
-
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      if (currentProduct) {
-        await updateProduct(currentProduct.id, formState);
-      } else {
-        await createProduct(formState);
-      }
-      fetchAdminData();
-      setIsFormDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to save product:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const confirmDelete = async () => {
-    if (!currentProduct) return;
-    setLoading(true);
-    try {
-      await deleteProduct(currentProduct.id);
-      fetchAdminData();
-      setIsDeleteDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to delete product:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle>Manage Products</CardTitle>
-          <CardDescription>Create, update, and delete products from your inventory.</CardDescription>
-        </div>
-        <Button onClick={handleCreateClick}>Add New Product</Button>
-      </CardHeader>
-      <CardContent>
-        {loading && !isFormDialogOpen && !isDeleteDialogOpen ? (
-          <div className="flex justify-center items-center h-48">
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <p className="ml-2">Loading products...</p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Image</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead>Price</TableHead>
-                <TableHead>Stock</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {allProducts.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell>
-                    <img src={product.imageUrl} alt={product.name} className="h-12 w-12 object-cover rounded-md" />
-                  </TableCell>
-                  <TableCell className="font-medium">{product.name}</TableCell>
-                  <TableCell className="max-w-[200px] truncate text-sm">{product.description}</TableCell>
-                  <TableCell>KSh {product.price.toLocaleString()}</TableCell>
-                  <TableCell>{product.stock}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>
-                      <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(product)}>Delete</Button>
+    return (
+        <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Manage Products</CardTitle>
+                    <CardDescription>Create, update, and delete custom magnet products.</CardDescription>
+                </div>
+                <Button onClick={handleCreateClick}>Add New Product</Button>
+            </CardHeader>
+            <CardContent>
+                {loading && !isFormDialogOpen && !isDeleteDialogOpen ? (
+                    <div className="flex justify-center items-center h-48">
+                        <Loader2 className="h-6 w-6 animate-spin" />
+                        <p className="ml-2">Loading products...</p>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
+                ) : (
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Image</TableHead>
+                                <TableHead>Name</TableHead>
+                                <TableHead>Description</TableHead>
+                                <TableHead>Price (KSh)</TableHead>
+                                <TableHead>Stock</TableHead>
+                                <TableHead>Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {allProducts.map((product) => (
+                                <TableRow key={product.id}>
+                                    <TableCell>
+                                        <img src={product.imageUrl} alt={product.name} className="w-16 h-16 object-cover rounded-md" />
+                                    </TableCell>
+                                    <TableCell className="font-medium">{product.name}</TableCell>
+                                    <TableCell className="text-sm text-muted-foreground max-w-[200px] truncate">{product.description}</TableCell>
+                                    <TableCell>{product.price.toLocaleString()}</TableCell>
+                                    <TableCell>{product.stock}</TableCell>
+                                    <TableCell>
+                                        <div className="flex gap-2">
+                                            <Button variant="outline" size="sm" onClick={() => handleEditClick(product)}>Edit</Button>
+                                            <Button variant="destructive" size="sm" onClick={() => handleDeleteClick(product)}>Delete</Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                )}
+            </CardContent>
 
-      {/* Create/Edit Product Dialog */}
-      <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{currentProduct ? 'Edit Product' : 'Create New Product'}</DialogTitle>
-            <DialogDescription>
-              {currentProduct ? 'Update details for this product.' : 'Add a new product to your inventory.'}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input id="name" value={formState.name} onChange={handleChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Textarea id="description" value={formState.description} onChange={handleChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="price" className="text-right">
-                Price (KSh)
-              </Label>
-              <Input id="price" type="number" value={formState.price} onChange={handleChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="stock" className="text-right">
-                Stock
-              </Label>
-              <Input id="stock" type="number" value={formState.stock} onChange={handleChange} className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="imageUrl" className="text-right">
-                Image URL
-              </Label>
-              <Input id="imageUrl" value={formState.imageUrl} onChange={handleChange} className="col-span-3" placeholder="e.g., /images/product.jpg" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleSubmit} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (currentProduct ? 'Save Changes' : 'Create Product')}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            {/* Create/Edit Product Dialog */}
+            <Dialog open={isFormDialogOpen} onOpenChange={setIsFormDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{currentProduct ? 'Edit Product' : 'Create New Product'}</DialogTitle>
+                        <DialogDescription>
+                            {currentProduct ? 'Update details for this product.' : 'Add a new custom magnet product.'}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="name" className="text-right">Name</Label>
+                            <Input id="name" value={formState.name} onChange={handleChange} className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="description" className="text-right">Description</Label>
+                            <Textarea id="description" value={formState.description} onChange={handleChange} className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="price" className="text-right">Price</Label>
+                            <Input id="price" type="number" value={formState.price} onChange={handleChange} className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="stock" className="text-right">Stock</Label>
+                            <Input id="stock" type="number" value={formState.stock} onChange={handleChange} className="col-span-3" />
+                        </div>
+                        <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="imageUrl" className="text-right">Image URL</Label>
+                            <Input id="imageUrl" value={formState.imageUrl} onChange={handleChange} className="col-span-3" />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsFormDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleSubmit} disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (currentProduct ? 'Save Changes' : 'Create Product')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to delete the product "<strong>{currentProduct?.name}</strong>"? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={confirmDelete} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Delete'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </Card>
-  );
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirm Delete</DialogTitle>
+                        <DialogDescription>
+                            Are you sure you want to delete the product "<strong>{currentProduct?.name}</strong>"? This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Cancel</Button>
+                        <Button variant="destructive" onClick={confirmDelete} disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Delete'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </Card>
+    );
 };
 
 export default AdminProduct;
