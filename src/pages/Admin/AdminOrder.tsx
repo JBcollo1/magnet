@@ -257,6 +257,7 @@
 // };
 
 // export default AdminOrder;
+// /
 // frontend/magnet/src/pages/Admin/AdminOrder.tsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
@@ -269,19 +270,20 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/use-toast'; // Assuming you have a toast component setup
-import { 
-    Loader2, 
-    ChevronLeft, 
-    ChevronRight, 
-    Search, 
-    Edit3, 
-    Trash2, 
+import {
+    Loader2,
+    ChevronLeft,
+    ChevronRight,
+    Search,
+    Edit3,
+    Trash2,
     Filter,
+    MoreHorizontal,
     Package,
     Users,
     DollarSign,
     Calendar,
+    Eye,
     Download
 } from 'lucide-react';
 
@@ -300,7 +302,7 @@ interface Order {
 interface AdminOrderProps {
     allOrders: Order[];
     fetchAdminData: (page?: number) => void;
-    // getStatusColor: (status: string) => string; // Removed, as getStatusBadgeStyle handles this internally
+    getStatusColor: (status: string) => string;
     totalOrders: number;
     totalPages: number;
     currentPage: number;
@@ -310,7 +312,7 @@ interface AdminOrderProps {
 const AdminOrder: React.FC<AdminOrderProps> = ({
     allOrders,
     fetchAdminData,
-    // getStatusColor, // Removed from destructuring
+    getStatusColor,
     totalOrders,
     totalPages,
     currentPage,
@@ -325,11 +327,9 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
     const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
     const [statusFilter, setStatusFilter] = useState('all');
 
-    const { toast } = useToast(); // Initialize toast
-
     useEffect(() => {
         let filtered = allOrders;
-        
+
         // Apply search filter
         if (searchQuery) {
             filtered = filtered.filter(order =>
@@ -338,12 +338,12 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                 order.items.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
-        
+
         // Apply status filter
         if (statusFilter !== 'all') {
-            filtered = filtered.filter(order => order.status.toLowerCase() === statusFilter.toLowerCase());
+            filtered = filtered.filter(order => order.status === statusFilter);
         }
-        
+
         setFilteredOrders(filtered);
     }, [searchQuery, statusFilter, allOrders]);
 
@@ -366,18 +366,8 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
             );
             fetchAdminData(currentPage);
             setIsEditDialogOpen(false);
-            toast({
-                title: "Order Updated",
-                description: `Order #${selectedOrder.order_number} status updated to ${newStatus}.`,
-                variant: "default",
-            });
         } catch (error) {
             console.error('Failed to update order:', error);
-            toast({
-                title: "Update Failed",
-                description: "There was an error updating the order status.",
-                variant: "destructive",
-            });
         } finally {
             setLoading(false);
         }
@@ -389,18 +379,8 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
             try {
                 await axios.delete(`${import.meta.env.VITE_API_URL}/orders/${orderId}`, { withCredentials: true });
                 fetchAdminData(currentPage);
-                toast({
-                    title: "Order Deleted",
-                    description: `Order ${orderId} has been successfully deleted.`,
-                    variant: "default",
-                });
             } catch (error) {
                 console.error('Failed to delete order:', error);
-                toast({
-                    title: "Deletion Failed",
-                    description: "There was an error deleting the order.",
-                    variant: "destructive",
-                });
             } finally {
                 setLoading(false);
             }
@@ -431,24 +411,6 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
         }
     };
 
-    // New function to get subtle background for table rows
-    const getTableRowStatusClass = (status: string) => {
-        switch (status.toLowerCase()) {
-            case 'pending':
-                return 'bg-amber-50/30'; 
-            case 'processing':
-                return 'bg-blue-50/30'; 
-            case 'shipped':
-                return 'bg-purple-50/30'; 
-            case 'delivered':
-                return 'bg-green-50/30'; 
-            case 'cancelled':
-                return 'bg-red-50/30'; 
-            default:
-                return ''; 
-        }
-    };
-
     const uniqueStatuses = [...new Set(allOrders.map(order => order.status))];
 
     return (
@@ -456,31 +418,31 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
             {/* Header Section with Stats */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+                    <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
                         Order Management
                     </h1>
                     <p className="text-muted-foreground mt-1">
                         Manage and track all customer orders in one place
                     </p>
                 </div>
-                
+
                 {/* Quick Stats */}
                 <div className="flex gap-4">
-                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-4 rounded-xl border border-blue-200 dark:border-blue-700/50">
                         <div className="flex items-center gap-2">
-                            <Package className="h-5 w-5 text-blue-600" />
+                            <Package className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                             <div>
-                                <p className="text-sm font-medium text-blue-900">Total Orders</p>
-                                <p className="text-2xl font-bold text-blue-700">{totalOrders}</p>
+                                <p className="text-sm font-medium text-blue-900 dark:text-blue-300">Total Orders</p>
+                                <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">{totalOrders}</p>
                             </div>
                         </div>
                     </div>
-                    <div className="bg-gradient-to-br from-green-50 to-green-100 p-4 rounded-xl border border-green-200">
+                    <div className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 p-4 rounded-xl border border-green-200 dark:border-green-700/50">
                         <div className="flex items-center gap-2">
-                            <DollarSign className="h-5 w-5 text-green-600" />
+                            <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
                             <div>
-                                <p className="text-sm font-medium text-green-900">Current Page</p>
-                                <p className="text-2xl font-bold text-green-700">{currentPage}/{totalPages}</p>
+                                <p className="text-sm font-medium text-green-900 dark:text-green-300">Current Page</p>
+                                <p className="text-2xl font-bold text-green-700 dark:text-green-400">{currentPage}/{totalPages}</p>
                             </div>
                         </div>
                     </div>
@@ -488,8 +450,8 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
             </div>
 
             {/* Main Content Card */}
-            <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50">
-                <CardHeader className="bg-gradient-to-r from-gray-50 to-white border-b">
+            <Card className="border-0 shadow-xl bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 dark:border dark:border-gray-700">
+                <CardHeader className="bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 border-b dark:border-gray-600">
                     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <div>
                             <CardTitle className="flex items-center gap-2 text-xl">
@@ -500,13 +462,13 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                 View, update, and manage the status of all customer orders
                             </CardDescription>
                         </div>
-                        <Button variant="outline" className="shrink-0 bg-white hover:bg-gray-50">
+                        <Button variant="outline" className="shrink-0 bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600">
                             <Download className="h-4 w-4 mr-2" />
                             Export
                         </Button>
                     </div>
                 </CardHeader>
-                
+
                 <CardContent className="p-6">
                     {/* Enhanced Search and Filter Section */}
                     <div className="flex flex-col sm:flex-row gap-4 mb-6">
@@ -517,13 +479,13 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                 placeholder="Search by customer name, order ID, or items..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 bg-white border-gray-200 focus:border-primary focus:ring-primary/20"
+                                className="pl-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 focus:border-primary focus:ring-primary/20"
                             />
                         </div>
                         <div className="flex items-center gap-2">
                             <Filter className="h-4 w-4 text-muted-foreground" />
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-[180px] bg-white">
+                                <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800 dark:border-gray-600">
                                     <SelectValue placeholder="Filter by status" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -540,7 +502,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
 
                     {/* Loading State */}
                     {loading && (
-                        <div className="flex justify-center items-center h-64 bg-gradient-to-br from-gray-50 to-white rounded-lg">
+                        <div className="flex justify-center items-center h-64 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 rounded-lg">
                             <div className="text-center">
                                 <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-3" />
                                 <p className="text-muted-foreground font-medium">Processing your request...</p>
@@ -550,49 +512,48 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
 
                     {/* Empty States */}
                     {!loading && filteredOrders.length === 0 && searchQuery !== '' && (
-                        <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-white rounded-lg">
+                        <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 rounded-lg">
                             <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">No matching orders found</h3>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No matching orders found</h3>
                             <p className="text-muted-foreground">Try adjusting your search terms or filters</p>
                         </div>
                     )}
 
                     {!loading && filteredOrders.length === 0 && searchQuery === '' && (
-                        <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-white rounded-lg">
+                        <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 rounded-lg">
                             <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders to display</h3>
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No orders to display</h3>
                             <p className="text-muted-foreground">Orders will appear here once customers start placing them</p>
                         </div>
                     )}
 
                     {/* Enhanced Table */}
                     {!loading && filteredOrders.length > 0 && (
-                        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                        <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm">
                             <Table>
                                 <TableHeader>
-                                    <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-150">
-                                        <TableHead className="font-semibold text-gray-900">Order ID</TableHead>
-                                        <TableHead className="font-semibold text-gray-900">Customer</TableHead>
-                                        <TableHead className="font-semibold text-gray-900">Items</TableHead>
-                                        <TableHead className="font-semibold text-gray-900">Total</TableHead>
-                                        <TableHead className="font-semibold text-gray-900">Status</TableHead>
-                                        <TableHead className="font-semibold text-gray-900">Payment</TableHead>
-                                        <TableHead className="font-semibold text-gray-900">Date</TableHead>
-                                        <TableHead className="font-semibold text-gray-900 text-center">Actions</TableHead>
+                                    <TableRow className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 hover:from-gray-100 hover:to-gray-150 dark:hover:from-gray-600 dark:hover:to-gray-550">
+                                        <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Order ID</TableHead>
+                                        <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Customer</TableHead>
+                                        <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Items</TableHead>
+                                        <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Total</TableHead>
+                                        <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Status</TableHead>
+                                        <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Payment</TableHead>
+                                        <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Date</TableHead>
+                                        <TableHead className="font-semibold text-gray-900 dark:text-gray-100 text-center">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {filteredOrders.map((order, index) => (
-                                        <TableRow 
-                                            key={order.id} 
+                                        <TableRow
+                                            key={order.id}
                                             className={`
-                                                transition-all duration-200 border-b border-gray-100
-                                                ${getTableRowStatusClass(order.status)}
-                                                ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}
-                                                hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 
+                                                hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20
+                                                transition-all duration-200 border-b border-gray-100 dark:border-gray-700
+                                                ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/30 dark:bg-gray-750/30'}
                                             `}
                                         >
-                                            <TableCell className="font-mono font-medium text-blue-700">
+                                            <TableCell className="font-mono font-medium text-blue-700 dark:text-blue-400">
                                                 #{order.order_number}
                                             </TableCell>
                                             <TableCell className="font-medium">
@@ -604,7 +565,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                             <TableCell className="max-w-[200px] truncate" title={order.items}>
                                                 {order.items}
                                             </TableCell>
-                                            <TableCell className="font-semibold text-green-700">
+                                            <TableCell className="font-semibold text-green-700 dark:text-green-400">
                                                 KSh {order.total.toLocaleString()}
                                             </TableCell>
                                             <TableCell>
@@ -618,30 +579,24 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                             <TableCell className="text-muted-foreground">
                                                 <div className="flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" />
-                                                    {new Date(order.date).toLocaleDateString('en-US', { // Example date formatting
-                                                        year: 'numeric',
-                                                        month: 'short',
-                                                        day: 'numeric',
-                                                    })}
+                                                    {order.date}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
                                                 <div className="flex justify-center gap-1">
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="sm" 
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
                                                         onClick={() => handleEditClick(order)}
-                                                        className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-700 transition-colors"
-                                                        aria-label={`Edit order ${order.order_number}`} // A11y improvement
+                                                        className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
                                                     >
                                                         <Edit3 className="h-4 w-4" />
                                                     </Button>
-                                                    <Button 
-                                                        variant="ghost" 
-                                                        size="sm" 
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
                                                         onClick={() => handleDeleteOrder(order.id)}
-                                                        className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-700 transition-colors"
-                                                        aria-label={`Delete order ${order.order_number}`} // A11y improvement
+                                                        className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-400 transition-colors"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
@@ -656,7 +611,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
 
                     {/* Enhanced Pagination */}
                     {!loading && totalPages > 1 && (
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6 p-4 bg-gradient-to-r from-gray-50 to-white rounded-lg border">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mt-6 p-4 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800 dark:to-gray-700 rounded-lg border dark:border-gray-600">
                             <div className="text-sm text-muted-foreground">
                                 Showing page {currentPage} of {totalPages} ({totalOrders} total orders)
                             </div>
@@ -666,7 +621,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                     size="sm"
                                     onClick={() => handlePageChange(currentPage - 1)}
                                     disabled={currentPage === 1}
-                                    className="bg-white hover:bg-gray-50"
+                                    className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
                                 >
                                     <ChevronLeft className="h-4 w-4 mr-1" />
                                     Previous
@@ -681,9 +636,9 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                                 size="sm"
                                                 onClick={() => handlePageChange(pageNum)}
                                                 className={`w-8 h-8 p-0 ${
-                                                    pageNum === currentPage 
-                                                        ? 'bg-primary text-primary-foreground' 
-                                                        : 'bg-white hover:bg-gray-50'
+                                                    pageNum === currentPage
+                                                        ? 'bg-primary text-primary-foreground'
+                                                        : 'bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600'
                                                 }`}
                                             >
                                                 {pageNum}
@@ -696,7 +651,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                     size="sm"
                                     onClick={() => handlePageChange(currentPage + 1)}
                                     disabled={currentPage === totalPages}
-                                    className="bg-white hover:bg-gray-50"
+                                    className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700 dark:border-gray-600"
                                 >
                                     Next
                                     <ChevronRight className="h-4 w-4 ml-1" />
@@ -709,8 +664,8 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
 
             {/* Enhanced Edit Dialog */}
             <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
-                    <DialogHeader className="pb-4 border-b">
+                <DialogContent className="sm:max-w-[500px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <DialogHeader className="pb-4 border-b dark:border-gray-600">
                         <DialogTitle className="flex items-center gap-2 text-xl">
                             <Edit3 className="h-5 w-5 text-primary" />
                             Edit Order: #{selectedOrder?.order_number}
@@ -722,15 +677,15 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                     {selectedOrder && (
                         <div className="space-y-6 py-4">
                             {/* Order Info Summary */}
-                            <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 rounded-lg">
+                            <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 p-4 rounded-lg">
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
-                                        <span className="font-medium text-gray-600">Customer:</span>
-                                        <p className="font-semibold">{selectedOrder.customer_name}</p>
+                                        <span className="font-medium text-gray-600 dark:text-gray-300">Customer:</span>
+                                        <p className="font-semibold dark:text-white">{selectedOrder.customer_name}</p>
                                     </div>
                                     <div>
-                                        <span className="font-medium text-gray-600">Total:</span>
-                                        <p className="font-semibold text-green-700">KSh {selectedOrder.total.toLocaleString()}</p>
+                                        <span className="font-medium text-gray-600 dark:text-gray-300">Total:</span>
+                                        <p className="font-semibold text-green-700 dark:text-green-400">KSh {selectedOrder.total.toLocaleString()}</p>
                                     </div>
                                 </div>
                             </div>
@@ -741,7 +696,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                     Order Status
                                 </Label>
                                 <Select onValueChange={setNewStatus} value={newStatus}>
-                                    <SelectTrigger className="bg-white">
+                                    <SelectTrigger className="bg-white dark:bg-gray-800">
                                         <SelectValue placeholder="Select a status" />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -764,21 +719,21 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                     value={orderNotes}
                                     onChange={(e) => setOrderNotes(e.target.value)}
                                     placeholder="Add internal notes about this order..."
-                                    className="min-h-[100px] bg-white"
+                                    className="min-h-[100px] bg-white dark:bg-gray-800"
                                 />
                             </div>
                         </div>
                     )}
-                    <DialogFooter className="pt-4 border-t">
-                        <Button 
-                            variant="outline" 
+                    <DialogFooter className="pt-4 border-t dark:border-gray-600">
+                        <Button
+                            variant="outline"
                             onClick={() => setIsEditDialogOpen(false)}
-                            className="bg-white hover:bg-gray-50"
+                            className="bg-white hover:bg-gray-50 dark:bg-gray-800 dark:hover:bg-gray-700"
                         >
                             Cancel
                         </Button>
-                        <Button 
-                            onClick={handleUpdateOrder} 
+                        <Button
+                            onClick={handleUpdateOrder}
                             disabled={loading}
                             className="bg-primary hover:bg-primary/90"
                         >
