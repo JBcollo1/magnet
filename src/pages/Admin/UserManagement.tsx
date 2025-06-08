@@ -15,20 +15,20 @@ interface UserData {
   orders?: number;
   totalSpent?: number;
 }
+
 interface UserManagementProps {
-  allUsers: UserData[]; // Add the allUsers prop
+  allUsers: UserData[];
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
   const [users, setUsers] = useState<UserData[]>(allUsers);
-  const [loading, setLoading] = useState(false); // Set to false initially since data is passed as prop
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState('');
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
 
-  // Fetch users from API
   const fetchUsers = async () => {
     setLoading(true);
     setError(null);
@@ -56,7 +56,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
     }
   };
 
-  // Fetch specific user details
   const fetchUserDetails = async (userId: string) => {
     try {
       const response = await axios.get(
@@ -74,12 +73,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
     }
   };
 
-  // Initial load
   useEffect(() => {
     setUsers(allUsers);
   }, [allUsers]);
 
-  // Re-fetch when filters change
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
       fetchUsers();
@@ -148,7 +145,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
           <CardDescription>Manage all registered users ({users.length} total)</CardDescription>
         </CardHeader>
         <CardContent>
-          {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4 mb-6">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -168,7 +164,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
               <option value="">All Roles</option>
               <option value="ADMIN">Admin</option>
               <option value="CUSTOMER">Customer</option>
-             
             </select>
             <select
               value={activeFilter}
@@ -181,7 +176,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
             </select>
           </div>
 
-          {/* Error Message */}
           {error && (
             <div className="flex items-center p-4 mb-4 text-red-700 bg-red-100 rounded-lg">
               <AlertCircle className="w-5 h-5 mr-2" />
@@ -189,7 +183,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
             </div>
           )}
 
-          {/* Users Table */}
           <div className="overflow-x-auto border rounded-lg">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -247,7 +240,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ allUsers }) => {
         </CardContent>
       </Card>
 
-      {/* User Details Modal/Card */}
       {selectedUser && (
         <Card>
           <CardHeader>
