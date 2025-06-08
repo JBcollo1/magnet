@@ -269,6 +269,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast'; // Assuming you have a toast component setup
 import { 
     Loader2, 
     ChevronLeft, 
@@ -277,12 +278,10 @@ import {
     Edit3, 
     Trash2, 
     Filter,
-    MoreHorizontal,
     Package,
     Users,
     DollarSign,
     Calendar,
-    Eye,
     Download
 } from 'lucide-react';
 
@@ -301,7 +300,7 @@ interface Order {
 interface AdminOrderProps {
     allOrders: Order[];
     fetchAdminData: (page?: number) => void;
-    getStatusColor: (status: string) => string;
+    // getStatusColor: (status: string) => string; // Removed, as getStatusBadgeStyle handles this internally
     totalOrders: number;
     totalPages: number;
     currentPage: number;
@@ -311,7 +310,7 @@ interface AdminOrderProps {
 const AdminOrder: React.FC<AdminOrderProps> = ({
     allOrders,
     fetchAdminData,
-    getStatusColor,
+    // getStatusColor, // Removed from destructuring
     totalOrders,
     totalPages,
     currentPage,
@@ -325,6 +324,8 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
     const [searchQuery, setSearchQuery] = useState('');
     const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
     const [statusFilter, setStatusFilter] = useState('all');
+
+    const { toast } = useToast(); // Initialize toast
 
     useEffect(() => {
         let filtered = allOrders;
@@ -340,7 +341,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
         
         // Apply status filter
         if (statusFilter !== 'all') {
-            filtered = filtered.filter(order => order.status === statusFilter);
+            filtered = filtered.filter(order => order.status.toLowerCase() === statusFilter.toLowerCase());
         }
         
         setFilteredOrders(filtered);
@@ -365,8 +366,18 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
             );
             fetchAdminData(currentPage);
             setIsEditDialogOpen(false);
+            toast({
+                title: "Order Updated",
+                description: `Order #${selectedOrder.order_number} status updated to ${newStatus}.`,
+                variant: "default",
+            });
         } catch (error) {
             console.error('Failed to update order:', error);
+            toast({
+                title: "Update Failed",
+                description: "There was an error updating the order status.",
+                variant: "destructive",
+            });
         } finally {
             setLoading(false);
         }
@@ -378,8 +389,18 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
             try {
                 await axios.delete(`${import.meta.env.VITE_API_URL}/orders/${orderId}`, { withCredentials: true });
                 fetchAdminData(currentPage);
+                toast({
+                    title: "Order Deleted",
+                    description: `Order ${orderId} has been successfully deleted.`,
+                    variant: "default",
+                });
             } catch (error) {
                 console.error('Failed to delete order:', error);
+                toast({
+                    title: "Deletion Failed",
+                    description: "There was an error deleting the order.",
+                    variant: "destructive",
+                });
             } finally {
                 setLoading(false);
             }
@@ -407,6 +428,24 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                 return `${baseClasses} bg-red-100 text-red-800 border-red-200 hover:bg-red-200`;
             default:
                 return `${baseClasses} bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200`;
+        }
+    };
+
+    // New function to get subtle background for table rows
+    const getTableRowStatusClass = (status: string) => {
+        switch (status.toLowerCase()) {
+            case 'pending':
+                return 'bg-amber-50/30'; 
+            case 'processing':
+                return 'bg-blue-50/30'; 
+            case 'shipped':
+                return 'bg-purple-50/30'; 
+            case 'delivered':
+                return 'bg-green-50/30'; 
+            case 'cancelled':
+                return 'bg-red-50/30'; 
+            default:
+                return ''; 
         }
     };
 
@@ -547,9 +586,10 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                         <TableRow 
                                             key={order.id} 
                                             className={`
-                                                hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 
                                                 transition-all duration-200 border-b border-gray-100
+                                                ${getTableRowStatusClass(order.status)}
                                                 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'}
+                                                hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 
                                             `}
                                         >
                                             <TableCell className="font-mono font-medium text-blue-700">
@@ -578,7 +618,11 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                             <TableCell className="text-muted-foreground">
                                                 <div className="flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" />
-                                                    {order.date}
+                                                    {new Date(order.date).toLocaleDateString('en-US', { // Example date formatting
+                                                        year: 'numeric',
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                    })}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -588,6 +632,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                                         size="sm" 
                                                         onClick={() => handleEditClick(order)}
                                                         className="h-8 w-8 p-0 hover:bg-blue-100 hover:text-blue-700 transition-colors"
+                                                        aria-label={`Edit order ${order.order_number}`} // A11y improvement
                                                     >
                                                         <Edit3 className="h-4 w-4" />
                                                     </Button>
@@ -596,6 +641,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                                         size="sm" 
                                                         onClick={() => handleDeleteOrder(order.id)}
                                                         className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-700 transition-colors"
+                                                        aria-label={`Delete order ${order.order_number}`} // A11y improvement
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>

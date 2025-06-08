@@ -363,7 +363,7 @@ const AdminDashboard: React.FC = () => {
                         <AdminOrder
                             allOrders={allOrders}
                             fetchAdminData={fetchAdminData} // This function now accepts a page number
-                            getStatusColor={getStatusColor}
+                            // getStatusColor={getStatusColor}
                             totalOrders={ordersPagination.total} // NEW
                             totalPages={ordersPagination.pages} // NEW
                             currentPage={ordersPagination.current_page} // NEW
