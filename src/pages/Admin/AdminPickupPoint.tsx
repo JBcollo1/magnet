@@ -14,25 +14,25 @@ import {
   X,
   Check
 } from 'lucide-react';
-import axios from 'axios'; // Make sure you have axios installed: npm install axios or yarn add axios
+import axios from 'axios';
 
-// Extend the interface to precisely match your backend PickupPoint model's as_dict() output
+// Define the interface for PickupPoint
 interface PickupPoint {
   id: string;
   name: string;
-  location_details: string; // Maps to 'address' in your original frontend mock
+  location_details: string;
   city: string;
-  is_active: boolean; // From backend, might not be edited by admin in this UI
-  created_at: string; // ISO format string from backend
-  updated: string;   // ISO format string from backend
+  is_active: boolean;
+  created_at: string;
+  updated: string;
   cost: number;
-  phone_number: string; // Maps to 'contactPhone' in your original frontend mock
+  phone_number: string;
   is_doorstep: boolean;
   delivery_method: string;
-  contact_person: string | null; // Added based on your latest backend model, nullable
+  contact_person: string | null;
 }
 
-// Type for the form state, excluding 'id', and with 'contact_person' as string (as input will be string)
+// Define the type for the form state
 type FormPickupPoint = Omit<PickupPoint, 'id' | 'created_at' | 'updated' | 'is_active'>;
 
 const AdminPickupPoint: React.FC = () => {
@@ -54,23 +54,51 @@ const AdminPickupPoint: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // Mock data for demonstration
+  const mockPickupPoints: PickupPoint[] = [
+    {
+      id: '1',
+      name: 'Downtown Hub',
+      location_details: '123 Main Street, Building A',
+      city: 'Nairobi',
+      is_active: true,
+      created_at: '2023-10-01T00:00:00',
+      updated: '2023-10-01T00:00:00',
+      cost: 150,
+      phone_number: '+254 700 123456',
+      is_doorstep: false,
+      delivery_method: 'Mtaani Agent',
+      contact_person: 'John Doe'
+    },
+    {
+      id: '2',
+      name: 'Westlands Center',
+      location_details: '456 High Street, Suite 10',
+      city: 'Nairobi',
+      is_active: true,
+      created_at: '2023-10-02T00:00:00',
+      updated: '2023-10-02T00:00:00',
+      cost: 200,
+      phone_number: '+254 700 654321',
+      is_doorstep: true,
+      delivery_method: 'Courier',
+      contact_person: 'Jane Smith'
+    }
+  ];
+
   // Base URL for your backend API
-  // Ensure VITE_API_URL is set in your .env.development or .env file (e.g., VITE_API_URL=http://127.0.0.1:5000)
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
 
-  // Function to get the JWT token (adjust this based on your actual authentication flow)
+  // Function to get the JWT token
   const getAuthToken = () => {
-    // Example: Retrieve from localStorage. In a real app, you might use context, Redux, or a secure cookie.
     return localStorage.getItem('access_token');
   };
 
   const axiosInstance = axios.create({
     baseURL: API_BASE_URL,
-    withCredentials: true, // Important for sending cookies/sessions if your backend requires them
+    withCredentials: true,
     headers: {
       'Content-Type': 'application/json',
-      // Dynamically add Authorization header. Axios interceptors are often better for this.
-      // For simplicity here, we add it directly, but consider an interceptor for larger apps.
     },
   });
 
@@ -88,28 +116,31 @@ const AdminPickupPoint: React.FC = () => {
     }
   );
 
-
   // Function to fetch all pickup points for the admin
   const fetchAdminPickupPoints = useCallback(async () => {
     setLoading(true);
-    setError(null); // Clear previous errors
+    setError(null);
     try {
-      // Endpoint for admin to get all pickup points
       const response = await axiosInstance.get<{ pickup_points: PickupPoint[] }>('/admin/pickup-points');
-      setAllPickupPoints(response.data.pickup_points);
+      if (response.data.pickup_points && response.data.pickup_points.length > 0) {
+        setAllPickupPoints(response.data.pickup_points);
+      } else {
+        setAllPickupPoints(mockPickupPoints);
+        console.warn("Backend returned no pickup points, using mock data.");
+      }
     } catch (err: any) {
       console.error('Failed to fetch admin pickup points:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Failed to load pickup points. Please try again.');
-      setAllPickupPoints([]); // Clear existing data on error
+      setError(err.response?.data?.message || 'Failed to load pickup points. Using mock data.');
+      setAllPickupPoints(mockPickupPoints);
     } finally {
       setLoading(false);
     }
-  }, [axiosInstance]); // Depend on axiosInstance if it could change (though usually it's static)
+  }, []);
 
   // Fetch data on component mount
   useEffect(() => {
     fetchAdminPickupPoints();
-  }, [fetchAdminPickupPoints]); // Re-run if fetchAdminPickupPoints changes (due to useCallback deps)
+  }, [fetchAdminPickupPoints]);
 
   // Helper function to show messages
   const showMessage = (message: string, isError = false) => {
@@ -123,12 +154,11 @@ const AdminPickupPoint: React.FC = () => {
     setTimeout(() => {
       setSuccessMessage(null);
       setError(null);
-    }, 5000); // Messages disappear after 5 seconds
+    }, 5000);
   };
 
   const handleCreateClick = () => {
     setCurrentPickupPoint(null);
-    // Reset form state for new creation
     setFormState({
       name: '',
       location_details: '',
@@ -144,13 +174,12 @@ const AdminPickupPoint: React.FC = () => {
 
   const handleEditClick = (pickupPoint: PickupPoint) => {
     setCurrentPickupPoint(pickupPoint);
-    // Populate form state with current pickup point's data
     setFormState({
       name: pickupPoint.name,
       location_details: pickupPoint.location_details,
       city: pickupPoint.city,
-      contact_person: pickupPoint.contact_person || '', // Handle potential null/undefined
-      phone_number: pickupPoint.phone_number || '', // Handle potential null/undefined
+      contact_person: pickupPoint.contact_person || '',
+      phone_number: pickupPoint.phone_number || '',
       cost: pickupPoint.cost,
       is_doorstep: pickupPoint.is_doorstep,
       delivery_method: pickupPoint.delivery_method
@@ -169,7 +198,7 @@ const AdminPickupPoint: React.FC = () => {
       if (type === 'checkbox') {
         return { ...prevState, [id]: (e.target as HTMLInputElement).checked };
       } else if (type === 'number') {
-        return { ...prevState, [id]: parseFloat(value) || 0 }; // Ensure cost is a number
+        return { ...prevState, [id]: parseFloat(value) || 0 };
       } else {
         return { ...prevState, [id]: value };
       }
@@ -181,31 +210,27 @@ const AdminPickupPoint: React.FC = () => {
     setError(null);
     setSuccessMessage(null);
 
-    // Prepare data to send to backend, mapping frontend to backend fields
     const payload = {
       name: formState.name,
       location_details: formState.location_details,
       city: formState.city,
       phone_number: formState.phone_number,
-      contact_person: formState.contact_person, // This must be accepted by your backend now
+      contact_person: formState.contact_person,
       cost: formState.cost,
       is_doorstep: formState.is_doorstep,
       delivery_method: formState.delivery_method,
-      // is_active is typically managed on the backend or set explicitly if editable
     };
 
     try {
       if (currentPickupPoint) {
-        // Update existing pickup point (PUT request)
         await axiosInstance.put(`/pickup-points/${currentPickupPoint.id}`, payload);
         showMessage('Pickup point updated successfully!');
       } else {
-        // Create new pickup point (POST request)
         await axiosInstance.post('/pickup-points', payload);
         showMessage('Pickup point created successfully!');
       }
-      fetchAdminPickupPoints(); // Re-fetch data to update the list in the table
-      setIsFormDialogOpen(false); // Close the form dialog
+      fetchAdminPickupPoints();
+      setIsFormDialogOpen(false);
     } catch (err: any) {
       console.error('Failed to save pickup point:', err.response?.data || err.message);
       showMessage(err.response?.data?.message || 'Failed to save pickup point. Please try again.', true);
@@ -221,11 +246,10 @@ const AdminPickupPoint: React.FC = () => {
     setSuccessMessage(null);
 
     try {
-      // Delete pickup point (DELETE request)
       await axiosInstance.delete(`/pickup-points/${currentPickupPoint.id}`);
       showMessage('Pickup point deleted successfully!');
-      fetchAdminPickupPoints(); // Re-fetch data to update the list
-      setIsDeleteDialogOpen(false); // Close the delete confirmation dialog
+      fetchAdminPickupPoints();
+      setIsDeleteDialogOpen(false);
     } catch (err: any) {
       console.error('Failed to delete pickup point:', err.response?.data || err.message);
       showMessage(err.response?.data?.message || 'Failed to delete pickup point. Please try again.', true);
@@ -237,7 +261,7 @@ const AdminPickupPoint: React.FC = () => {
   const totalCities = new Set(allPickupPoints.map(p => p.city)).size;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
@@ -249,7 +273,6 @@ const AdminPickupPoint: React.FC = () => {
         </div>
       </div>
 
-      {/* Success/Error Messages */}
       {error && (
         <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
           <strong className="font-bold">Error!</strong>
@@ -259,6 +282,7 @@ const AdminPickupPoint: React.FC = () => {
           </span>
         </div>
       )}
+
       {successMessage && (
         <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
           <strong className="font-bold">Success!</strong>
@@ -268,7 +292,6 @@ const AdminPickupPoint: React.FC = () => {
           </span>
         </div>
       )}
-
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 p-3 rounded-lg border border-blue-200 dark:border-blue-700/50">
@@ -397,77 +420,77 @@ const AdminPickupPoint: React.FC = () => {
                   </thead>
                   <tbody>
                     {allPickupPoints.length === 0 && !loading ? (
-                        <tr>
-                            <td colSpan={8} className="text-center py-4 text-muted-foreground">
-                                No pickup points available. Create one!
-                            </td>
-                        </tr>
+                      <tr>
+                        <td colSpan={8} className="text-center py-4 text-muted-foreground">
+                          No pickup points available. Create one!
+                        </td>
+                      </tr>
                     ) : (
-                        allPickupPoints.map((point, index) => (
+                      allPickupPoints.map((point, index) => (
                         <tr
-                            key={point.id}
-                            className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 transition-all duration-200 border-b border-gray-100 dark:border-gray-700 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/30 dark:bg-gray-750/30'}`}
+                          key={point.id}
+                          className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 transition-all duration-200 border-b border-gray-100 dark:border-gray-700 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/30 dark:bg-gray-750/30'}`}
                         >
-                            <td className="py-2 px-3">
+                          <td className="py-2 px-3">
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
+                              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center">
                                 <MapPin className="h-4 w-4 text-white" />
-                                </div>
-                                <div>
+                              </div>
+                              <div>
                                 <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{point.name}</p>
                                 <p className="text-xs text-gray-500 dark:text-gray-300">ID: {point.id}</p>
-                                </div>
+                              </div>
                             </div>
-                            </td>
-                            <td className="py-2 px-3">
+                          </td>
+                          <td className="py-2 px-3">
                             <div>
-                                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{point.location_details}</p>
-                                <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{point.city}</p>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{point.location_details}</p>
+                              <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">{point.city}</p>
                             </div>
-                            </td>
-                            <td className="py-2 px-3">
+                          </td>
+                          <td className="py-2 px-3">
                             <div className="flex items-center gap-1">
-                                <div className="w-6 h-6 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
+                              <div className="w-6 h-6 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-full flex items-center justify-center">
                                 <User className="h-3 w-3 text-white" />
-                                </div>
-                                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{point.contact_person || 'N/A'}</span>
+                              </div>
+                              <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{point.contact_person || 'N/A'}</span>
                             </div>
-                            </td>
-                            <td className="py-2 px-3">
+                          </td>
+                          <td className="py-2 px-3">
                             <div className="flex items-center gap-1">
-                                <Phone className="h-3 w-3 text-gray-400 dark:text-gray-300" />
-                                <span className="text-xs font-mono text-gray-700 dark:text-gray-100">{point.phone_number || 'N/A'}</span>
+                              <Phone className="h-3 w-3 text-gray-400 dark:text-gray-300" />
+                              <span className="text-xs font-mono text-gray-700 dark:text-gray-100">{point.phone_number || 'N/A'}</span>
                             </div>
-                            </td>
-                            <td className="py-2 px-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
-                                Ksh {point.cost.toFixed(2)}
-                            </td>
-                            <td className="py-2 px-3 text-sm font-medium text-gray-900 dark:text-gray-100">
-                                {point.delivery_method}
-                            </td>
-                            <td className="py-2 px-3 text-center">
-                                {point.is_doorstep ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />}
-                            </td>
-                            <td className="py-2 px-3">
+                          </td>
+                          <td className="py-2 px-3 text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            Ksh {point.cost.toFixed(2)}
+                          </td>
+                          <td className="py-2 px-3 text-sm font-medium text-gray-900 dark:text-gray-100">
+                            {point.delivery_method}
+                          </td>
+                          <td className="py-2 px-3 text-center">
+                            {point.is_doorstep ? <Check className="h-4 w-4 text-green-500" /> : <X className="h-4 w-4 text-red-500" />}
+                          </td>
+                          <td className="py-2 px-3">
                             <div className="flex justify-center gap-1">
-                                <button
+                              <button
                                 onClick={() => handleEditClick(point)}
                                 className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
                                 title="Edit"
-                                >
+                              >
                                 <Edit3 className="h-3 w-3" />
-                                </button>
-                                <button
+                              </button>
+                              <button
                                 onClick={() => handleDeleteClick(point)}
                                 className="h-6 w-6 p-0 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-400 transition-colors"
                                 title="Delete"
-                                >
+                              >
                                 <Trash2 className="h-3 w-3" />
-                                </button>
+                              </button>
                             </div>
-                            </td>
+                          </td>
                         </tr>
-                        ))
+                      ))
                     )}
                   </tbody>
                 </table>
@@ -550,7 +573,7 @@ const AdminPickupPoint: React.FC = () => {
                   </label>
                   <input
                     id="contact_person"
-                    value={formState.contact_person || ''} // Ensure it's a string for input
+                    value={formState.contact_person || ''}
                     onChange={handleChange}
                     placeholder="John Doe"
                     className="w-full h-8 rounded-lg border-0 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm shadow-lg ring-1 ring-slate-200/50 dark:ring-slate-600/50 focus:ring-2 focus:ring-blue-500/30 text-xs px-2"
@@ -563,7 +586,7 @@ const AdminPickupPoint: React.FC = () => {
                   </label>
                   <input
                     id="phone_number"
-                    value={formState.phone_number || ''} // Ensure it's a string for input
+                    value={formState.phone_number || ''}
                     onChange={handleChange}
                     placeholder="+254 700 123456"
                     className="w-full h-8 rounded-lg border-0 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm shadow-lg ring-1 ring-slate-200/50 dark:ring-slate-600/50 focus:ring-2 focus:ring-blue-500/30 text-xs px-2"
@@ -658,8 +681,8 @@ const AdminPickupPoint: React.FC = () => {
                 Confirm Deletion
               </h2>
               <p className="text-muted-foreground text-xs mt-1">
-                Are you sure you want to delete the pickup point{' '}
-                <span className="font-semibold text-gray-900 dark:text-gray-100">"{currentPickupPoint?.name}"</span>?{' '}
+                Are you sure you want to delete the pickup point{" "}
+                <span className="font-semibold text-gray-900 dark:text-gray-100">"{currentPickupPoint?.name}"</span>?{" "}
                 This action cannot be undone and will permanently remove all associated data.
               </p>
             </div>
