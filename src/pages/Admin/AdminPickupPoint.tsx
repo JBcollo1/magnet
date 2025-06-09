@@ -192,7 +192,7 @@ const AdminPickupPoint: React.FC = () => {
     setIsDeleteDialogOpen(true);
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { id, value, type } = e.target;
     setFormState(prevState => {
       if (type === 'checkbox') {
@@ -615,18 +615,13 @@ const AdminPickupPoint: React.FC = () => {
                     <Truck className="h-3 w-3" />
                     Delivery Method
                   </label>
-                  <select
+                  <input
                     id="delivery_method"
                     value={formState.delivery_method}
                     onChange={handleChange}
+                    placeholder="Enter delivery method"
                     className="w-full h-8 rounded-lg border-0 bg-white/80 dark:bg-gray-700/80 backdrop-blur-sm shadow-lg ring-1 ring-slate-200/50 dark:ring-slate-600/50 focus:ring-2 focus:ring-blue-500/30 text-xs px-2"
-                  >
-                    <option value="">Select Method</option>
-                    <option value="Mtaani Agent">Mtaani Agent</option>
-                    <option value="By Bus">By Bus</option>
-                    <option value="Courier">Courier</option>
-                    <option value="Doorstep">Doorstep</option>
-                  </select>
+                  />
                 </div>
               </div>
 
