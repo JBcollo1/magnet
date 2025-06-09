@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // Still import axios, but we'll conditionally use it or mock its behavior
+import axios from 'axios';
 import {
   Loader2,
   CreditCard,
@@ -75,7 +75,7 @@ const AdminPayment: React.FC = () => {
       orderId: 'ORD-004',
       amount: 500,
       method: 'M-Pesa',
-      status: 'Pending', // Changed to Pending for better verification demo
+      status: 'Pending',
       transactionId: 'MP87654321',
       paymentDate: '2023-09-25',
       customerEmail: 'alice.brown@example.com'
@@ -93,14 +93,16 @@ const AdminPayment: React.FC = () => {
   ];
 
   // Function to determine whether to use mock data or real API
-  const USE_MOCK_DATA = !import.meta.env.VITE_API_URL; // If API URL is not set, use mock data
+  const USE_MOCK_DATA = !import.meta.env.VITE_API_URL;
 
+  // Function to fetch payments
   const fetchPayments = async () => {
     setLoading(true);
     setError(null);
     try {
       if (USE_MOCK_DATA) {
         console.log("Using mock data for payments.");
+        await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API delay
         setPayments(mockPayments);
         setFilteredPayments(mockPayments);
       } else {
@@ -112,7 +114,6 @@ const AdminPayment: React.FC = () => {
           setPayments(response.data.payments);
           setFilteredPayments(response.data.payments);
         } else {
-          // Fallback to mock data if backend returns empty or non-array
           setPayments(mockPayments);
           setFilteredPayments(mockPayments);
           console.warn("Backend returned no payments or invalid data, using mock data.");
@@ -181,7 +182,7 @@ const AdminPayment: React.FC = () => {
 
   const handleVerifyClick = (payment: Payment) => {
     setSelectedPayment(payment);
-    setNewPaymentStatus(payment.status); // Pre-fill with current status
+    setNewPaymentStatus(payment.status);
     setIsVerifyDialogOpen(true);
   };
 
@@ -194,7 +195,6 @@ const AdminPayment: React.FC = () => {
 
     try {
       if (USE_MOCK_DATA) {
-        // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 800));
 
         const updatedPayments = payments.map(p =>
@@ -203,7 +203,6 @@ const AdminPayment: React.FC = () => {
         setPayments(updatedPayments);
         setSuccessMessage(`Payment ${selectedPayment.orderId} status updated to ${newPaymentStatus} (mock data).`);
       } else {
-        // Real API call
         const response = await axios.put(
           `${import.meta.env.VITE_API_URL}/admin/payments/${selectedPayment.id}`,
           { status: newPaymentStatus },
@@ -236,19 +235,17 @@ const AdminPayment: React.FC = () => {
 
     try {
       if (USE_MOCK_DATA) {
-        // Simulate API call delay
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         let newStatus: Payment['status'] = 'Failed';
         let message = `M-Pesa Transaction Status for ${transactionId}: Not found.`;
 
-        // Simulate success for specific transaction IDs or based on current status
         if (transactionId === 'MP12345678' || transactionId === 'MP87654321') {
           newStatus = 'Completed';
           message = `M-Pesa Transaction Status for ${transactionId}: Verified successfully! (mock data)`;
         } else {
-           newStatus = 'Failed';
-           message = `M-Pesa Transaction Status for ${transactionId}: Verification failed. (mock data)`;
+          newStatus = 'Failed';
+          message = `M-Pesa Transaction Status for ${transactionId}: Verification failed. (mock data)`;
         }
 
         const updatedPayments = payments.map(p =>
@@ -256,24 +253,22 @@ const AdminPayment: React.FC = () => {
         );
         setPayments(updatedPayments);
         setSuccessMessage(message);
-
       } else {
-        // Real API call
         const response = await axios.get(
           `${import.meta.env.VITE_API_URL}/admin/payments/mpesa/verify?transactionId=${transactionId}`,
           { withCredentials: true }
         );
 
         const data = response.data as { status: Payment['status'] };
-        if (response.status === 200 && data.status) { // Assuming backend returns a status
-            const receivedStatus = data.status;
-            const updatedPayments = payments.map(p =>
-                p.id === paymentId ? { ...p, status: receivedStatus } : p
-            );
-            setPayments(updatedPayments);
-            setSuccessMessage(`M-Pesa Transaction Status for ${transactionId}: ${receivedStatus} (backend).`);
+        if (response.status === 200 && data.status) {
+          const receivedStatus = data.status;
+          const updatedPayments = payments.map(p =>
+            p.id === paymentId ? { ...p, status: receivedStatus } : p
+          );
+          setPayments(updatedPayments);
+          setSuccessMessage(`M-Pesa Transaction Status for ${transactionId}: ${receivedStatus} (backend).`);
         } else {
-            throw new Error('M-Pesa verification failed or returned unexpected data.');
+          throw new Error('M-Pesa verification failed or returned unexpected data.');
         }
       }
     } catch (error) {
@@ -292,7 +287,7 @@ const AdminPayment: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 p-4">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-2">
         <div>
           <h1 className="text-2xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
@@ -309,7 +304,7 @@ const AdminPayment: React.FC = () => {
           <strong className="font-bold">Error!</strong>
           <span className="block sm:inline"> {error}</span>
           <span className="absolute top-0 bottom-0 right-0 px-3 py-2 cursor-pointer" onClick={() => setError(null)}>
-            <XCircle className="h-4 w-4 fill-current" />
+            <XCircle className="h-4 w-4" />
           </span>
         </div>
       )}
@@ -319,7 +314,7 @@ const AdminPayment: React.FC = () => {
           <strong className="font-bold">Success!</strong>
           <span className="block sm:inline"> {successMessage}</span>
           <span className="absolute top-0 bottom-0 right-0 px-3 py-2 cursor-pointer" onClick={() => setSuccessMessage(null)}>
-            <CheckCircle className="h-4 w-4 fill-current" />
+            <CheckCircle className="h-4 w-4" />
           </span>
         </div>
       )}
@@ -396,13 +391,13 @@ const AdminPayment: React.FC = () => {
                   placeholder="Search payments..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-7 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 focus:border-primary focus:ring-primary/20 w-full sm:w-auto text-xs h-7"
+                  className="pl-7 pr-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-primary focus:ring-1 focus:ring-primary/20 w-full sm:w-auto text-xs h-8"
                 />
               </div>
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 focus:border-primary focus:ring-primary/20 text-xs h-7"
+                className="px-3 py-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded focus:border-primary focus:ring-1 focus:ring-primary/20 text-xs h-8"
               >
                 <option value="all">All Status</option>
                 <option value="completed">Completed</option>
@@ -417,7 +412,7 @@ const AdminPayment: React.FC = () => {
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600 hover:from-gray-100 hover:to-gray-150 dark:hover:from-gray-600 dark:hover:to-gray-550">
+              <tr className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-600">
                 <th className="font-semibold text-gray-900 dark:text-gray-100 py-2 px-3 text-left text-xs">
                   <div className="flex items-center gap-1">
                     <CreditCard className="h-3 w-3" />
@@ -522,7 +517,7 @@ const AdminPayment: React.FC = () => {
                     <div className="flex justify-end gap-1">
                       <button
                         onClick={() => handleVerifyClick(payment)}
-                        className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors rounded-sm"
+                        className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors rounded-sm flex items-center justify-center"
                         title="Edit Payment Status"
                       >
                         <Eye className="h-3 w-3" />
@@ -531,10 +526,10 @@ const AdminPayment: React.FC = () => {
                         <button
                           onClick={() => handleCheckMpesaStatus(payment.id, payment.transactionId!)}
                           disabled={loading}
-                          className="h-6 w-6 p-0 hover:bg-green-100 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 transition-colors rounded-sm"
+                          className="h-6 w-6 p-0 hover:bg-green-100 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 transition-colors rounded-sm flex items-center justify-center"
                           title="Verify M-Pesa Transaction"
                         >
-                          {loading && selectedPayment?.id === payment.id ? ( // Only show spinner for the current action
+                          {loading ? (
                             <Loader2 className="h-3 w-3 animate-spin" />
                           ) : (
                             <RefreshCw className="h-3 w-3" />
