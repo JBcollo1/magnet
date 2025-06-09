@@ -40,7 +40,7 @@ interface Order {
 interface AdminOrderProps {
     allOrders: Order[];
     fetchAdminData: (page?: number) => void;
-    getStatusColor: (status: string) => string;
+    getStatusColor: (status: string) => string; // This prop seems unused, but kept for completeness
     totalOrders: number;
     totalPages: number;
     currentPage: number;
@@ -50,7 +50,7 @@ interface AdminOrderProps {
 const AdminOrder: React.FC<AdminOrderProps> = ({
     allOrders,
     fetchAdminData,
-    getStatusColor,
+    // getStatusColor, // Unused prop
     totalOrders,
     totalPages,
     currentPage,
@@ -83,7 +83,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
         setFilteredOrders(filtered);
     }, [searchQuery, statusFilter, allOrders]);
 
-    const handleEditClick = (order) => {
+    const handleEditClick = (order: Order) => { // Type annotation added here
         setSelectedOrder(order);
         setNewStatus(order.status);
         setOrderNotes(order.notes || '');
@@ -104,12 +104,13 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
             setIsEditDialogOpen(false);
         } catch (error) {
             console.error('Failed to update order:', error);
+            // Optionally, add user-friendly error feedback here
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDeleteOrder = async (orderId) => {
+    const handleDeleteOrder = async (orderId: string) => { // Type annotation added here
         if (window.confirm(`Are you sure you want to delete order ${orderId}? This action cannot be undone.`)) {
             setLoading(true);
             try {
@@ -117,19 +118,20 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                 fetchAdminData(currentPage);
             } catch (error) {
                 console.error('Failed to delete order:', error);
+                // Optionally, add user-friendly error feedback here
             } finally {
                 setLoading(false);
             }
         }
     };
 
-    const handlePageChange = (page) => {
+    const handlePageChange = (page: number) => { // Type annotation added here
         if (page >= 1 && page <= totalPages) {
             onPageChange(page);
         }
     };
 
-    const getStatusBadgeStyle = (status) => {
+    const getStatusBadgeStyle = (status: string) => { // Type annotation added here
         const baseClasses = "font-medium transition-all duration-200 hover:scale-105";
         switch (status.toLowerCase()) {
             case 'pending':

@@ -35,8 +35,12 @@ interface PickupPoint {
 // Define the type for the form state
 type FormPickupPoint = Omit<PickupPoint, 'id' | 'created_at' | 'updated' | 'is_active'>;
 
-const AdminPickupPoint: React.FC = () => {
-  const [allPickupPoints, setAllPickupPoints] = useState<PickupPoint[]>([]);
+interface AdminPickupPointProps {
+  allPickupPoints: PickupPoint[];
+  fetchAdminData: () => Promise<void>;
+}
+
+const AdminPickupPoint: React.FC<AdminPickupPointProps> = ({ allPickupPoints, fetchAdminData }) => {
   const [isFormDialogOpen, setIsFormDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [currentPickupPoint, setCurrentPickupPoint] = useState<PickupPoint | null>(null);
@@ -53,38 +57,6 @@ const AdminPickupPoint: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-
-  // Mock data for demonstration
-  const mockPickupPoints: PickupPoint[] = [
-    {
-      id: '1',
-      name: 'Downtown Hub',
-      location_details: '123 Main Street, Building A',
-      city: 'Nairobi',
-      is_active: true,
-      created_at: '2023-10-01T00:00:00',
-      updated: '2023-10-01T00:00:00',
-      cost: 150,
-      phone_number: '+254 700 123456',
-      is_doorstep: false,
-      delivery_method: 'Mtaani Agent',
-      contact_person: 'John Doe'
-    },
-    {
-      id: '2',
-      name: 'Westlands Center',
-      location_details: '456 High Street, Suite 10',
-      city: 'Nairobi',
-      is_active: true,
-      created_at: '2023-10-02T00:00:00',
-      updated: '2023-10-02T00:00:00',
-      cost: 200,
-      phone_number: '+254 700 654321',
-      is_doorstep: true,
-      delivery_method: 'Courier',
-      contact_person: 'Jane Smith'
-    }
-  ];
 
   // Base URL for your backend API
   const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
@@ -115,32 +87,6 @@ const AdminPickupPoint: React.FC = () => {
       return Promise.reject(error);
     }
   );
-
-  // Function to fetch all pickup points for the admin
-  const fetchAdminPickupPoints = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await axiosInstance.get<{ pickup_points: PickupPoint[] }>('/admin/pickup-points');
-      if (response.data.pickup_points && response.data.pickup_points.length > 0) {
-        setAllPickupPoints(response.data.pickup_points);
-      } else {
-        setAllPickupPoints(mockPickupPoints);
-        console.warn("Backend returned no pickup points, using mock data.");
-      }
-    } catch (err: any) {
-      console.error('Failed to fetch admin pickup points:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Failed to load pickup points. Using mock data.');
-      setAllPickupPoints(mockPickupPoints);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  // Fetch data on component mount
-  useEffect(() => {
-    fetchAdminPickupPoints();
-  }, [fetchAdminPickupPoints]);
 
   // Helper function to show messages
   const showMessage = (message: string, isError = false) => {
@@ -229,7 +175,7 @@ const AdminPickupPoint: React.FC = () => {
         await axiosInstance.post('/pickup-points', payload);
         showMessage('Pickup point created successfully!');
       }
-      fetchAdminPickupPoints();
+      fetchAdminData();
       setIsFormDialogOpen(false);
     } catch (err: any) {
       console.error('Failed to save pickup point:', err.response?.data || err.message);
@@ -248,7 +194,7 @@ const AdminPickupPoint: React.FC = () => {
     try {
       await axiosInstance.delete(`/pickup-points/${currentPickupPoint.id}`);
       showMessage('Pickup point deleted successfully!');
-      fetchAdminPickupPoints();
+      fetchAdminData();
       setIsDeleteDialogOpen(false);
     } catch (err: any) {
       console.error('Failed to delete pickup point:', err.response?.data || err.message);

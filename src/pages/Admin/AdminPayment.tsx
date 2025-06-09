@@ -15,6 +15,11 @@ import {
 } from 'lucide-react';
 
 // Define the interfaces
+interface Order {
+  id: string;
+  // Add other properties of Order as needed
+}
+
 interface Payment {
   id: string;
   orderId: string;
@@ -26,7 +31,12 @@ interface Payment {
   customerEmail: string;
 }
 
-const AdminPayment: React.FC = () => {
+interface AdminPaymentProps {
+  allOrders: Order[];
+  fetchAdminData: () => Promise<void>;
+}
+
+const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }) => {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [filteredPayments, setFilteredPayments] = useState<Payment[]>([]);
   const [isVerifyDialogOpen, setIsVerifyDialogOpen] = useState(false);
