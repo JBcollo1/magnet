@@ -1,3 +1,5 @@
+// frontend/magnet/src/App.tsx
+
 import React from "react"; // Ensure React is imported
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -13,7 +15,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Index from "./pages/Index";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./pages/Dashboard"; // This is now your CUSTOMER Dashboard container
 import Cart from "./pages/Cart";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -36,7 +38,7 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, allowedRoles }) =
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p>Loading user session...</p>
+        <p className="text-gray-700 dark:text-gray-300">Loading user session...</p>
       </div>
     );
   }
@@ -45,11 +47,19 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children, allowedRoles }) =
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles && user) {
-    const userRole = (user as any).role;
-    if (!allowedRoles.includes(userRole)) {
-      return <Navigate to="/dashboard" replace />;
+  // Type assertion for user, assuming user object always has a role property
+  const userRole = (user as { role: "ADMIN" | "CUSTOMER" | "STAFF" })?.role;
+
+  if (allowedRoles && userRole && !allowedRoles.includes(userRole)) {
+    // If the user is authenticated but doesn't have the allowed role:
+    // Redirect admins/staff to their specific dashboards if they try to access customer dashboard directly
+    if (userRole === "ADMIN") {
+      return <Navigate to="/admin" replace />;
     }
+    // You can add more specific redirects here, or just a generic one
+    // For now, if a staff tries to access /dashboard, they'll be sent back to /admin (which will redirect to their own dashboard)
+    // or you can direct them to / if there's no staff-specific dashboard
+    return <Navigate to="/" replace />; // Or to a default landing page
   }
 
   return <>{children}</>;
@@ -77,12 +87,14 @@ const App = () => (
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-                {/* Protected User Routes */}
+                {/* Protected Customer Dashboard Route */}
+                {/* Only 'CUSTOMER' role is explicitly allowed to access the /dashboard route.
+                    Admin and Staff will be redirected by the PrivateRoute. */}
                 <Route
                   path="/dashboard"
                   element={
-                    <PrivateRoute allowedRoles={["CUSTOMER", "ADMIN", "STAFF"]}>
-                      <Dashboard />
+                    <PrivateRoute allowedRoles={["CUSTOMER"]}>
+                      <Dashboard /> {/* This is your refactored customer dashboard container */}
                     </PrivateRoute>
                   }
                 />

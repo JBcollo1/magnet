@@ -13,6 +13,7 @@ interface User {
   email: string;
   name: string;
   role: 'ADMIN' | 'CUSTOMER' | 'STAFF';
+  dateJoined?: string; // <--- ADD THIS LINE
 }
 
 interface AuthResponse {
@@ -41,12 +42,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Updated isValidUser to account for the new dateJoined property being optional
   const isValidUser = (data: any): data is User => {
     return data &&
            typeof data.id === 'string' &&
            typeof data.email === 'string' &&
            typeof data.name === 'string' &&
-           (data.role === 'ADMIN' || data.role === 'CUSTOMER' || data.role === 'STAFF');
+           (data.role === 'ADMIN' || data.role === 'CUSTOMER' || data.role === 'STAFF') &&
+           (typeof data.dateJoined === 'string' || data.dateJoined === undefined || data.dateJoined === null); // Check for optional string or null/undefined
   };
 
   const getCurrentUser = async (): Promise<User | null> => {
