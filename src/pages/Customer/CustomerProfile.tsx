@@ -1,5 +1,3 @@
-// frontend/magnet/src/pages/Customer/CustomerProfile.tsx
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
@@ -16,9 +14,10 @@ interface UserDetails {
   email: string;
   phone: string;
   address: string;
-  city: string;
-  postalCode: string;
-  dateJoined?: string;
+  county: string; // Changed from city to county to match backend
+  postalCode: string; // Assuming you'll add this to the backend if it's not there
+  dateJoined?: string; // Maps to backend's 'created_at'
+  lastUpdated?: string; // Maps to backend's 'updated_at'
 }
 
 interface ApiResponse<T> {
@@ -36,9 +35,11 @@ const CustomerProfile = () => {
     email: user?.email || '',
     phone: '',
     address: '',
-    city: '',
+    county: '',
     postalCode: '',
-    dateJoined: user?.dateJoined || 'N/A' // Initialize from auth context
+    // Initialize dateJoined and lastUpdated from auth context if available
+    dateJoined: user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A',
+    lastUpdated: user?.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'N/A'
   });
 
   useEffect(() => {
@@ -48,25 +49,30 @@ const CustomerProfile = () => {
         ...prev,
         name: user.name || '',
         email: user.email || '',
-        dateJoined: user.dateJoined || prev.dateJoined // Keep previous if user.dateJoined is null
+        dateJoined: user.created_at ? new Date(user.created_at).toLocaleDateString() : prev.dateJoined,
+        lastUpdated: user.updated_at ? new Date(user.updated_at).toLocaleDateString() : prev.lastUpdated
       }));
-      fetchUserProfile(); // Fetch the rest of the details (phone, address etc.)
+      // Fetch the rest of the details (phone, address etc.) if not already loaded
+      fetchUserProfile();
     }
   }, [user]); // Re-run if user context changes
 
   const fetchUserProfile = async () => {
-    if (user?.role !== 'ADMIN') {
+    if (user) { // Ensure user exists before trying to fetch profile
       try {
         setLoading(true); // Set loading while fetching profile data
         const response = await axios.get<UserDetails>(
-          `${import.meta.env.VITE_API_URL}auth/profile`,
+          `${import.meta.env.VITE_API_URL}/auth/profile`, // Ensure this endpoint returns all user details
           { withCredentials: true }
         );
 
         if (response.data) {
           setUserDetails(prev => ({
             ...prev,
-            ...response.data // Overwrite with fetched data
+            ...response.data, // Overwrite with fetched data
+            // Format the dates for display
+            dateJoined: response.data.dateJoined ? new Date(response.data.dateJoined).toLocaleDateString() : 'N/A',
+            lastUpdated: response.data.lastUpdated ? new Date(response.data.lastUpdated).toLocaleDateString() : 'N/A'
           }));
         }
       } catch (error) {
@@ -85,13 +91,23 @@ const CustomerProfile = () => {
   const handleSaveDetails = async () => {
     setLoading(true);
     try {
+      // Send only the editable fields for update
+      const updatePayload = {
+        name: userDetails.name,
+        email: userDetails.email,
+        phone: userDetails.phone,
+        address: userDetails.address,
+        county: userDetails.county,
+        postalCode: userDetails.postalCode,
+      };
+
       await axios.put<ApiResponse<UserDetails>>(
         `${import.meta.env.VITE_API_URL}/auth/profile`,
-        userDetails,
+        updatePayload, // Send only the updatable fields
         { withCredentials: true }
       );
 
-      await refreshUser(); // Refresh user context in case name/email changed
+      await refreshUser(); // Refresh user context to get latest updated_at from backend
 
       setIsEditing(false);
       toast({
@@ -190,6 +206,11 @@ const CustomerProfile = () => {
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Member Since</Label>
             <p className="font-medium text-gray-900 dark:text-gray-100">{userDetails.dateJoined}</p>
           </div>
+          {/* New field for Last Updated */}
+          <div>
+            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Last Updated</Label>
+            <p className="font-medium text-gray-900 dark:text-gray-100">{userDetails.lastUpdated}</p>
+          </div>
         </CardContent>
       </Card>
 
@@ -218,16 +239,16 @@ const CustomerProfile = () => {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">City</Label>
+              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">County</Label>
               {isEditing ? (
                 <Input
-                  value={userDetails.city}
-                  onChange={(e) => setUserDetails({ ...userDetails, city: e.target.value })}
-                  placeholder="Nairobi"
+                  value={userDetails.county}
+                  onChange={(e) => setUserDetails({ ...userDetails, county: e.target.value })}
+                  placeholder="Kiambu"
                   className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
                 />
               ) : (
-                <p className="font-medium text-gray-900 dark:text-gray-100">{userDetails.city || 'Not provided'}</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">{userDetails.county || 'Not provided'}</p>
               )}
             </div>
             <div>

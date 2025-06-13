@@ -13,7 +13,8 @@ interface User {
   email: string;
   name: string;
   role: 'ADMIN' | 'CUSTOMER' | 'STAFF';
-  dateJoined?: string; // <--- ADD THIS LINE
+  created_at?: string; // Corresponds to 'dateJoined' on the frontend display
+  updated_at?: string; // New: Corresponds to 'lastUpdated' on the frontend display
 }
 
 interface AuthResponse {
@@ -27,9 +28,9 @@ interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
   signup: (email: string, password: string, name: string) => Promise<boolean>;
-  forgotPassword: (email: string) => Promise<void>; // Changed to void, will throw on error
-  resetPassword: (token: string, password: string) => Promise<void>; // Changed to void, will throw on error
-  validateResetToken: (token: string) => Promise<string>; // New function for token validation
+  forgotPassword: (email: string) => Promise<void>;
+  resetPassword: (token: string, password: string) => Promise<void>;
+  validateResetToken: (token: string) => Promise<string>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
@@ -42,14 +43,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Updated isValidUser to account for the new dateJoined property being optional
+  // Updated isValidUser to account for new optional properties
   const isValidUser = (data: any): data is User => {
     return data &&
-           typeof data.id === 'string' &&
-           typeof data.email === 'string' &&
-           typeof data.name === 'string' &&
-           (data.role === 'ADMIN' || data.role === 'CUSTOMER' || data.role === 'STAFF') &&
-           (typeof data.dateJoined === 'string' || data.dateJoined === undefined || data.dateJoined === null); // Check for optional string or null/undefined
+      typeof data.id === 'string' &&
+      typeof data.email === 'string' &&
+      typeof data.name === 'string' &&
+      (data.role === 'ADMIN' || data.role === 'CUSTOMER' || data.role === 'STAFF') &&
+      (typeof data.created_at === 'string' || data.created_at === undefined || data.created_at === null) && // Check for optional created_at
+      (typeof data.updated_at === 'string' || data.updated_at === undefined || data.updated_at === null); // Check for optional updated_at
   };
 
   const getCurrentUser = async (): Promise<User | null> => {
@@ -65,6 +67,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return userData;
       }
 
+      // If the response is an AuthResponse object containing a user
       if (userData && typeof userData === 'object' && 'user' in userData) {
         const authResponse = userData as AuthResponse;
         if (authResponse.user && isValidUser(authResponse.user)) {
@@ -107,6 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.status === 200) {
         const userData = response.data;
 
+        // Prioritize AuthResponse.user if available
         if (userData && typeof userData === 'object' && 'user' in userData) {
           const authResponse = userData as AuthResponse;
           if (authResponse.user && isValidUser(authResponse.user)) {
@@ -115,11 +119,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
+        // Fallback to directly checking if response.data is a valid User
         if (isValidUser(userData)) {
           setUser(userData);
           return true;
         }
 
+        // Final fallback: fetch user if login was successful but user data was not directly returned
         const userFromApi = await getCurrentUser();
         if (userFromApi) {
           setUser(userFromApi);
@@ -148,6 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.status === 200 || response.status === 201) {
         const userData = response.data;
 
+        // Prioritize AuthResponse.user if available
         if (userData && typeof userData === 'object' && 'user' in userData) {
           const authResponse = userData as AuthResponse;
           if (authResponse.user && isValidUser(authResponse.user)) {
@@ -156,6 +163,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
+        // Fallback to directly checking if response.data is a valid User
         if (isValidUser(userData)) {
           setUser(userData);
           return true;
@@ -199,7 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: errorMessage,
         variant: "destructive",
       });
-      throw new Error(errorMessage); // Re-throw for component to catch
+      throw new Error(errorMessage);
     }
   };
 
@@ -230,11 +238,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: errorMessage,
         variant: "destructive",
       });
-      throw new Error(errorMessage); // Re-throw for component to catch
+      throw new Error(errorMessage);
     }
   };
 
-  // New function to validate the reset token
   const validateResetToken = async (token: string): Promise<string> => {
     try {
       const response = await axios.get<AuthResponse>(
@@ -263,7 +270,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: errorMessage,
         variant: "destructive",
       });
-      throw new Error(errorMessage); // Re-throw for component to catch
+      throw new Error(errorMessage);
     }
   };
 
@@ -287,7 +294,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signup,
     forgotPassword,
     resetPassword,
-    validateResetToken, // Include the new function
+    validateResetToken,
     logout,
     isAuthenticated: !!user,
     loading,
