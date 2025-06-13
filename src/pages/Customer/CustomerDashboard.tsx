@@ -48,9 +48,14 @@ const CustomerDashboard = ({ orders, onRefresh }: CustomerDashboardProps) => {
       case 'cancelled':
         return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
       default:
-        return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700';
+        return 'text-gray-600 bg-gray-100 dark:text-gray-100';
     }
   };
+
+  // Format the member since date
+  const memberSinceDate = user?.created_at
+    ? new Date(user.created_at).toLocaleDateString()
+    : 'N/A';
 
   return (
     <div className="space-y-8">
@@ -109,7 +114,7 @@ const CustomerDashboard = ({ orders, onRefresh }: CustomerDashboardProps) => {
           <CardContent>
             <div className="text-2xl font-bold text-green-600 dark:text-green-400">Active</div>
             <p className="text-xs text-gray-600 dark:text-gray-300">
-              Member since {user?.dateJoined || 'N/A'}
+              Member since {memberSinceDate}
             </p>
           </CardContent>
         </Card>
