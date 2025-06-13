@@ -59,7 +59,7 @@ const CustomerProfile = () => {
       try {
         setLoading(true); // Set loading while fetching profile data
         const response = await axios.get<UserDetails>(
-          `${import.meta.env.VITE_API_URL}/profile/details`,
+          `${import.meta.env.VITE_API_URL}auth/profile`,
           { withCredentials: true }
         );
 
@@ -86,7 +86,7 @@ const CustomerProfile = () => {
     setLoading(true);
     try {
       await axios.put<ApiResponse<UserDetails>>(
-        `${import.meta.env.VITE_API_URL}/profile/details`,
+        `${import.meta.env.VITE_API_URL}/auth/profile`,
         userDetails,
         { withCredentials: true }
       );
