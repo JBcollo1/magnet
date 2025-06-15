@@ -14,10 +14,27 @@ interface UserDetails {
   email: string;
   phone: string;
   address: string;
-  county: string; // Changed from city to county to match backend
-  postalCode: string; // Assuming you'll add this to the backend if it's not there
+  county: string; // Changed from city to county
+  // postalCode: string; // Removed as per your request for pickup points, but keeping for user's own address if needed
   dateJoined?: string; // Maps to backend's 'created_at'
   lastUpdated?: string; // Maps to backend's 'updated_at'
+}
+
+interface PickupPoint {
+  id: number;
+  name: string;
+  address: string;
+  county: string;
+  phone?: string;
+  email?: string;
+  operating_hours?: string;
+  // Add other pickup point properties as needed
+}
+
+interface PickupPointsResponse {
+  pickup_points: PickupPoint[];
+  success?: boolean;
+  message?: string;
 }
 
 interface ApiResponse<T> {
@@ -35,15 +52,16 @@ const CustomerProfile = () => {
     email: user?.email || '',
     phone: '',
     address: '',
-    county: '',
-    postalCode: '',
-    // Initialize dateJoined and lastUpdated from auth context if available
+    county: '', 
     dateJoined: user?.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A',
     lastUpdated: user?.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'N/A'
   });
 
+  // State to hold available pickup points based on the user's selected county
+  const [availablePickupPoints, setAvailablePickupPoints] = useState<PickupPoint[]>([]);
+  const [fetchingPickupPoints, setFetchingPickupPoints] = useState(false);
+
   useEffect(() => {
-    // Sync user details from auth context if they change
     if (user) {
       setUserDetails(prev => ({
         ...prev,
@@ -52,25 +70,32 @@ const CustomerProfile = () => {
         dateJoined: user.created_at ? new Date(user.created_at).toLocaleDateString() : prev.dateJoined,
         lastUpdated: user.updated_at ? new Date(user.updated_at).toLocaleDateString() : prev.lastUpdated
       }));
-      // Fetch the rest of the details (phone, address etc.) if not already loaded
       fetchUserProfile();
     }
-  }, [user]); // Re-run if user context changes
+  }, [user]);
+
+  // New useEffect to fetch pickup points when userDetails.county changes
+  useEffect(() => {
+    if (userDetails.county && userDetails.county !== '') {
+      fetchPickupPoints(userDetails.county);
+    } else {
+      setAvailablePickupPoints([]); // Clear pickup points if no county is set
+    }
+  }, [userDetails.county]); // Dependency on userDetails.county
 
   const fetchUserProfile = async () => {
-    if (user) { // Ensure user exists before trying to fetch profile
+    if (user) {
       try {
-        setLoading(true); // Set loading while fetching profile data
+        setLoading(true);
         const response = await axios.get<UserDetails>(
-          `${import.meta.env.VITE_API_URL}/auth/profile`, // Ensure this endpoint returns all user details
+          `${import.meta.env.VITE_API_URL}/auth/profile`,
           { withCredentials: true }
         );
 
         if (response.data) {
           setUserDetails(prev => ({
             ...prev,
-            ...response.data, // Overwrite with fetched data
-            // Format the dates for display
+            ...response.data,
             dateJoined: response.data.dateJoined ? new Date(response.data.dateJoined).toLocaleDateString() : 'N/A',
             lastUpdated: response.data.lastUpdated ? new Date(response.data.lastUpdated).toLocaleDateString() : 'N/A'
           }));
@@ -88,26 +113,51 @@ const CustomerProfile = () => {
     }
   };
 
+  const fetchPickupPoints = async (county: string) => {
+    setFetchingPickupPoints(true);
+    try {
+      const response = await axios.get<PickupPointsResponse>(
+        `${import.meta.env.VITE_API_URL}/pickup-points/county/${county}`, // Updated endpoint
+        { withCredentials: true }
+      );
+      
+      if (response.data && response.data.pickup_points) {
+        setAvailablePickupPoints(response.data.pickup_points);
+      } else {
+        setAvailablePickupPoints([]);
+      }
+    } catch (error) {
+      console.error(`Failed to fetch pickup points for county ${county}:`, error);
+      toast({
+        title: "Error",
+        description: `Failed to load pickup points for ${county}.`,
+        variant: "destructive",
+      });
+      setAvailablePickupPoints([]);
+    } finally {
+      setFetchingPickupPoints(false);
+    }
+  };
+
   const handleSaveDetails = async () => {
     setLoading(true);
     try {
-      // Send only the editable fields for update
       const updatePayload = {
         name: userDetails.name,
         email: userDetails.email,
         phone: userDetails.phone,
         address: userDetails.address,
         county: userDetails.county,
-        postalCode: userDetails.postalCode,
+        // Removed postalCode from the update payload if it's not relevant to user's address anymore
       };
 
       await axios.put<ApiResponse<UserDetails>>(
         `${import.meta.env.VITE_API_URL}/auth/profile`,
-        updatePayload, // Send only the updatable fields
+        updatePayload,
         { withCredentials: true }
       );
 
-      await refreshUser(); // Refresh user context to get latest updated_at from backend
+      await refreshUser();
 
       setIsEditing(false);
       toast({
@@ -206,7 +256,6 @@ const CustomerProfile = () => {
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Member Since</Label>
             <p className="font-medium text-gray-900 dark:text-gray-100">{userDetails.dateJoined}</p>
           </div>
-          {/* New field for Last Updated */}
           <div>
             <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Last Updated</Label>
             <p className="font-medium text-gray-900 dark:text-gray-100">{userDetails.lastUpdated}</p>
@@ -251,19 +300,48 @@ const CustomerProfile = () => {
                 <p className="font-medium text-gray-900 dark:text-gray-100">{userDetails.county || 'Not provided'}</p>
               )}
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Postal Code</Label>
-              {isEditing ? (
-                <Input
-                  value={userDetails.postalCode}
-                  onChange={(e) => setUserDetails({ ...userDetails, postalCode: e.target.value })}
-                  placeholder="00100"
-                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
-                />
-              ) : (
-                <p className="font-medium text-gray-900 dark:text-gray-100">{userDetails.postalCode || 'Not provided'}</p>
-              )}
-            </div>
+            {/* Removed Postal Code field for the user's address as per the request, 
+                assuming it's no longer needed for identifying pickuppoints.
+                If the user's *own* address still needs a postal code, keep this section.
+                For now, I've removed it for the context of pickup points.
+            */}
+          </div>
+
+          {/* New Section for Pickup Points based on County */}
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 flex items-center">
+              <MapPin className="w-4 h-4 mr-2" /> Available Pickup Points in {userDetails.county || 'your selected county'}
+            </h3>
+            <CardDescription className="text-gray-600 dark:text-gray-300">
+                Select a pickup point for your orders.
+            </CardDescription>
+            {fetchingPickupPoints ? (
+              <div className="flex items-center justify-center py-4">
+                <Loader2 className="h-6 w-6 animate-spin mr-2 text-gray-900 dark:text-gray-100" />
+                <span className="text-gray-700 dark:text-gray-300">Loading pickup points...</span>
+              </div>
+            ) : (
+              <div className="space-y-2 mt-4">
+                {availablePickupPoints.length > 0 ? (
+                  availablePickupPoints.map((point) => (
+                    <div key={point.id} className="p-3 border rounded-md dark:border-gray-700 dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors cursor-pointer">
+                      <p className="font-medium text-gray-900 dark:text-gray-100">{point.name}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">{point.address}</p>
+                      {point.phone && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Phone: {point.phone}</p>
+                      )}
+                      {point.operating_hours && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Hours: {point.operating_hours}</p>
+                      )}
+                      {/* You might want a mechanism to actually *select* a pickup point here */}
+                      {/* For example, a radio button or a select button */}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-600 dark:text-gray-400">No pickup points found for this county or county not set.</p>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
