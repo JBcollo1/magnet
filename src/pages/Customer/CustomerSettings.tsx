@@ -33,7 +33,7 @@ const CustomerSettings = () => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [hoveredCard, setHoveredCard] = useState(null);
   const [actionStates, setActionStates] = useState({
-    password: 'idle', // idle, processing, success
+    password: 'idle',
     download: 'idle',
     logout: 'idle'
   });
@@ -41,14 +41,14 @@ const CustomerSettings = () => {
 
   const handlePasswordChange = () => {
     setActionStates(prev => ({ ...prev, password: 'processing' }));
-    
+
     setTimeout(() => {
       setActionStates(prev => ({ ...prev, password: 'success' }));
       toast.success('Password update initiated!', {
         description: 'Check your email for the secure password reset link.',
         duration: 4000,
       });
-      
+
       setTimeout(() => {
         setActionStates(prev => ({ ...prev, password: 'idle' }));
       }, 3000);
@@ -58,12 +58,11 @@ const CustomerSettings = () => {
   const handleDownloadHistory = async () => {
     setIsDownloading(true);
     setActionStates(prev => ({ ...prev, download: 'processing' }));
-    
+
     toast.info('Preparing your order history...', {
       description: 'Gathering data from the last 2 years...',
     });
 
-    // Simulate download process with progress
     setTimeout(() => {
       toast.info('Almost ready...', {
         description: 'Compressing files and ensuring data integrity.',
@@ -77,7 +76,7 @@ const CustomerSettings = () => {
         description: 'OrderHistory_2023-2025.zip saved to your downloads folder.',
         duration: 5000,
       });
-      
+
       setTimeout(() => {
         setActionStates(prev => ({ ...prev, download: 'idle' }));
       }, 3000);
@@ -87,7 +86,6 @@ const CustomerSettings = () => {
   const handleDeleteAccount = () => {
     if (!showDeleteConfirm) {
       setShowDeleteConfirm(true);
-      // Add pulse effect to deletion section
       setPulseCards(prev => new Set([...prev, 'delete']));
       toast.error('Account deletion requires confirmation.', {
         description: 'This action cannot be undone. Please confirm below.',
@@ -109,14 +107,14 @@ const CustomerSettings = () => {
 
   const handleLogoutDevices = () => {
     setActionStates(prev => ({ ...prev, logout: 'processing' }));
-    
+
     setTimeout(() => {
       setActionStates(prev => ({ ...prev, logout: 'success' }));
       toast('Successfully logged out from all devices!', {
         description: 'Found 4 active sessions. All have been terminated for security.',
         duration: 5000,
       });
-      
+
       setTimeout(() => {
         setActionStates(prev => ({ ...prev, logout: 'idle' }));
       }, 3000);
@@ -124,9 +122,8 @@ const CustomerSettings = () => {
   };
 
   const handleInfoCardClick = (cardType) => {
-    // Add pulse effect
     setPulseCards(prev => new Set([...prev, cardType]));
-    
+
     const messages = {
       email: {
         title: "Email Settings",
@@ -141,14 +138,13 @@ const CustomerSettings = () => {
         description: "Set your preferred language, currency, time zone, and regional formatting options."
       }
     };
-    
+
     const message = messages[cardType];
     toast.info(`${message.title} - Coming Soon!`, {
       description: message.description,
       duration: 4000,
     });
-    
-    // Remove pulse effect after animation
+
     setTimeout(() => {
       setPulseCards(prev => {
         const newSet = new Set(prev);
@@ -211,8 +207,8 @@ const CustomerSettings = () => {
           {children}
         </div>
         <ArrowRight className={`w-4 h-4 transform transition-all duration-300 ${
-          state === 'success' 
-            ? 'text-green-600 dark:text-green-400 rotate-0' 
+          state === 'success'
+            ? 'text-green-600 dark:text-green-400 rotate-0'
             : 'rotate-0 group-hover:translate-x-1 group-hover:scale-110'
         }`} />
       </Button>
@@ -304,8 +300,8 @@ const CustomerSettings = () => {
                 state={actionStates.password}
                 aria-label="Change Password"
               >
-                {actionStates.password === 'processing' ? 'Initiating Password Change...' : 
-                 actionStates.password === 'success' ? 'Password Change Initiated ✓' : 
+                {actionStates.password === 'processing' ? 'Initiating Password Change...' :
+                 actionStates.password === 'success' ? 'Password Change Initiated ✓' :
                  'Change Password'}
               </ActionButton>
 
@@ -316,7 +312,7 @@ const CustomerSettings = () => {
                 state={actionStates.download}
                 aria-label="Download Order History"
               >
-                {isDownloading ? 'Preparing Complete History...' : 
+                {isDownloading ? 'Preparing Complete History...' :
                  actionStates.download === 'success' ? 'Order History Downloaded ✓' :
                  'Download Complete Order History'}
               </ActionButton>
@@ -341,7 +337,7 @@ const CustomerSettings = () => {
                     </span>
                   </div>
                   <p className="text-red-700 dark:text-red-300 mb-4 font-medium">
-                    This action is <strong>irreversible</strong>. All your data, order history, 
+                    This action is <strong>irreversible</strong>. All your data, order history,
                     saved preferences, and account information will be permanently deleted.
                   </p>
                   <div className="bg-red-200 dark:bg-red-800/50 p-3 rounded-lg">
