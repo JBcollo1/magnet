@@ -201,15 +201,15 @@ const CustomerSettings = () => {
             <div className="w-4 h-4 mr-2 animate-spin rounded-full border-2 border-current border-t-transparent" />
           ) : (
             <StateIcon className={`w-4 h-4 mr-2 transition-all duration-300 ${
-              state === 'success' ? 'text-green-600 dark:text-green-400' : ''
+              state === 'success' ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-gray-100'
             }`} />
           )}
-          {children}
+          <span className="text-gray-900 dark:text-gray-100">{children}</span>
         </div>
         <ArrowRight className={`w-4 h-4 transform transition-all duration-300 ${
           state === 'success'
             ? 'text-green-600 dark:text-green-400 rotate-0'
-            : 'rotate-0 group-hover:translate-x-1 group-hover:scale-110'
+            : 'rotate-0 group-hover:translate-x-1 group-hover:scale-110 text-gray-900 dark:text-gray-100'
         }`} />
       </Button>
     );
@@ -240,7 +240,7 @@ const CustomerSettings = () => {
         <div className={`transform transition-all duration-300 ${
           hoveredCard === cardType ? 'scale-110 -translate-y-1' : ''
         }`}>
-          <Icon className={`w-8 h-8 text-blue-600 dark:text-blue-400 mx-auto mb-3 transition-all duration-300 ${
+          <Icon className={`w-8 h-8 mx-auto mb-3 transition-all duration-300 text-blue-600 dark:text-blue-400 ${
             hoveredCard === cardType ? 'rotate-12 scale-125' : ''
           }`} />
         </div>
@@ -277,13 +277,9 @@ const CustomerSettings = () => {
 
         <div className="grid lg:grid-cols-1 gap-8">
           {/* Account Actions */}
-          <Card
-            className={`bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl transition-all duration-300 hover:shadow-3xl hover:border-blue-300 dark:hover:border-blue-600 ${
-              pulseCards.has('delete') ? 'ring-4 ring-red-300 dark:ring-red-600 animate-pulse' : ''
-            }`}
-            onMouseEnter={() => setHoveredCard('actions')}
-            onMouseLeave={() => setHoveredCard(null)}
-          >
+          <Card className={`bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm border-2 border-gray-200 dark:border-gray-700 shadow-2xl rounded-2xl transition-all duration-300 hover:shadow-3xl hover:border-blue-300 dark:hover:border-blue-600 ${
+            pulseCards.has('delete') ? 'ring-4 ring-red-300 dark:ring-red-600 animate-pulse' : ''
+          }`}>
             <CardHeader className="pb-4">
               <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center text-xl">
                 <Lock className="w-6 h-6 mr-3 text-blue-600 animate-pulse" />
