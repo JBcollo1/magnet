@@ -89,7 +89,7 @@ const CustomerSettings = () => {
     });
   };
 
-  type ButtonVariant = "outline" | "destructive" | "link" | "default" | "secondary" | "ghost";
+  type ButtonVariant = "outline" | "destructive" | "link" | "default" | "secondary" | "ghost" | null | undefined;
 
   const ActionButton = ({
     onClick,
@@ -115,6 +115,8 @@ const CustomerSettings = () => {
           : 'hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-md hover:scale-[1.02]'
       }`}
       disabled={loading}
+      aria-label={typeof children === 'string' ? children : 'Button'}
+      role="button"
     >
       <div className="flex items-center">
         {loading ? (
@@ -124,20 +126,29 @@ const CustomerSettings = () => {
         )}
         {children}
       </div>
-      <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+      <ChevronRight className="w-4 h-4 transform transition-transform duration-200 group-hover:translate-x-1" />
     </Button>
   );
 
-  const ToggleCard = ({ title, description, icon: Icon, enabled, onToggle, gradient }) => (
+  const ToggleCard = ({ title, description, icon: Icon, enabled, onToggle, gradient }: {
+    title: string;
+    description: string;
+    icon: React.ElementType;
+    enabled: boolean;
+    onToggle: () => void;
+    gradient: string;
+  }) => (
     <Card
       className={`cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-[1.02] ${
         enabled
-          ? `bg-gradient-to-br ${gradient} text-white`
+          ? `bg-gradient-to-br ${gradient} text-white ring-2 ring-white/50`
           : 'bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700'
-      }`}
+      } rounded-2xl`}
       onClick={onToggle}
+      role="button"
+      aria-label={`${title} toggle`}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className={`p-2 rounded-lg ${enabled ? 'bg-white/20' : 'bg-blue-100 dark:bg-blue-900'}`}>
@@ -164,6 +175,27 @@ const CustomerSettings = () => {
             } mt-0.5`} />
           </div>
         </div>
+      </CardContent>
+    </Card>
+  );
+
+  const SettingsCard = ({ title, description, icon: Icon, gradient, onClick }: {
+    title: string;
+    description: string;
+    icon: React.ElementType;
+    gradient: string;
+    onClick: () => void;
+  }) => (
+    <Card
+      onClick={onClick}
+      className={`cursor-pointer bg-gradient-to-br ${gradient} border-blue-200 dark:border-blue-800 transition-all hover:scale-[1.02] hover:shadow-md rounded-2xl`}
+      role="button"
+      aria-label={title}
+    >
+      <CardContent className="p-6 text-center">
+        <Icon className="w-8 h-8 text-blue-600 mx-auto mb-3" />
+        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">{title}</h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">{description}</p>
       </CardContent>
     </Card>
   );
@@ -212,7 +244,7 @@ const CustomerSettings = () => {
 
           {/* Account Actions */}
           <Card
-            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200 dark:border-gray-700 shadow-xl"
+            className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-gray-200 dark:border-gray-700 shadow-xl rounded-2xl"
             onMouseEnter={() => setHoveredCard('actions')}
             onMouseLeave={() => setHoveredCard(null)}
           >
@@ -229,6 +261,7 @@ const CustomerSettings = () => {
               <ActionButton
                 onClick={handlePasswordChange}
                 icon={Edit}
+                aria-label="Change Password"
               >
                 Change Password
               </ActionButton>
@@ -237,6 +270,7 @@ const CustomerSettings = () => {
                 onClick={handleDownloadHistory}
                 icon={isDownloading ? Download : Package}
                 loading={isDownloading}
+                aria-label="Download Order History"
               >
                 {isDownloading ? 'Preparing Download...' : 'Download Order History'}
               </ActionButton>
@@ -244,6 +278,7 @@ const CustomerSettings = () => {
               <ActionButton
                 onClick={handleLogoutDevices}
                 icon={ShieldAlert}
+                aria-label="Logout from All Devices"
               >
                 Logout from All Devices
               </ActionButton>
@@ -266,6 +301,7 @@ const CustomerSettings = () => {
                 onClick={handleDeleteAccount}
                 icon={showDeleteConfirm ? AlertTriangle : Trash2}
                 destructive={true}
+                aria-label="Delete Account"
               >
                 {showDeleteConfirm ? 'Confirm Account Deletion' : 'Delete Account'}
               </ActionButton>
@@ -273,31 +309,33 @@ const CustomerSettings = () => {
           </Card>
         </div>
 
+        <hr className="my-8 border-t border-gray-300 dark:border-gray-700" />
+
         {/* Additional Info Cards */}
-        <div className="grid md:grid-cols-3 gap-6 mt-8">
-          <Card className="bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
-            <CardContent className="p-6 text-center">
-              <Mail className="w-8 h-8 text-blue-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Email Settings</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Manage your email preferences</p>
-            </CardContent>
-          </Card>
+        <div className="grid md:grid-cols-3 gap-6">
+          <SettingsCard
+            title="Email Settings"
+            description="Manage your email preferences"
+            icon={Mail}
+            gradient="from-blue-50 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20"
+            onClick={() => toast.info("Email settings feature coming soon!")}
+          />
 
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20 border-green-200 dark:border-green-800">
-            <CardContent className="p-6 text-center">
-              <CreditCard className="w-8 h-8 text-green-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Payment Methods</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Update your payment options</p>
-            </CardContent>
-          </Card>
+          <SettingsCard
+            title="Payment Methods"
+            description="Update your payment options"
+            icon={CreditCard}
+            gradient="from-green-50 to-emerald-100 dark:from-green-900/20 dark:to-emerald-900/20"
+            onClick={() => toast.info("Payment methods feature coming soon!")}
+          />
 
-          <Card className="bg-gradient-to-br from-purple-50 to-violet-100 dark:from-purple-900/20 dark:to-violet-900/20 border-purple-200 dark:border-purple-800">
-            <CardContent className="p-6 text-center">
-              <Globe className="w-8 h-8 text-purple-600 mx-auto mb-3" />
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-2">Language & Region</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Customize your locale settings</p>
-            </CardContent>
-          </Card>
+          <SettingsCard
+            title="Language & Region"
+            description="Customize your locale settings"
+            icon={Globe}
+            gradient="from-purple-50 to-violet-100 dark:from-purple-900/20 dark:to-violet-900/20"
+            onClick={() => toast.info("Language settings feature coming soon!")}
+          />
         </div>
       </div>
     </div>
