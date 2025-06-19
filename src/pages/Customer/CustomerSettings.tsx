@@ -21,8 +21,8 @@ import {
   Mail,
   Smartphone,
   Lock,
-  Eye,
-  EyeOff,
+  Eye, // Import Eye icon
+  EyeOff, // Import EyeOff icon
   ChevronRight,
   AlertTriangle,
   CheckCircle,
@@ -47,7 +47,12 @@ const CustomerSettings = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [showPasswordFields, setShowPasswordFields] = useState(false); // To toggle visibility of fields
+  const [showPasswordFields, setShowPasswordFields] = useState(false); // To toggle visibility of password change form
+
+  // State for individual password input visibility toggles
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
   type ButtonState = 'idle' | 'processing' | 'success' | 'error';
 
@@ -90,6 +95,10 @@ const CustomerSettings = () => {
       setNewPassword('');
       setConfirmNewPassword('');
       setShowPasswordFields(false); // Hide fields after successful change
+      // Reset password visibility toggles
+      setShowCurrentPassword(false);
+      setShowNewPassword(false);
+      setShowConfirmNewPassword(false);
     } catch (error) {
       console.error('Failed to change password:', error);
       setActionStates(prev => ({ ...prev, password: 'error' }));
@@ -408,30 +417,60 @@ const CustomerSettings = () => {
 
                 {showPasswordFields && (
                     <div className="space-y-4 p-4 rounded-xl bg-slate-700/30 border border-slate-600/50 animate-fadeIn">
-                        <input
-                            type="password"
-                            placeholder="Current Password"
-                            value={currentPassword}
-                            onChange={(e) => setCurrentPassword(e.target.value)}
-                            className="w-full p-3 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
-                                placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        <input
-                            type="password"
-                            placeholder="New Password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full p-3 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
-                                placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                        <input
-                            type="password"
-                            placeholder="Confirm New Password"
-                            value={confirmNewPassword}
-                            onChange={(e) => setConfirmNewPassword(e.target.value)}
-                            className="w-full p-3 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
-                                placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
+                        <div className="relative">
+                            <input
+                                type={showCurrentPassword ? 'text' : 'password'}
+                                placeholder="Current Password"
+                                value={currentPassword}
+                                onChange={(e) => setCurrentPassword(e.target.value)}
+                                className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
+                                    placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
+                                aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                            >
+                                {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <input
+                                type={showNewPassword ? 'text' : 'password'}
+                                placeholder="New Password"
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
+                                    placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowNewPassword(!showNewPassword)}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
+                                aria-label={showNewPassword ? "Hide password" : "Show password"}
+                            >
+                                {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                        </div>
+                        <div className="relative">
+                            <input
+                                type={showConfirmNewPassword ? 'text' : 'password'}
+                                placeholder="Confirm New Password"
+                                value={confirmNewPassword}
+                                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
+                                    placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
+                                aria-label={showConfirmNewPassword ? "Hide password" : "Show password"}
+                            >
+                                {showConfirmNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                        </div>
                         <ActionButton
                             onClick={handlePasswordChange}
                             icon={Edit}
