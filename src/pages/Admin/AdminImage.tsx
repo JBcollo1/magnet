@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { 
-  Eye, 
-  Check, 
-  X, 
-  Filter, 
-  ChevronLeft, 
+import {
+  Eye,
+  Check,
+  X,
+  Filter,
+  ChevronLeft,
   ChevronRight,
   AlertCircle,
   Clock,
@@ -79,7 +79,7 @@ const AdminImage: React.FC = () => {
   const fetchImages = async (page = 1, status = 'all') => {
     setLoading(true);
     setError(null);
-    
+
     try {
       let url = `${import.meta.env.VITE_API_URL}/admin/custom-images?page=${page}&per_page=${perPage}`;
       if (status !== 'all') {
@@ -122,7 +122,7 @@ const AdminImage: React.FC = () => {
   const handleApprove = async (imageId: string, productId?: string) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const payload: any = { action: 'approve' };
       if (productId) {
@@ -151,11 +151,11 @@ const AdminImage: React.FC = () => {
   const handleReject = async (imageId: string, reason: string) => {
     setLoading(true);
     setError(null);
-    
+
     try {
       await axios.put(
         `${import.meta.env.VITE_API_URL}/custom-images/${imageId}/approve`,
-        { 
+        {
           action: 'reject',
           rejection_reason: reason || 'No reason provided'
         },
@@ -205,13 +205,13 @@ const AdminImage: React.FC = () => {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-800';
       case 'approved':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800';
       case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700';
     }
   };
 
@@ -241,36 +241,36 @@ const AdminImage: React.FC = () => {
   }, [error, success]);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6 max-w-7xl mx-auto bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Custom Images Management</h1>
-        <p className="text-gray-600">Review and manage user-uploaded custom images</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-2">Custom Images Management</h1>
+        <p className="text-gray-600 dark:text-gray-400">Review and manage user-uploaded custom images</p>
       </div>
 
       {/* Alerts */}
       {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
-          <AlertCircle className="w-5 h-5 text-red-500 mr-2" />
-          <span className="text-red-700">{error}</span>
+        <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center">
+          <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 mr-2" />
+          <span className="text-red-700 dark:text-red-300">{error}</span>
         </div>
       )}
 
       {success && (
-        <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center">
-          <CheckCircle className="w-5 h-5 text-green-500 mr-2" />
-          <span className="text-green-700">{success}</span>
+        <div className="mb-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center">
+          <CheckCircle className="w-5 h-5 text-green-500 dark:text-green-400 mr-2" />
+          <span className="text-green-700 dark:text-green-300">{success}</span>
         </div>
       )}
 
       {/* Filters */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <Filter className="w-5 h-5 text-gray-400" />
+          <Filter className="w-5 h-5 text-gray-400 dark:text-gray-300" />
           <select
             value={selectedStatus}
             onChange={(e) => handleStatusChange(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
           >
             <option value="all">All Status</option>
             <option value="pending">Pending</option>
@@ -279,7 +279,7 @@ const AdminImage: React.FC = () => {
           </select>
         </div>
 
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
           Total: {totalImages} images
         </div>
       </div>
@@ -287,22 +287,22 @@ const AdminImage: React.FC = () => {
       {/* Images Grid */}
       {loading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
         </div>
       ) : (
         <>
           {images.length === 0 ? (
             <div className="text-center py-12">
-              <Package className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No images found</h3>
-              <p className="text-gray-500">No custom images match the current filter.</p>
+              <Package className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No images found</h3>
+              <p className="text-gray-500 dark:text-gray-400">No custom images match the current filter.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {images.map((image) => (
-                <div key={image.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                <div key={image.id} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
                   {/* Image */}
-                  <div className="aspect-square bg-gray-100">
+                  <div className="aspect-square bg-gray-100 dark:bg-gray-700">
                     <img
                       src={image.image_url}
                       alt="Custom upload"
@@ -322,12 +322,12 @@ const AdminImage: React.FC = () => {
 
                     {/* Order Info */}
                     {image.order_info && (
-                      <div className="mb-2 text-sm text-gray-600">
+                      <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center">
                           <User className="w-3 h-3 mr-1" />
                           {image.order_info.customer_name}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-gray-400">
                           Order: {image.order_info.order_number}
                         </div>
                       </div>
@@ -335,7 +335,7 @@ const AdminImage: React.FC = () => {
 
                     {/* Product Info */}
                     {image.product_info && (
-                      <div className="mb-2 text-sm text-gray-600">
+                      <div className="mb-2 text-sm text-gray-600 dark:text-gray-400">
                         <div className="flex items-center">
                           <Package className="w-3 h-3 mr-1" />
                           {image.product_info.name}
@@ -344,7 +344,7 @@ const AdminImage: React.FC = () => {
                     )}
 
                     {/* Upload Date */}
-                    <div className="flex items-center text-xs text-gray-500 mb-3">
+                    <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3">
                       <Calendar className="w-3 h-3 mr-1" />
                       {new Date(image.upload_date).toLocaleDateString()}
                     </div>
@@ -371,19 +371,19 @@ const AdminImage: React.FC = () => {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage <= 1}
-                className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
 
-              <span className="px-4 py-2 text-sm text-gray-600">
+              <span className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
                 Page {currentPage} of {totalPages}
               </span>
 
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage >= totalPages}
-                className="p-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="p-2 rounded-lg border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -395,14 +395,14 @@ const AdminImage: React.FC = () => {
       {/* Review Modal */}
       {showModal && selectedImage && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold text-gray-900">Review Custom Image</h2>
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Review Custom Image</h2>
                 <button
                   onClick={() => setShowModal(false)}
-                  className="p-2 hover:bg-gray-100 rounded-lg"
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -413,29 +413,29 @@ const AdminImage: React.FC = () => {
                 <img
                   src={selectedImage.image_url}
                   alt="Custom upload"
-                  className="w-full max-h-96 object-contain rounded-lg bg-gray-100"
+                  className="w-full max-h-96 object-contain rounded-lg bg-gray-100 dark:bg-gray-700"
                 />
               </div>
 
               {/* Image Details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">Image Details</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Image Details</h3>
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-gray-500">Status: </span>
+                      <span className="text-gray-500 dark:text-gray-400">Status: </span>
                       <span className={`inline-flex items-center px-2 py-1 rounded text-xs ${getStatusBadge(selectedImage.approval_status)}`}>
                         {getStatusIcon(selectedImage.approval_status)}
                         <span className="ml-1 capitalize">{selectedImage.approval_status}</span>
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500">Upload Date: </span>
+                      <span className="text-gray-500 dark:text-gray-400">Upload Date: </span>
                       {new Date(selectedImage.upload_date).toLocaleString()}
                     </div>
                     {selectedImage.approval_date && (
                       <div>
-                        <span className="text-gray-500">Approval Date: </span>
+                        <span className="text-gray-500 dark:text-gray-400">Approval Date: </span>
                         {new Date(selectedImage.approval_date).toLocaleString()}
                       </div>
                     )}
@@ -443,36 +443,36 @@ const AdminImage: React.FC = () => {
                 </div>
 
                 <div>
-                  <h3 className="font-medium text-gray-900 mb-2">Order Information</h3>
+                  <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Order Information</h3>
                   {selectedImage.order_info ? (
                     <div className="space-y-2 text-sm">
                       <div>
-                        <span className="text-gray-500">Customer: </span>
+                        <span className="text-gray-500 dark:text-gray-400">Customer: </span>
                         {selectedImage.order_info.customer_name}
                       </div>
                       <div>
-                        <span className="text-gray-500">Order: </span>
+                        <span className="text-gray-500 dark:text-gray-400">Order: </span>
                         {selectedImage.order_info.order_number}
                       </div>
                       <div>
-                        <span className="text-gray-500">Status: </span>
+                        <span className="text-gray-500 dark:text-gray-400">Status: </span>
                         {selectedImage.order_info.order_status}
                       </div>
                       {selectedImage.order_item_info && (
                         <>
                           <div>
-                            <span className="text-gray-500">Quantity: </span>
+                            <span className="text-gray-500 dark:text-gray-400">Quantity: </span>
                             {selectedImage.order_item_info.quantity}
                           </div>
                           <div>
-                            <span className="text-gray-500">Unit Price: </span>
+                            <span className="text-gray-500 dark:text-gray-400">Unit Price: </span>
                             ${selectedImage.order_item_info.unit_price}
                           </div>
                         </>
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm text-gray-500">No order information available</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No order information available</p>
                   )}
                 </div>
               </div>
@@ -482,13 +482,13 @@ const AdminImage: React.FC = () => {
                 <div className="space-y-4">
                   {/* Product Selection for Approval */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Assign to Product (Optional)
                     </label>
                     <select
                       value={selectedProductId}
                       onChange={(e) => setSelectedProductId(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                     >
                       <option value="">Select a product...</option>
                       {products.map((product) => (
@@ -501,14 +501,14 @@ const AdminImage: React.FC = () => {
 
                   {/* Rejection Reason */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Rejection Reason (if rejecting)
                     </label>
                     <textarea
                       value={rejectionReason}
                       onChange={(e) => setRejectionReason(e.target.value)}
                       rows={3}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
                       placeholder="Enter reason for rejection..."
                     />
                   </div>
@@ -537,9 +537,9 @@ const AdminImage: React.FC = () => {
 
               {/* Rejection Reason Display */}
               {selectedImage.approval_status === 'rejected' && selectedImage.rejection_reason && (
-                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <h4 className="font-medium text-red-900 mb-1">Rejection Reason:</h4>
-                  <p className="text-red-700 text-sm">{selectedImage.rejection_reason}</p>
+                <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <h4 className="font-medium text-red-900 dark:text-red-300 mb-1">Rejection Reason:</h4>
+                  <p className="text-red-700 dark:text-red-300 text-sm">{selectedImage.rejection_reason}</p>
                 </div>
               )}
             </div>
