@@ -43,6 +43,12 @@ const CustomerSettings = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
+  // State for password change form inputs
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showPasswordFields, setShowPasswordFields] = useState(false); // To toggle visibility of fields
+
   type ButtonState = 'idle' | 'processing' | 'success' | 'error';
 
   const [actionStates, setActionStates] = useState<{
@@ -60,22 +66,34 @@ const CustomerSettings = () => {
   const handlePasswordChange = async () => {
     setActionStates(prev => ({ ...prev, password: 'processing' }));
 
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
+      toast.error('All password fields are required.');
+      setActionStates(prev => ({ ...prev, password: 'error' }));
+      setTimeout(() => setActionStates(prev => ({ ...prev, password: 'idle' })), 3000);
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast.error('New password and confirmation do not match.');
+      setActionStates(prev => ({ ...prev, password: 'error' }));
+      setTimeout(() => setActionStates(prev => ({ ...prev, password: 'idle' })), 3000);
+      return;
+    }
+
     try {
-      const currentPassword = prompt("Enter your current password:");
-      const newPassword = prompt("Enter your new password:");
-
-      if (!currentPassword || !newPassword) {
-        throw new Error("Passwords are required");
-      }
-
       await changePassword(currentPassword, newPassword);
 
       setActionStates(prev => ({ ...prev, password: 'success' }));
       toast.success('Password changed successfully!');
+      // Clear password fields on success
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setShowPasswordFields(false); // Hide fields after successful change
     } catch (error) {
       console.error('Failed to change password:', error);
       setActionStates(prev => ({ ...prev, password: 'error' }));
-      toast.error('Failed to change password.');
+      // The `changePassword` in AuthContext already shows a toast error, so no need for another here.
     } finally {
       setTimeout(() => {
         setActionStates(prev => ({ ...prev, password: 'idle' }));
@@ -144,7 +162,7 @@ const CustomerSettings = () => {
 
       setActionStates(prev => ({ ...prev, deleteAccount: 'success' }));
       toast.success('Account deletion initiated!');
-      logout();
+      logout(); // This will clear the user in AuthContext
     } catch (error) {
       console.error('Failed to delete account:', error);
       setActionStates(prev => ({ ...prev, deleteAccount: 'error' }));
@@ -168,7 +186,7 @@ const CustomerSettings = () => {
 
       setActionStates(prev => ({ ...prev, logout: 'success' }));
       toast.success('Successfully logged out from all devices!');
-      logout();
+      logout(); // This will clear the user in AuthContext
     } catch (error) {
       console.error('Failed to log out from all devices:', error);
       setActionStates(prev => ({ ...prev, logout: 'error' }));
@@ -198,7 +216,7 @@ const CustomerSettings = () => {
     state?: ButtonState;
   }) => {
     const getStateIcon = () => {
-      if (state === 'processing') return Clock;
+      if (state === 'processing') return Loader2; // Use Loader2 for processing
       if (state === 'success') return CheckCircle;
       if (state === 'error') return AlertTriangle;
       return Icon;
@@ -378,17 +396,55 @@ const CustomerSettings = () => {
             </CardHeader>
 
             <CardContent className="space-y-6 relative z-10 pb-8">
-              <ActionButton
-                onClick={handlePasswordChange}
-                icon={Edit}
-                state={actionStates.password}
-                aria-label="Change Password"
-              >
-                {actionStates.password === 'processing' ? 'Initiating Password Change...' :
-                  actionStates.password === 'success' ? 'Password Change Initiated ✓' :
-                    actionStates.password === 'error' ? 'Password Change Failed ✗' :
-                      'Change Password'}
-              </ActionButton>
+                {/* Toggle Password Change Fields */}
+                <ActionButton
+                    onClick={() => setShowPasswordFields(!showPasswordFields)}
+                    icon={showPasswordFields ? EyeOff : Lock}
+                    state={'idle'} // Always idle for toggle button
+                    aria-label="Toggle Change Password Fields"
+                >
+                    {showPasswordFields ? 'Hide Password Fields' : 'Change Password'}
+                </ActionButton>
+
+                {showPasswordFields && (
+                    <div className="space-y-4 p-4 rounded-xl bg-slate-700/30 border border-slate-600/50 animate-fadeIn">
+                        <input
+                            type="password"
+                            placeholder="Current Password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            className="w-full p-3 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
+                                placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <input
+                            type="password"
+                            placeholder="New Password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full p-3 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
+                                placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <input
+                            type="password"
+                            placeholder="Confirm New Password"
+                            value={confirmNewPassword}
+                            onChange={(e) => setConfirmNewPassword(e.target.value)}
+                            className="w-full p-3 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
+                                placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <ActionButton
+                            onClick={handlePasswordChange}
+                            icon={Edit}
+                            state={actionStates.password}
+                            aria-label="Submit Password Change"
+                        >
+                            {actionStates.password === 'processing' ? 'Processing...' :
+                                actionStates.password === 'success' ? 'Password Updated ✓' :
+                                actionStates.password === 'error' ? 'Update Failed ✗' :
+                                'Update Password'}
+                        </ActionButton>
+                    </div>
+                )}
 
               <ActionButton
                 onClick={handleDownloadHistory}

@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 
 // Helper function to check if error is an Axios error
 const isAxiosError = (error: any): error is { response?: { data?: { msg: string } }, isAxiosError: true } => {
-  return error && typeof error === 'object' && error.isAxiosError === true;
+  return error && typeof error === 'object' && (error as any).isAxiosError === true;
 };
 
 interface User {
@@ -76,6 +76,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Failed to get current user:', error);
       return null;
+    } finally {
+        // Ensure loading state is false after attempt
+        setLoading(false);
     }
   };
 
@@ -170,10 +173,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       if (response.status === 200) {
         toast.success("Reset link sent", {
-          description: "Password reset link sent to your email!",
+          description: response.data.message || "Password reset link sent to your email!",
         });
       } else {
-        throw new Error(response.data.message || "Failed to send reset link.");
+        // If the status is not 200 but no error was thrown by axios, we should still throw an error
+        throw new Error(response.data.message || "Failed to send reset link with unexpected status.");
       }
     } catch (error: unknown) {
       let errorMessage = 'An unexpected error occurred. Please try again.';
@@ -185,7 +189,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error("Error", {
         description: errorMessage,
       });
-      throw new Error(errorMessage);
+      throw new Error(errorMessage); // Re-throw the error for the caller to handle
     }
   };
 
@@ -201,7 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: "Password reset successful! Redirecting to sign in...",
         });
       } else {
-        throw new Error(response.data.message || "Failed to reset password.");
+        throw new Error(response.data.message || "Failed to reset password with unexpected status.");
       }
     } catch (error: unknown) {
       let errorMessage = 'An unexpected error occurred. Please try again.';
@@ -230,7 +234,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         return msg;
       } else {
-        throw new Error(response.data.message || "Invalid or expired reset token.");
+        throw new Error(response.data.message || "Invalid or expired reset token with unexpected status.");
       }
     } catch (error: unknown) {
       let errorMessage = 'Invalid or expired reset token. Please request a new password reset.';
@@ -255,10 +259,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       if (response.status === 200) {
         toast.success("Password changed successfully", {
-          description: "Your password has been updated successfully!",
+          description: response.data.message || "Your password has been updated successfully!",
         });
       } else {
-        throw new Error(response.data.message || "Failed to change password.");
+        // If the API returns a non-200 status for success or indicates an error in body
+        throw new Error(response.data.message || "Failed to change password with unexpected status.");
       }
     } catch (error: unknown) {
       let errorMessage = 'An unexpected error occurred. Please try again.';
@@ -270,7 +275,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error("Error", {
         description: errorMessage,
       });
-      throw new Error(errorMessage);
+      throw new Error(errorMessage); // **Crucial: Re-throw the error**
     }
   };
 
@@ -332,37 +337,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      toast.error("Account Deletion Failed", {
+      toast.error("Error", {
         description: errorMessage,
       });
-      console.error('Account deletion request failed:', error);
     }
   };
 
-  const value: AuthContextType = {
-    user,
-    login,
-    signup,
-    forgotPassword,
-    resetPassword,
-    validateResetToken,
-    changePassword,
-    logout,
-    logoutAllDevices,
-    deleteAccount,
-    isAuthenticated: !!user,
-    loading,
-    refreshUser,
-  };
+  const isAuthenticated = !!user;
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        signup,
+        forgotPassword,
+        resetPassword,
+        validateResetToken,
+        changePassword,
+        logout,
+        logoutAllDevices,
+        deleteAccount,
+        isAuthenticated,
+        loading,
+        refreshUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
