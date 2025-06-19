@@ -1,7 +1,7 @@
 // src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import { toast } from '@/hooks/use-toast'; // Assuming you have this toast utility
+import { toast } from 'sonner'; // Changed to use sonner for consistency
 
 // Helper function to check if error is an Axios error
 const isAxiosError = (error: any): error is { response?: { data?: { msg: string } }, isAxiosError: true } => {
@@ -13,8 +13,8 @@ interface User {
   email: string;
   name: string;
   role: 'ADMIN' | 'CUSTOMER' | 'STAFF';
-  created_at?: string; // Corresponds to 'dateJoined' on the frontend display
-  updated_at?: string; // New: Corresponds to 'lastUpdated' on the frontend display
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface AuthResponse {
@@ -31,7 +31,9 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, password: string) => Promise<void>;
   validateResetToken: (token: string) => Promise<string>;
-  logout: () => Promise<void>;
+  logout: () => Promise<void>; // This is standard logout
+  logoutAllDevices: () => Promise<void>; // New: for /auth/logout-all
+  deleteAccount: () => Promise<void>; // New: for /auth/delete-account
   isAuthenticated: boolean;
   loading: boolean;
   refreshUser: () => Promise<void>;
@@ -43,15 +45,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Updated isValidUser to account for new optional properties
   const isValidUser = (data: any): data is User => {
     return data &&
       typeof data.id === 'string' &&
       typeof data.email === 'string' &&
       typeof data.name === 'string' &&
       (data.role === 'ADMIN' || data.role === 'CUSTOMER' || data.role === 'STAFF') &&
-      (typeof data.created_at === 'string' || data.created_at === undefined || data.created_at === null) && // Check for optional created_at
-      (typeof data.updated_at === 'string' || data.updated_at === undefined || data.updated_at === null); // Check for optional updated_at
+      (typeof data.created_at === 'string' || data.created_at === undefined || data.created_at === null) &&
+      (typeof data.updated_at === 'string' || data.updated_at === undefined || data.updated_at === null);
   };
 
   const getCurrentUser = async (): Promise<User | null> => {
@@ -67,7 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return userData;
       }
 
-      // If the response is an AuthResponse object containing a user
       if (userData && typeof userData === 'object' && 'user' in userData) {
         const authResponse = userData as AuthResponse;
         if (authResponse.user && isValidUser(authResponse.user)) {
@@ -110,7 +110,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.status === 200) {
         const userData = response.data;
 
-        // Prioritize AuthResponse.user if available
         if (userData && typeof userData === 'object' && 'user' in userData) {
           const authResponse = userData as AuthResponse;
           if (authResponse.user && isValidUser(authResponse.user)) {
@@ -119,13 +118,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Fallback to directly checking if response.data is a valid User
         if (isValidUser(userData)) {
           setUser(userData);
           return true;
         }
 
-        // Final fallback: fetch user if login was successful but user data was not directly returned
         const userFromApi = await getCurrentUser();
         if (userFromApi) {
           setUser(userFromApi);
@@ -154,7 +151,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (response.status === 200 || response.status === 201) {
         const userData = response.data;
 
-        // Prioritize AuthResponse.user if available
         if (userData && typeof userData === 'object' && 'user' in userData) {
           const authResponse = userData as AuthResponse;
           if (authResponse.user && isValidUser(authResponse.user)) {
@@ -163,7 +159,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Fallback to directly checking if response.data is a valid User
         if (isValidUser(userData)) {
           setUser(userData);
           return true;
@@ -188,8 +183,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { withCredentials: true }
       );
       if (response.status === 200) {
-        toast({
-          title: "Reset link sent",
+        toast.success("Reset link sent", {
           description: "Password reset link sent to your email!",
         });
       } else {
@@ -202,10 +196,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: errorMessage,
-        variant: "destructive",
       });
       throw new Error(errorMessage);
     }
@@ -219,8 +211,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { withCredentials: true }
       );
       if (response.status === 200) {
-        toast({
-          title: "Password reset successful",
+        toast.success("Password reset successful", {
           description: "Password reset successful! Redirecting to sign in...",
         });
       } else {
@@ -233,10 +224,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: errorMessage,
-        variant: "destructive",
       });
       throw new Error(errorMessage);
     }
@@ -250,8 +239,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       if (response.status === 200) {
         const msg = response.data.message || 'Token is valid. You can now reset your password.';
-        toast({
-          title: "Token Validated",
+        toast.info("Token Validated", {
           description: msg,
         });
         return msg;
@@ -265,10 +253,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      toast({
-        title: "Error",
+      toast.error("Error", {
         description: errorMessage,
-        variant: "destructive",
       });
       throw new Error(errorMessage);
     }
@@ -281,10 +267,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         {},
         { withCredentials: true }
       );
+      setUser(null);
     } catch (error) {
       console.error('Logout request failed:', error);
-    } finally {
-      setUser(null);
+      toast.error("Logout Failed", {
+        description: "Failed to log out. Please try again.",
+      });
+    }
+  };
+
+  const logoutAllDevices = async (): Promise<void> => {
+    try {
+      const response = await axios.post<AuthResponse>(
+        `${import.meta.env.VITE_API_URL}/auth/logout-all`,
+        {},
+        { withCredentials: true }
+      );
+      toast.success("Logged out from all devices", {
+        description: response.data.message || "All active sessions have been terminated for security.",
+      });
+      setUser(null); // Clear user state after logging out from all devices
+    } catch (error: unknown) {
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      if (isAxiosError(error) && error.response?.data?.msg) {
+        errorMessage = error.response.data.msg;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast.error("Logout All Failed", {
+        description: errorMessage,
+      });
+      console.error('Logout all devices request failed:', error);
+    }
+  };
+
+  const deleteAccount = async (): Promise<void> => {
+    try {
+      const response = await axios.delete<AuthResponse>(
+        `${import.meta.env.VITE_API_URL}/auth/delete-account`,
+        { withCredentials: true }
+      );
+      toast.success("Account deletion initiated", {
+        description: response.data.message || "You will receive a confirmation email within 5 minutes.",
+      });
+      setUser(null); // Clear user state after account deletion
+    } catch (error: unknown) {
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      if (isAxiosError(error) && error.response?.data?.msg) {
+        errorMessage = error.response.data.msg;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast.error("Account Deletion Failed", {
+        description: errorMessage,
+      });
+      console.error('Account deletion request failed:', error);
     }
   };
 
@@ -296,6 +333,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     resetPassword,
     validateResetToken,
     logout,
+    logoutAllDevices, // Export new function
+    deleteAccount,    // Export new function
     isAuthenticated: !!user,
     loading,
     refreshUser,
