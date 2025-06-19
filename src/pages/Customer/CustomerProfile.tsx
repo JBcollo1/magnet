@@ -62,8 +62,8 @@ interface ApiResponse<T> {
 
 // Mock data for demonstration
 const mockUser: UserDetails = {
-  name: "John Doe (Mock)",
-  email: "john.doe.mock@example.com",
+  name: "siko  (Mock)",
+  email: "Siko@gmail.com",
   phone: "+254711223344",
   address: "Mock Address, Mock City",
   county: "Kiambu",
