@@ -1,4 +1,3 @@
-// src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
@@ -77,8 +76,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.error('Failed to get current user:', error);
       return null;
     } finally {
-        // Ensure loading state is false after attempt
-        setLoading(false);
+      setLoading(false);
     }
   };
 
@@ -176,7 +174,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: response.data.message || "Password reset link sent to your email!",
         });
       } else {
-        // If the status is not 200 but no error was thrown by axios, we should still throw an error
         throw new Error(response.data.message || "Failed to send reset link with unexpected status.");
       }
     } catch (error: unknown) {
@@ -189,7 +186,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error("Error", {
         description: errorMessage,
       });
-      throw new Error(errorMessage); // Re-throw the error for the caller to handle
+      throw new Error(errorMessage);
     }
   };
 
@@ -254,7 +251,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const response = await axios.post<AuthResponse>(
         `${import.meta.env.VITE_API_URL}/auth/change-password`,
-        { currentPassword, newPassword },
+        {
+          current_password: currentPassword,
+          new_password: newPassword,
+        },
         { withCredentials: true }
       );
       if (response.status === 200) {
@@ -262,7 +262,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: response.data.message || "Your password has been updated successfully!",
         });
       } else {
-        // If the API returns a non-200 status for success or indicates an error in body
         throw new Error(response.data.message || "Failed to change password with unexpected status.");
       }
     } catch (error: unknown) {
@@ -275,7 +274,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.error("Error", {
         description: errorMessage,
       });
-      throw new Error(errorMessage); // **Crucial: Re-throw the error**
+      throw new Error(errorMessage);
     }
   };
 
