@@ -80,31 +80,31 @@ const ProductSection = () => {
     setUploadedImages([]);
     setDialogOpen(true);
   };
+const uploadImageToAPI = async (file: File): Promise<CustomImage> => {
+  const formData = new FormData();
+  formData.append('image', file);
 
-  const uploadImageToAPI = async (file: File): Promise<CustomImage> => {
-    const formData = new FormData();
-    formData.append('image', file);
+  try {
+    // Use the temporary upload endpoint
+    const response = await axios.post<ImageUploadResponse>(`${import.meta.env.VITE_API_URL}/temp-images`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+      withCredentials: true
+    });
 
-    try {
-      const response = await axios.post<ImageUploadResponse>(`${import.meta.env.VITE_API_URL}/custom-images`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        withCredentials: true
-      });
-
-      return {
-        id: response.data.id,
-        url: response.data.image_url,
-        name: response.data.image_name,
-        uploadStatus: 'pending',
-        approvalStatus: response.data.approval_status
-      };
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      throw error;
-    }
-  };
+    return {
+      id: response.data.id,
+      url: response.data.image_url,
+      name: response.data.image_name,
+      uploadStatus: 'pending',
+      approvalStatus: response.data.approval_status
+    };
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    throw error;
+  }
+};
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -208,33 +208,33 @@ const ProductSection = () => {
       setUploadingCount(0);
     }
   };
-
-  const removeImage = async (imageId: string | number) => {
-    const imageToRemove = uploadedImages.find(img => img.id === imageId);
-    
-    if (imageToRemove && imageToRemove.uploadStatus !== 'uploading') {
-      try {
-        // Delete from API if it was successfully uploaded
-        await axios.delete(`${import.meta.env.VITE_API_URL}/custom-images/${imageToRemove.id}`, {
-          withCredentials: true
-        });
-        
-        toast({
-          title: "Image removed",
-          description: `${imageToRemove.name} has been removed.`,
-        });
-      } catch (error) {
-        console.error('Error deleting image from API:', error);
-        toast({
-          title: "Deletion failed",
-          description: "Failed to remove image from server, but removed from local view.",
-          variant: "destructive"
-        });
-      }
+const removeImage = async (imageId: string | number) => {
+  const imageToRemove = uploadedImages.find(img => img.id === imageId);
+  
+  if (imageToRemove && imageToRemove.uploadStatus !== 'uploading') {
+    try {
+      // Delete from API using temp endpoint
+      await axios.delete(`${import.meta.env.VITE_API_URL}/temp-images/${imageToRemove.id}`, {
+        withCredentials: true
+      });
+      
+      toast({
+        title: "Image removed",
+        description: `${imageToRemove.name} has been removed.`,
+      });
+    } catch (error) {
+      console.error('Error deleting image from API:', error);
+      toast({
+        title: "Deletion failed",
+        description: "Failed to remove image from server, but removed from local view.",
+        variant: "destructive"
+      });
     }
+  }
 
-    setUploadedImages(prev => prev.filter(img => img.id !== imageId));
-  };
+  setUploadedImages(prev => prev.filter(img => img.id !== imageId));
+};
+
 
   const getImageStatusIcon = (status?: string) => {
     switch (status) {
@@ -269,49 +269,62 @@ const ProductSection = () => {
         return '';
     }
   };
+const handleAddToCart = async () => {
+  const approvedImages = uploadedImages.filter(img => img.uploadStatus === 'approved');
+  const pendingImages = uploadedImages.filter(img => img.uploadStatus === 'pending');
+  const uploadingImages = uploadedImages.filter(img => img.uploadStatus === 'uploading');
+  const errorImages = uploadedImages.filter(img => img.uploadStatus === 'error');
 
-  const handleAddToCart = () => {
-    const approvedImages = uploadedImages.filter(img => img.uploadStatus === 'approved');
-    const pendingImages = uploadedImages.filter(img => img.uploadStatus === 'pending');
-    const uploadingImages = uploadedImages.filter(img => img.uploadStatus === 'uploading');
-    const errorImages = uploadedImages.filter(img => img.uploadStatus === 'error');
+  if (uploadingImages.length > 0) {
+    toast({
+      title: "Upload in progress",
+      description: "Please wait for all images to finish uploading.",
+      variant: "destructive"
+    });
+    return;
+  }
 
-    if (uploadingImages.length > 0) {
-      toast({
-        title: "Upload in progress",
-        description: "Please wait for all images to finish uploading.",
-        variant: "destructive"
-      });
-      return;
-    }
+  if (errorImages.length > 0) {
+    toast({
+      title: "Upload errors",
+      description: "Please fix upload errors before adding to cart.",
+      variant: "destructive"
+    });
+    return;
+  }
 
-    if (errorImages.length > 0) {
-      toast({
-        title: "Upload errors",
-        description: "Please fix upload errors before adding to cart.",
-        variant: "destructive"
-      });
-      return;
-    }
+  if (approvedImages.length === 0 && pendingImages.length === 0) {
+    toast({
+      title: "No images uploaded",
+      description: "Please upload at least one image for your custom product.",
+      variant: "destructive"
+    });
+    return;
+  }
 
-    if (approvedImages.length === 0 && pendingImages.length === 0) {
-      toast({
-        title: "No images uploaded",
-        description: "Please upload at least one image for your custom product.",
-        variant: "destructive"
-      });
-      return;
-    }
+  if (!selectedProduct) return;
 
-    if (!selectedProduct) return;
+  try {
+    // Create order with product and temporary image IDs
+    // const orderData = {
+    //   product_id: selectedProduct.id,
+    //   quantity: selectedProduct.quantity,
+    //   temp_image_ids: [...approvedImages, ...pendingImages].map(img => img.id)
+    // };
 
+    // const response = await axios.post(`${import.meta.env.VITE_API_URL}/orders`, orderData, {
+    //   withCredentials: true
+    // });
+
+    // Add to local cart
     const customProduct = {
       ...selectedProduct,
       customImages: [...approvedImages, ...pendingImages],
       name: `${selectedProduct.name} (${approvedImages.length + pendingImages.length} custom designs)`,
       addedAt: new Date().toISOString(),
       approvedCount: approvedImages.length,
-      pendingCount: pendingImages.length
+      pendingCount: pendingImages.length,
+      // orderId: response.data.order_id
     };
 
     addToCart(customProduct);
@@ -329,8 +342,34 @@ const ProductSection = () => {
     setDialogOpen(false);
     setSelectedProduct(null);
     setUploadedImages([]);
-  };
 
+  } catch (error) {
+    console.error('Error creating order:', error);
+    toast({
+      title: "Error",
+      description: "Failed to add item to cart. Please try again.",
+      variant: "destructive"
+    });
+  }
+};
+useEffect(() => {
+  return () => {
+    // Cleanup unused temp images when component unmounts
+    const unusedImages = uploadedImages.filter(img => 
+      img.uploadStatus === 'pending' || img.uploadStatus === 'approved'
+    );
+    
+    unusedImages.forEach(async (img) => {
+      try {
+        await axios.delete(`${import.meta.env.VITE_API_URL}/temp-images/${img.id}`, {
+          withCredentials: true
+        });
+      } catch (error) {
+        console.error('Error cleaning up temp image:', error);
+      }
+    });
+  };
+}, []);
   const canAddToCart = () => {
     const hasValidImages = uploadedImages.some(img => 
       img.uploadStatus === 'approved' || img.uploadStatus === 'pending'
