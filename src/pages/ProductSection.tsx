@@ -4,14 +4,17 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCart } from '@/contexts/CartContext';
-import { ShoppingCart, Upload, X, Loader2, AlertCircle } from 'lucide-react';
+import { ShoppingCart, Upload, X, Loader2, AlertCircle, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 interface CustomImage {
   id: string | number;
   url: string;
   name: string;
-  file?: File; // Keep reference to original file for upload
+  file?: File;
+  uploadStatus?: 'uploading' | 'pending' | 'approved' | 'rejected' | 'error';
+  approvalStatus?: string;
+  rejectionReason?: string;
 }
 
 interface Product {
@@ -23,6 +26,14 @@ interface Product {
   description: string;
 }
 
+// API Response type for image upload
+interface ImageUploadResponse {
+  id: string | number;
+  image_url: string;
+  image_name: string;
+  approval_status: string;
+}
+
 const ProductSection = () => {
   const { addToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
@@ -31,13 +42,14 @@ const ProductSection = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [uploadedImages, setUploadedImages] = useState<CustomImage[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [uploadingCount, setUploadingCount] = useState(0);
 
   // Fetch products from API
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setLoading(true);
-        const response = await axios.get<{ products?: Product[] } | Product[]>(`${import.meta.env.VITE_API_URL}/products`,  { withCredentials: true });
+        const response = await axios.get<{ products?: Product[] } | Product[]>(`${import.meta.env.VITE_API_URL}/products`, { withCredentials: true });
         const data = response.data;
         if (Array.isArray(data)) {
           setProducts(data as Product[]);
@@ -69,7 +81,32 @@ const ProductSection = () => {
     setDialogOpen(true);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const uploadImageToAPI = async (file: File): Promise<CustomImage> => {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    try {
+      const response = await axios.post<ImageUploadResponse>(`${import.meta.env.VITE_API_URL}/custom-images`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+        withCredentials: true
+      });
+
+      return {
+        id: response.data.id,
+        url: response.data.image_url,
+        name: response.data.image_name,
+        uploadStatus: 'pending',
+        approvalStatus: response.data.approval_status
+      };
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length + uploadedImages.length > (selectedProduct?.quantity || 0)) {
       toast({
@@ -80,7 +117,8 @@ const ProductSection = () => {
       return;
     }
 
-    files.forEach((file: File) => {
+    // Validate files first
+    const validFiles = files.filter((file: File) => {
       // Validate file size (e.g., max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast({
@@ -88,7 +126,7 @@ const ProductSection = () => {
           description: `${file.name} is too large. Please use images under 5MB.`,
           variant: "destructive"
         });
-        return;
+        return false;
       }
 
       // Validate file type
@@ -98,33 +136,168 @@ const ProductSection = () => {
           description: `${file.name} is not a valid image file.`,
           variant: "destructive"
         });
-        return;
+        return false;
       }
 
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) {
-          setUploadedImages(prev => [...prev, {
-            id: Date.now() + Math.random(),
-            url: event.target!.result as string,
-            name: file.name,
-            file: file // Keep reference to original file
-          }]);
-        }
-      };
-      reader.readAsDataURL(file);
+      return true;
     });
+
+    if (validFiles.length === 0) return;
+
+    try {
+      setUploadingCount(validFiles.length);
+
+      // Upload files sequentially to avoid overwhelming the server
+      for (const file of validFiles) {
+        // Add image with uploading status immediately
+        const tempImage: CustomImage = {
+          id: Date.now() + Math.random(),
+          url: URL.createObjectURL(file),
+          name: file.name,
+          file: file,
+          uploadStatus: 'uploading'
+        };
+
+        setUploadedImages(prev => [...prev, tempImage]);
+
+        try {
+          // Upload to API
+          const uploadedImage = await uploadImageToAPI(file);
+          
+          // Update the image with API response
+          setUploadedImages(prev => 
+            prev.map(img => 
+              img.id === tempImage.id 
+                ? { ...uploadedImage, file: file }
+                : img
+            )
+          );
+
+          toast({
+            title: "Image uploaded successfully",
+            description: `${file.name} has been uploaded and is pending approval.`,
+          });
+
+        } catch (error) {
+          // Update image with error status
+          setUploadedImages(prev => 
+            prev.map(img => 
+              img.id === tempImage.id 
+                ? { ...img, uploadStatus: 'error' }
+                : img
+            )
+          );
+
+          toast({
+            title: "Upload failed",
+            description: `Failed to upload ${file.name}. Please try again.`,
+            variant: "destructive"
+          });
+        }
+
+        setUploadingCount(prev => prev - 1);
+      }
+
+    } catch (error) {
+      console.error('Error in image upload process:', error);
+      toast({
+        title: "Upload error",
+        description: "Failed to start upload process. Please try again.",
+        variant: "destructive"
+      });
+      setUploadingCount(0);
+    }
   };
 
-  const removeImage = (imageId: string | number) => {
+  const removeImage = async (imageId: string | number) => {
+    const imageToRemove = uploadedImages.find(img => img.id === imageId);
+    
+    if (imageToRemove && imageToRemove.uploadStatus !== 'uploading') {
+      try {
+        // Delete from API if it was successfully uploaded
+        await axios.delete(`${import.meta.env.VITE_API_URL}/custom-images/${imageToRemove.id}`, {
+          withCredentials: true
+        });
+        
+        toast({
+          title: "Image removed",
+          description: `${imageToRemove.name} has been removed.`,
+        });
+      } catch (error) {
+        console.error('Error deleting image from API:', error);
+        toast({
+          title: "Deletion failed",
+          description: "Failed to remove image from server, but removed from local view.",
+          variant: "destructive"
+        });
+      }
+    }
+
     setUploadedImages(prev => prev.filter(img => img.id !== imageId));
   };
 
+  const getImageStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'uploading':
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+      case 'pending':
+        return <Clock className="h-4 w-4 text-yellow-500" />;
+      case 'approved':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'rejected':
+        return <XCircle className="h-4 w-4 text-red-500" />;
+      case 'error':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default:
+        return null;
+    }
+  };
+
+  const getImageStatusText = (status?: string) => {
+    switch (status) {
+      case 'uploading':
+        return 'Uploading...';
+      case 'pending':
+        return 'Pending approval';
+      case 'approved':
+        return 'Approved';
+      case 'rejected':
+        return 'Rejected';
+      case 'error':
+        return 'Upload failed';
+      default:
+        return '';
+    }
+  };
+
   const handleAddToCart = () => {
-    if (uploadedImages.length === 0) {
+    const approvedImages = uploadedImages.filter(img => img.uploadStatus === 'approved');
+    const pendingImages = uploadedImages.filter(img => img.uploadStatus === 'pending');
+    const uploadingImages = uploadedImages.filter(img => img.uploadStatus === 'uploading');
+    const errorImages = uploadedImages.filter(img => img.uploadStatus === 'error');
+
+    if (uploadingImages.length > 0) {
+      toast({
+        title: "Upload in progress",
+        description: "Please wait for all images to finish uploading.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (errorImages.length > 0) {
+      toast({
+        title: "Upload errors",
+        description: "Please fix upload errors before adding to cart.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (approvedImages.length === 0 && pendingImages.length === 0) {
       toast({
         title: "No images uploaded",
-        description: "Please upload at least one image for your custom magnets.",
+        description: "Please upload at least one image for your custom product.",
         variant: "destructive"
       });
       return;
@@ -132,26 +305,40 @@ const ProductSection = () => {
 
     if (!selectedProduct) return;
 
-    // Generate a temporary session ID for this cart item
-    const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
     const customProduct = {
       ...selectedProduct,
-      customImages: uploadedImages,
-      sessionId, // Add session ID to track this order
-      name: `${selectedProduct.name} (${uploadedImages.length} custom designs)`,
-      // Add timestamp for cleanup purposes
-      addedAt: new Date().toISOString()
+      customImages: [...approvedImages, ...pendingImages],
+      name: `${selectedProduct.name} (${approvedImages.length + pendingImages.length} custom designs)`,
+      addedAt: new Date().toISOString(),
+      approvedCount: approvedImages.length,
+      pendingCount: pendingImages.length
     };
 
     addToCart(customProduct);
+    
+    let message = `${selectedProduct.name} with ${approvedImages.length + pendingImages.length} custom designs has been added to your cart.`;
+    if (pendingImages.length > 0) {
+      message += ` ${pendingImages.length} images are still pending approval.`;
+    }
+
     toast({
       title: "Added to cart!",
-      description: `${selectedProduct.name} with ${uploadedImages.length} custom designs has been added to your cart.`,
+      description: message,
     });
+    
     setDialogOpen(false);
     setSelectedProduct(null);
     setUploadedImages([]);
+  };
+
+  const canAddToCart = () => {
+    const hasValidImages = uploadedImages.some(img => 
+      img.uploadStatus === 'approved' || img.uploadStatus === 'pending'
+    );
+    const hasUploadingImages = uploadedImages.some(img => img.uploadStatus === 'uploading');
+    const hasErrorImages = uploadedImages.some(img => img.uploadStatus === 'error');
+    
+    return hasValidImages && !hasUploadingImages && !hasErrorImages;
   };
 
   // Loading state
@@ -278,17 +465,26 @@ const ProductSection = () => {
                           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                             {uploadedImages.map((image) => (
                               <div key={image.id} className="relative group">
-                                <img
-                                  src={image.url}
-                                  alt={image.name}
-                                  className="w-full h-32 object-cover rounded-lg border-2 border-border"
-                                />
+                                <div className="relative">
+                                  <img
+                                    src={image.url}
+                                    alt={image.name}
+                                    className="w-full h-32 object-cover rounded-lg border-2 border-border"
+                                  />
+                                  <div className="absolute bottom-2 right-2 flex items-center space-x-1">
+                                    {getImageStatusIcon(image.uploadStatus)}
+                                  </div>
+                                </div>
                                 <button
                                   onClick={() => removeImage(image.id)}
                                   className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                  disabled={image.uploadStatus === 'uploading'}
                                 >
                                   <X className="w-4 h-4" />
                                 </button>
+                                <div className="mt-1 text-xs text-center text-muted-foreground">
+                                  {getImageStatusText(image.uploadStatus)}
+                                </div>
                               </div>
                             ))}
                           </div>
@@ -305,7 +501,7 @@ const ProductSection = () => {
                         </Button>
                         <Button
                           onClick={handleAddToCart}
-                          disabled={uploadedImages.length === 0}
+                          disabled={!canAddToCart() || uploadedImages.length === 0}
                           className="flex-1 bg-primary hover:bg-primary/90"
                         >
                           <ShoppingCart className="w-4 h-4 mr-2" />
