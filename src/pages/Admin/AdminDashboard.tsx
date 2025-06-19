@@ -7,8 +7,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, DollarSign, Package, Users, BarChart, Menu, X } from 'lucide-react';
+import { Loader2, DollarSign, Package, Users, BarChart, Menu, X, Image } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+
 // PickupPoint interface defined locally since './types' does not exist
 interface PickupPoint {
   id: string;
@@ -31,6 +32,7 @@ import AdminPickupPoint from './AdminPickupPoint';
 import AdminProduct from './AdminProduct';
 import SystemReports from './SystemReports';
 import UserManagement from './UserManagement';
+import AdminImage from './AdminImage';
 
 interface Order {
   id: string;
@@ -100,6 +102,7 @@ const AdminDashboard: React.FC = () => {
     { value: 'overview', label: 'Overview', icon: BarChart },
     { value: 'orders', label: 'Orders', icon: Package },
     { value: 'products', label: 'Products', icon: Package },
+    { value: 'images', label: 'Custom Images', icon: Image },
     { value: 'payments', label: 'Payments', icon: DollarSign },
     { value: 'pickup-points', label: 'Pickup Points', icon: Package },
     { value: 'users', label: 'Users', icon: Users },
@@ -297,7 +300,7 @@ const AdminDashboard: React.FC = () => {
 
         {/* Desktop Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="hidden md:grid w-full grid-cols-7 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-1 rounded-lg shadow-sm">
+          <TabsList className="hidden md:grid w-full grid-cols-8 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-1 rounded-lg shadow-sm">
             {navItems.map((item) => (
               <TabsTrigger
                 key={item.value}
@@ -428,6 +431,10 @@ const AdminDashboard: React.FC = () => {
 
           <TabsContent value="products" className="space-y-6">
             <AdminProduct allProducts={allProducts} fetchAdminData={() => fetchAdminData(1)} />
+          </TabsContent>
+
+          <TabsContent value="images" className="space-y-6">
+            <AdminImage />
           </TabsContent>
 
           <TabsContent value="payments" className="space-y-6">
