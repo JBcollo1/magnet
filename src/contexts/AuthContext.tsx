@@ -1,7 +1,7 @@
 // src/contexts/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
-import { toast } from 'sonner'; // Changed to use sonner for consistency
+import { toast } from 'sonner';
 
 // Helper function to check if error is an Axios error
 const isAxiosError = (error: any): error is { response?: { data?: { msg: string } }, isAxiosError: true } => {
@@ -31,9 +31,10 @@ interface AuthContextType {
   forgotPassword: (email: string) => Promise<void>;
   resetPassword: (token: string, password: string) => Promise<void>;
   validateResetToken: (token: string) => Promise<string>;
-  logout: () => Promise<void>; // This is standard logout
-  logoutAllDevices: () => Promise<void>; // New: for /auth/logout-all
-  deleteAccount: () => Promise<void>; // New: for /auth/delete-account
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  logout: () => Promise<void>;
+  logoutAllDevices: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
   isAuthenticated: boolean;
   loading: boolean;
   refreshUser: () => Promise<void>;
@@ -61,20 +62,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         `${import.meta.env.VITE_API_URL}/auth/me`,
         { withCredentials: true }
       );
-
       const userData = response.data;
-
       if (isValidUser(userData)) {
         return userData;
       }
-
       if (userData && typeof userData === 'object' && 'user' in userData) {
         const authResponse = userData as AuthResponse;
         if (authResponse.user && isValidUser(authResponse.user)) {
           return authResponse.user;
         }
       }
-
       return null;
     } catch (error) {
       console.error('Failed to get current user:', error);
@@ -106,10 +103,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { email, password },
         { withCredentials: true }
       );
-
       if (response.status === 200) {
         const userData = response.data;
-
         if (userData && typeof userData === 'object' && 'user' in userData) {
           const authResponse = userData as AuthResponse;
           if (authResponse.user && isValidUser(authResponse.user)) {
@@ -117,21 +112,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return true;
           }
         }
-
         if (isValidUser(userData)) {
           setUser(userData);
           return true;
         }
-
         const userFromApi = await getCurrentUser();
         if (userFromApi) {
           setUser(userFromApi);
           return true;
         }
-
         return false;
       }
-
       return false;
     } catch (error) {
       console.error('Login failed:', error);
@@ -147,10 +138,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         { email, password, name },
         { withCredentials: true }
       );
-
       if (response.status === 200 || response.status === 201) {
         const userData = response.data;
-
         if (userData && typeof userData === 'object' && 'user' in userData) {
           const authResponse = userData as AuthResponse;
           if (authResponse.user && isValidUser(authResponse.user)) {
@@ -158,15 +147,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return true;
           }
         }
-
         if (isValidUser(userData)) {
           setUser(userData);
           return true;
         }
-
         return true;
       }
-
       return false;
     } catch (error) {
       console.error('Signup failed:', error);
@@ -260,6 +246,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+    try {
+      const response = await axios.post<AuthResponse>(
+        `${import.meta.env.VITE_API_URL}/auth/change-password`,
+        { currentPassword, newPassword },
+        { withCredentials: true }
+      );
+      if (response.status === 200) {
+        toast.success("Password changed successfully", {
+          description: "Your password has been updated successfully!",
+        });
+      } else {
+        throw new Error(response.data.message || "Failed to change password.");
+      }
+    } catch (error: unknown) {
+      let errorMessage = 'An unexpected error occurred. Please try again.';
+      if (isAxiosError(error) && error.response?.data?.msg) {
+        errorMessage = error.response.data.msg;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      toast.error("Error", {
+        description: errorMessage,
+      });
+      throw new Error(errorMessage);
+    }
+  };
+
   const logout = async (): Promise<void> => {
     try {
       await axios.post(
@@ -286,7 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success("Logged out from all devices", {
         description: response.data.message || "All active sessions have been terminated for security.",
       });
-      setUser(null); // Clear user state after logging out from all devices
+      setUser(null);
     } catch (error: unknown) {
       let errorMessage = 'An unexpected error occurred. Please try again.';
       if (isAxiosError(error) && error.response?.data?.msg) {
@@ -310,7 +324,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       toast.success("Account deletion initiated", {
         description: response.data.message || "You will receive a confirmation email within 5 minutes.",
       });
-      setUser(null); // Clear user state after account deletion
+      setUser(null);
     } catch (error: unknown) {
       let errorMessage = 'An unexpected error occurred. Please try again.';
       if (isAxiosError(error) && error.response?.data?.msg) {
@@ -332,9 +346,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     forgotPassword,
     resetPassword,
     validateResetToken,
+    changePassword,
     logout,
-    logoutAllDevices, // Export new function
-    deleteAccount,    // Export new function
+    logoutAllDevices,
+    deleteAccount,
     isAuthenticated: !!user,
     loading,
     refreshUser,

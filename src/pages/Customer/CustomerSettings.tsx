@@ -39,7 +39,7 @@ interface ApiResponse {
 }
 
 const CustomerSettings = () => {
-  const { user, logout } = useAuth();
+  const { user, logout, changePassword } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -68,11 +68,7 @@ const CustomerSettings = () => {
         throw new Error("Passwords are required");
       }
 
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/change-password`,
-        { current_password: currentPassword, new_password: newPassword },
-        { withCredentials: true }
-      );
+      await changePassword(currentPassword, newPassword);
 
       setActionStates(prev => ({ ...prev, password: 'success' }));
       toast.success('Password changed successfully!');
