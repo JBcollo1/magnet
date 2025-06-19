@@ -316,7 +316,7 @@ const handleAddToCart = async () => {
     //   withCredentials: true
     // });
 
-    // Add to local cart
+   
     const customProduct = {
       ...selectedProduct,
       customImages: [...approvedImages, ...pendingImages],
