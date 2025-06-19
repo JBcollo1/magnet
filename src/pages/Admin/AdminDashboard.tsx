@@ -9,6 +9,22 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, DollarSign, Package, Users, BarChart, Menu, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+// PickupPoint interface defined locally since './types' does not exist
+interface PickupPoint {
+  id: string;
+  name: string;
+  location_details: string;
+  city: string;
+  is_active: boolean;
+  created_at: string;
+  updated: string;
+  cost: number;
+  phone_number: string;
+  is_doorstep: boolean;
+  delivery_method: string;
+  contact_person: string;
+}
+
 import AdminOrder from './AdminOrder';
 import AdminPayment from './AdminPayment';
 import AdminPickupPoint from './AdminPickupPoint';
@@ -61,21 +77,6 @@ interface AppUser {
   name: string;
   email: string;
   role: 'ADMIN' | 'CUSTOMER' | 'STAFF';
-}
-
-interface PickupPoint {
-  id: string;
-  name: string;
-  location_details: string;
-  city: string;
-  is_active: boolean;
-  created_at: string;
-  updated: string;
-  cost: number;
-  phone_number: string;
-  is_doorstep: boolean;
-  delivery_method: string;
-  contact_person: string;
 }
 
 const AdminDashboard: React.FC = () => {
@@ -451,4 +452,3 @@ const AdminDashboard: React.FC = () => {
 };
 
 export default AdminDashboard;
-
