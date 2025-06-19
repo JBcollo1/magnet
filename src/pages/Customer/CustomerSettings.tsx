@@ -21,8 +21,8 @@ import {
   Mail,
   Smartphone,
   Lock,
-  Eye, // Import Eye icon
-  EyeOff, // Import EyeOff icon
+  Eye,
+  EyeOff,
   ChevronRight,
   AlertTriangle,
   CheckCircle,
@@ -47,7 +47,7 @@ const CustomerSettings = () => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [showPasswordFields, setShowPasswordFields] = useState(false); // To toggle visibility of password change form
+  const [showPasswordFields, setShowPasswordFields] = useState(false);
 
   // State for individual password input visibility toggles
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
@@ -68,9 +68,27 @@ const CustomerSettings = () => {
     deleteAccount: 'idle'
   });
 
+  // Password validation helper
+  const validatePassword = (password: string): string | null => {
+    if (password.length < 8) {
+      return 'Password must be at least 8 characters long';
+    }
+    if (!/(?=.*[a-z])/.test(password)) {
+      return 'Password must contain at least one lowercase letter';
+    }
+    if (!/(?=.*[A-Z])/.test(password)) {
+      return 'Password must contain at least one uppercase letter';
+    }
+    if (!/(?=.*\d)/.test(password)) {
+      return 'Password must contain at least one number';
+    }
+    return null;
+  };
+
   const handlePasswordChange = async () => {
     setActionStates(prev => ({ ...prev, password: 'processing' }));
 
+    // Validation
     if (!currentPassword || !newPassword || !confirmNewPassword) {
       toast.error('All password fields are required.');
       setActionStates(prev => ({ ...prev, password: 'error' }));
@@ -85,16 +103,31 @@ const CustomerSettings = () => {
       return;
     }
 
+    // Validate new password strength
+    const passwordError = validatePassword(newPassword);
+    if (passwordError) {
+      toast.error(passwordError);
+      setActionStates(prev => ({ ...prev, password: 'error' }));
+      setTimeout(() => setActionStates(prev => ({ ...prev, password: 'idle' })), 3000);
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      toast.error('New password must be different from current password.');
+      setActionStates(prev => ({ ...prev, password: 'error' }));
+      setTimeout(() => setActionStates(prev => ({ ...prev, password: 'idle' })), 3000);
+      return;
+    }
+
     try {
       await changePassword(currentPassword, newPassword);
 
       setActionStates(prev => ({ ...prev, password: 'success' }));
-      toast.success('Password changed successfully!');
       // Clear password fields on success
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
-      setShowPasswordFields(false); // Hide fields after successful change
+      setShowPasswordFields(false);
       // Reset password visibility toggles
       setShowCurrentPassword(false);
       setShowNewPassword(false);
@@ -102,7 +135,7 @@ const CustomerSettings = () => {
     } catch (error) {
       console.error('Failed to change password:', error);
       setActionStates(prev => ({ ...prev, password: 'error' }));
-      // The `changePassword` in AuthContext already shows a toast error, so no need for another here.
+      // The error toast is already handled in the AuthContext
     } finally {
       setTimeout(() => {
         setActionStates(prev => ({ ...prev, password: 'idle' }));
@@ -171,7 +204,7 @@ const CustomerSettings = () => {
 
       setActionStates(prev => ({ ...prev, deleteAccount: 'success' }));
       toast.success('Account deletion initiated!');
-      logout(); // This will clear the user in AuthContext
+      logout();
     } catch (error) {
       console.error('Failed to delete account:', error);
       setActionStates(prev => ({ ...prev, deleteAccount: 'error' }));
@@ -195,7 +228,7 @@ const CustomerSettings = () => {
 
       setActionStates(prev => ({ ...prev, logout: 'success' }));
       toast.success('Successfully logged out from all devices!');
-      logout(); // This will clear the user in AuthContext
+      logout();
     } catch (error) {
       console.error('Failed to log out from all devices:', error);
       setActionStates(prev => ({ ...prev, logout: 'error' }));
@@ -225,7 +258,7 @@ const CustomerSettings = () => {
     state?: ButtonState;
   }) => {
     const getStateIcon = () => {
-      if (state === 'processing') return Loader2; // Use Loader2 for processing
+      if (state === 'processing') return Loader2;
       if (state === 'success') return CheckCircle;
       if (state === 'error') return AlertTriangle;
       return Icon;
@@ -405,85 +438,104 @@ const CustomerSettings = () => {
             </CardHeader>
 
             <CardContent className="space-y-6 relative z-10 pb-8">
-                {/* Toggle Password Change Fields */}
-                <ActionButton
-                    onClick={() => setShowPasswordFields(!showPasswordFields)}
-                    icon={showPasswordFields ? EyeOff : Lock}
-                    state={'idle'} // Always idle for toggle button
-                    aria-label="Toggle Change Password Fields"
-                >
-                    {showPasswordFields ? 'Hide Password Fields' : 'Change Password'}
-                </ActionButton>
+              {/* Toggle Password Change Fields */}
+              <ActionButton
+                onClick={() => setShowPasswordFields(!showPasswordFields)}
+                icon={showPasswordFields ? EyeOff : Lock}
+                state={'idle'}
+                aria-label="Toggle Change Password Fields"
+              >
+                {showPasswordFields ? 'Hide Password Fields' : 'Change Password'}
+              </ActionButton>
 
-                {showPasswordFields && (
-                    <div className="space-y-4 p-4 rounded-xl bg-slate-700/30 border border-slate-600/50 animate-fadeIn">
-                        <div className="relative">
-                            <input
-                                type={showCurrentPassword ? 'text' : 'password'}
-                                placeholder="Current Password"
-                                value={currentPassword}
-                                onChange={(e) => setCurrentPassword(e.target.value)}
-                                className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
-                                    placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
-                                aria-label={showCurrentPassword ? "Hide password" : "Show password"}
-                            >
-                                {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                            </button>
-                        </div>
-                        <div className="relative">
-                            <input
-                                type={showNewPassword ? 'text' : 'password'}
-                                placeholder="New Password"
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
-                                    placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowNewPassword(!showNewPassword)}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
-                                aria-label={showNewPassword ? "Hide password" : "Show password"}
-                            >
-                                {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                            </button>
-                        </div>
-                        <div className="relative">
-                            <input
-                                type={showConfirmNewPassword ? 'text' : 'password'}
-                                placeholder="Confirm New Password"
-                                value={confirmNewPassword}
-                                onChange={(e) => setConfirmNewPassword(e.target.value)}
-                                className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
-                                    placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
-                                className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
-                                aria-label={showConfirmNewPassword ? "Hide password" : "Show password"}
-                            >
-                                {showConfirmNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                            </button>
-                        </div>
-                        <ActionButton
-                            onClick={handlePasswordChange}
-                            icon={Edit}
-                            state={actionStates.password}
-                            aria-label="Submit Password Change"
-                        >
-                            {actionStates.password === 'processing' ? 'Processing...' :
-                                actionStates.password === 'success' ? 'Password Updated ✓' :
-                                actionStates.password === 'error' ? 'Update Failed ✗' :
-                                'Update Password'}
-                        </ActionButton>
-                    </div>
-                )}
+              {showPasswordFields && (
+                <div className="space-y-4 p-4 rounded-xl bg-slate-700/30 border border-slate-600/50 animate-fadeIn">
+                  <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg">
+                    <h4 className="text-blue-300 font-medium mb-2">Password Requirements:</h4>
+                    <ul className="text-sm text-blue-200 space-y-1">
+                      <li>• At least 8 characters long</li>
+                      <li>• Contains uppercase and lowercase letters</li>
+                      <li>• Contains at least one number</li>
+                      <li>• Different from your current password</li>
+                    </ul>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type={showCurrentPassword ? 'text' : 'password'}
+                      placeholder="Current Password"
+                      value={currentPassword}
+                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
+                        placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={actionStates.password === 'processing'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
+                      aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                      disabled={actionStates.password === 'processing'}
+                    >
+                      {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type={showNewPassword ? 'text' : 'password'}
+                      placeholder="New Password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
+                        placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={actionStates.password === 'processing'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
+                      aria-label={showNewPassword ? "Hide password" : "Show password"}
+                      disabled={actionStates.password === 'processing'}
+                    >
+                      {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+
+                  <div className="relative">
+                    <input
+                      type={showConfirmNewPassword ? 'text' : 'password'}
+                      placeholder="Confirm New Password"
+                      value={confirmNewPassword}
+                      onChange={(e) => setConfirmNewPassword(e.target.value)}
+                      className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
+                        placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      disabled={actionStates.password === 'processing'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-200"
+                      aria-label={showConfirmNewPassword ? "Hide password" : "Show password"}
+                      disabled={actionStates.password === 'processing'}
+                    >
+                      {showConfirmNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+
+                  <ActionButton
+                    onClick={handlePasswordChange}
+                    icon={Edit}
+                    state={actionStates.password}
+                    aria-label="Submit Password Change"
+                  >
+                    {actionStates.password === 'processing' ? 'Updating Password...' :
+                      actionStates.password === 'success' ? 'Password Updated ✓' :
+                        actionStates.password === 'error' ? 'Update Failed ✗' :
+                          'Update Password'}
+                  </ActionButton>
+                </div>
+              )}
 
               <ActionButton
                 onClick={handleDownloadHistory}
@@ -554,7 +606,7 @@ const CustomerSettings = () => {
         </div>
       </div>
 
-      <style>{`
+       <style>{`
         @keyframes gradient {
           0%, 100% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
