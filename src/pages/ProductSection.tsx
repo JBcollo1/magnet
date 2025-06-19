@@ -25,7 +25,12 @@ interface Product {
   image: string;
   description: string;
 }
-
+interface CartCustomImage {
+  id: string | number;
+  url: string;
+  name: string;
+  uploadStatus?: 'approved' | 'pending' | 'uploading' | 'error';
+}
 // API Response type for image upload
 interface ImageUploadResponse {
   id: string | number;
@@ -35,7 +40,7 @@ interface ImageUploadResponse {
 }
 
 const ProductSection = () => {
-  const { addToCart } = useCart();
+  const { addToCart, addCustomProductToCart } = useCart();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -269,7 +274,8 @@ const removeImage = async (imageId: string | number) => {
         return '';
     }
   };
-const handleAddToCart = async () => {
+  const handleAddToCart = async () => {
+  
   const approvedImages = uploadedImages.filter(img => img.uploadStatus === 'approved');
   const pendingImages = uploadedImages.filter(img => img.uploadStatus === 'pending');
   const uploadingImages = uploadedImages.filter(img => img.uploadStatus === 'uploading');
@@ -286,7 +292,7 @@ const handleAddToCart = async () => {
 
   if (errorImages.length > 0) {
     toast({
-      title: "Upload errors",
+      title: "Upload errors",  
       description: "Please fix upload errors before adding to cart.",
       variant: "destructive"
     });
@@ -305,30 +311,50 @@ const handleAddToCart = async () => {
   if (!selectedProduct) return;
 
   try {
-    // Create order with product and temporary image IDs
-    // const orderData = {
-    //   product_id: selectedProduct.id,
-    //   quantity: selectedProduct.quantity,
-    //   temp_image_ids: [...approvedImages, ...pendingImages].map(img => img.id)
-    // };
+    const orderData = {
+      order_items: [
+        {
+          product_id: selectedProduct.id,
+          quantity: selectedProduct.quantity,
+        }
+      ]
+    };
 
-    // const response = await axios.post(`${import.meta.env.VITE_API_URL}/orders`, orderData, {
-    //   withCredentials: true
-    // });
+    const response = await axios.post<{ order_id: string | number }>(
+      `${import.meta.env.VITE_API_URL}/orders`,
+      orderData,
+      {
+        withCredentials: true
+      }
+    ); 
 
-   
+    // Convert CustomImage to CartCustomImage format
+    const cartCustomImages: CartCustomImage[] = [...approvedImages, ...pendingImages].map(img => ({
+      id: img.id,
+      url: img.url,
+      name: img.name,
+      // Only include valid uploadStatus values for CartCustomImage
+      uploadStatus: (img.uploadStatus === 'approved' || 
+                   img.uploadStatus === 'pending' || 
+                   img.uploadStatus === 'uploading' || 
+                   img.uploadStatus === 'error') 
+        ? img.uploadStatus 
+        : 'pending'
+    }));
+
     const customProduct = {
       ...selectedProduct,
-      customImages: [...approvedImages, ...pendingImages],
+      customImages: cartCustomImages,
       name: `${selectedProduct.name} (${approvedImages.length + pendingImages.length} custom designs)`,
       addedAt: new Date().toISOString(),
       approvedCount: approvedImages.length,
       pendingCount: pendingImages.length,
-      // orderId: response.data.order_id
+      orderId: response.data.order_id
     };
 
-    addToCart(customProduct);
-    
+    // Fixed: Removed duplicate call
+    addCustomProductToCart(customProduct);
+
     let message = `${selectedProduct.name} with ${approvedImages.length + pendingImages.length} custom designs has been added to your cart.`;
     if (pendingImages.length > 0) {
       message += ` ${pendingImages.length} images are still pending approval.`;
@@ -338,7 +364,7 @@ const handleAddToCart = async () => {
       title: "Added to cart!",
       description: message,
     });
-    
+
     setDialogOpen(false);
     setSelectedProduct(null);
     setUploadedImages([]);

@@ -1,29 +1,96 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios, { AxiosError } from 'axios'; 
 import Header from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCart } from '@/contexts/CartContext';
-import { Minus, Plus, Trash2, ShoppingBag, CheckCircle, Copy, Phone, CreditCard } from 'lucide-react';
+import { Minus, Plus, Trash2, ShoppingBag, CheckCircle, Copy, Phone, CreditCard, Loader2, MapPin, Clock } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
+interface PickupPoint {
+  id: string;
+  name: string;
+  location_details: string;
+  city: string;
+  cost: number;
+  phone_number: string;
+  delivery_method: string;
+  is_doorstep: boolean;
+}
+
+interface PaymentDetails {
+  mpesa_code: string;
+  phone_number: string;
+  amount: number;
+  order_id?: string | number;
+}
+
+interface OrderResponse {
+  order_id?: string;
+  id?: string;
+  success?: boolean;
+  message?: string;
+}
+
+interface OrderDetails {
+  customer_name: string;
+  customer_phone: string;
+  pickup_point_id?: string;
+  delivery_address?: string;
+  city?: string;
+  order_notes?: string;
+  items: Array<{
+    product_id: number;
+    quantity: number;
+    price: number;
+    custom_images?: string[];
+  }>;
+  total_amount: number;
+}
+
 const Cart = () => {
-  const { cartItems, updateQuantity, removeFromCart, clearCart, getCartTotal } = useCart();
+  const { 
+    cartItems, 
+    updateQuantity, 
+    removeFromCart, 
+    clearCart, 
+    getCartTotal,
+    getOrderIds,
+    getItemByOrderId,
+    getItemsByOrderId 
+  } = useCart();
+  
   const [showCheckout, setShowCheckout] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [selectedPickupPoint, setSelectedPickupPoint] = useState<PickupPoint | null>(null);
+  const [pickupPoints, setPickupPoints] = useState<PickupPoint[]>([]);
+  const [loadingPickupPoints, setLoadingPickupPoints] = useState(false);
+  const [orderStep, setOrderStep] = useState<'upload' | 'delivery' | 'payment'>('upload');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
+    mpesa_code: '',
+    phone_number: '',
+    amount: 0,
+  });
+
   const [customerDetails, setCustomerDetails] = useState({
     name: '',
-    email: '',
     phone: '',
     address: '',
     city: '',
-    orderNotes: ''
+    notes: ''
   });
 
   const handleQuantityChange = (productId: number, newQuantity: number) => {
-    updateQuantity(productId, newQuantity);
+    if (newQuantity > 0) {
+      updateQuantity(productId, newQuantity);
+    }
   };
 
   const handleRemoveItem = (productId: number) => {
@@ -34,24 +101,234 @@ const Cart = () => {
     });
   };
 
-  const handleCheckout = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Generate order ID
-    const newOrderId = 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase();
-    setOrderId(newOrderId);
-    
-    toast({
-      title: "Order received!",
-      description: `Your order ${newOrderId} has been received. Please complete payment to confirm.`,
-    });
-    
-    setShowCheckout(false);
-    setShowPayment(true);
+  const fetchPickupPoints = async () => {
+    setLoadingPickupPoints(true);
+    try {
+      const response = await axios.get<{ pickup_points: PickupPoint[] }>(
+        `${import.meta.env.VITE_API_URL}/pickup-points`,
+        { withCredentials: true }
+      );
+      setPickupPoints(response.data.pickup_points || []);
+    } catch (error) {
+      console.error('Error fetching pickup points:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load pickup points. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoadingPickupPoints(false);
+    }
   };
 
+  useEffect(() => {
+    fetchPickupPoints();
+  }, []);
+
+  const handlePickupPointChange = (pickupPointId: string) => {
+    const selectedPoint = pickupPoints.find(point => point.id === pickupPointId);
+    setSelectedPickupPoint(selectedPoint || null);
+  };
+
+  const calculateTotal = () => {
+    const subtotal = getCartTotal();
+    const deliveryCost = selectedPickupPoint?.cost || 0;
+    return subtotal + deliveryCost;
+  };
+
+const updateOrder = async (orderId: string | number, orderData: any): Promise<string | null> => {
+  try {
+    const response = await axios.put<OrderResponse>(
+      `${import.meta.env.VITE_API_URL}/orders/${orderId}`, // Note: Updated endpoint with order ID
+      orderData,
+      { 
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      }
+    );
+    
+    return orderId.toString();
+  } catch (error) {
+    console.error('Error updating order:', error);
+    
+    if (error instanceof AxiosError) {
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Failed to update order';
+      toast({
+        title: "Order Update Failed",
+        description: errorMessage,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Order Update Failed",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
+    }
+    
+    return null;
+  }
+};
+
+  const submitPayment = async (paymentData: PaymentDetails): Promise<boolean> => {
+    try {
+      const response = await axios.post(
+        `${import.meta.env.VITE_API_URL}/payments`,
+        paymentData,
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+      
+      return response.status === 200 || response.status === 201;
+    } catch (error) {
+      console.error('Error submitting payment:', error);
+      
+      if (error instanceof AxiosError) {
+        const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Payment submission failed';
+        toast({
+          title: "Payment Submission Failed",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Payment Submission Failed",
+          description: "An unexpected error occurred. Please try again.",
+          variant: "destructive"
+        });
+      }
+      
+      return false;
+    }
+  };
+
+  // Function to check if order ID exists in cart
+  const findOrderInCart = (searchOrderId: string): boolean => {
+    const orderIds = getOrderIds();
+    return orderIds.some(id => id.toString() === searchOrderId);
+    
+  };
+
+  // Function to get order details from cart
+  const getOrderDetailsFromCart = (searchOrderId: string) => {
+    const items = getItemsByOrderId(searchOrderId);
+    const orderTotal = items.reduce((total, item) => total + (item.price * item.quantity), 0);
+    
+    return {
+      items,
+      total: orderTotal,
+      exists: items.length > 0
+    };
+  };
+
+const handleCheckout = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  if (!selectedPickupPoint) {
+    toast({
+      title: "Pickup Point Required",
+      description: "Please select a pickup point for delivery.",
+      variant: "destructive"
+    });
+    return;
+  }
+  
+  setIsSubmitting(true);
+
+  try {
+    // Get all existing order IDs from cart items
+    const existingOrderIds = getOrderIds();
+    
+    if (existingOrderIds.length === 0) {
+      toast({
+        title: "No Orders Found",
+        description: "No orders found in cart. Please add items first.",
+        variant: "destructive"
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    // Group cart items by order ID
+    const orderGroups = existingOrderIds.map(orderId => ({
+      orderId,
+      items: getItemsByOrderId(orderId)
+    }));
+    
+
+    // Update each existing order with customer details and pickup point
+    const updatePromises = orderGroups.map(async (group) => {
+      const orderData = {
+        order_id: group.orderId, // Include the existing order ID
+        customer_name: customerDetails.name,
+        customer_phone: customerDetails.phone,
+        delivery_address: customerDetails.address,
+        city: customerDetails.city,
+        order_notes: customerDetails.notes,
+        pickup_point_id: selectedPickupPoint.id,
+        total_amount: calculateTotal()
+      };
+
+      return await updateOrder(group.orderId, orderData);
+    });
+
+    // Wait for all order updates to complete
+    const updateResults = await Promise.all(updatePromises);
+    
+    // Check if all updates were successful
+    const allSuccessful = updateResults.every(result => result !== null);
+    
+    if (allSuccessful) {
+      // Use the first order ID for payment (or you might want to handle multiple orders differently)
+      const primaryOrderId = existingOrderIds[0];
+      setOrderId(primaryOrderId.toString());
+      
+      // Prepare payment details
+      setPaymentDetails({
+        mpesa_code: '',
+        phone_number: customerDetails.phone,
+        amount: calculateTotal(),
+        order_id: primaryOrderId
+      });
+      
+      toast({
+        title: "Orders updated successfully!",
+        description: `Your order details have been updated. Please complete payment to confirm.`,
+      });
+      
+      setShowCheckout(false);
+      setShowPayment(true);
+    } else {
+      throw new Error('Failed to update some orders');
+    }
+    
+  } catch (error) {
+    console.error('Checkout error:', error);
+    toast({
+      title: "Checkout Failed",
+      description: "Failed to update order details. Please try again.",
+      variant: "destructive"
+    });
+  } finally {
+    setIsSubmitting(false);
+  }
+};
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setCustomerDetails({
       ...customerDetails,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handlePaymentDetailsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPaymentDetails({
+      ...paymentDetails,
       [e.target.name]: e.target.value
     });
   };
@@ -64,21 +341,90 @@ const Cart = () => {
     });
   };
 
-  const handlePaymentComplete = () => {
-    clearCart();
-    setCustomerDetails({
-      name: '',
-      email: '',
-      phone: '',
-      address: '',
-      city: '',
-      orderNotes: ''
-    });
-    setShowPayment(false);
-    toast({
-      title: "Order confirmed!",
-      description: "Thank you for your order. We'll start production immediately.",
-    });
+  const handlePaymentComplete = async () => {
+    if (!paymentDetails.mpesa_code.trim()) {
+      toast({
+        title: "M-Pesa Code Required",
+        description: "Please enter the M-Pesa confirmation code to complete your order.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if order exists in cart before processing payment
+    if (orderId && !findOrderInCart(orderId)) {
+      // If order ID is not in cart, still proceed with payment
+      // as it might be a valid order created in this session
+      console.log('Order not found in cart context, but proceeding with payment');
+    }
+
+    setIsProcessingPayment(true);
+
+    try {
+      const paymentSuccess = await submitPayment({
+        ...paymentDetails,
+        order_id: orderId
+      });
+
+      if (paymentSuccess) {
+        clearCart();
+        setCustomerDetails({
+          name: '',
+          phone: '',
+          address: '',
+          city: '',
+          notes: ''
+        });
+        setPaymentDetails({
+          mpesa_code: '',
+          phone_number: '',
+          amount: 0,
+        });
+        setSelectedPickupPoint(null);
+        setShowPayment(false);
+        
+        toast({
+          title: "Payment confirmed!",
+          description: "Thank you for your order. We'll start production immediately and keep you updated.",
+        });
+      }
+    } catch (error) {
+      console.error('Payment completion error:', error);
+      toast({
+        title: "Payment Processing Failed",
+        description: "Failed to process payment. Please try again or contact support.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  // Function to handle existing order payment (if needed)
+  const handleExistingOrderPayment = (existingOrderId: string) => {
+    const orderDetails = getOrderDetailsFromCart(existingOrderId);
+    
+    if (orderDetails.exists) {
+      setOrderId(existingOrderId);
+      setPaymentDetails({
+        mpesa_code: '',
+        phone_number: customerDetails.phone,
+        amount: orderDetails.total,
+        order_id: existingOrderId
+      });
+      setShowPayment(true);
+      
+      toast({
+        title: "Order Found",
+        description: `Resuming payment for order ${existingOrderId}`,
+      });
+    } else {
+      toast({
+        title: "Order Not Found",
+        description: "The specified order was not found in your cart.",
+        variant: "destructive"
+      });
+    }
   };
 
   if (showPayment) {
@@ -92,7 +438,7 @@ const Cart = () => {
                 <div className="mx-auto w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mb-4">
                   <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
                 </div>
-                <CardTitle className="text-2xl text-green-800 dark:text-green-200">Order Received!</CardTitle>
+                <CardTitle className="text-2xl text-green-800 dark:text-green-200">Order Created!</CardTitle>
                 <CardDescription className="text-green-700 dark:text-green-300">
                   Order ID: <span className="font-semibold">{orderId}</span>
                 </CardDescription>
@@ -143,11 +489,11 @@ const Cart = () => {
                       <div className="mt-4">
                         <label className="text-sm font-medium text-gray-600 dark:text-gray-400">Amount</label>
                         <div className="flex items-center space-x-2 mt-1">
-                          <span className="font-mono text-xl font-bold text-green-600 dark:text-green-400">KSh {getCartTotal().toLocaleString()}</span>
+                          <span className="font-mono text-xl font-bold text-green-600 dark:text-green-400">KSh {paymentDetails.amount.toLocaleString()}</span>
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => copyToClipboard(getCartTotal().toString(), 'Amount')}
+                            onClick={() => copyToClipboard(paymentDetails.amount.toString(), 'Amount')}
                           >
                             <Copy className="w-4 h-4" />
                           </Button>
@@ -161,19 +507,21 @@ const Cart = () => {
                     </div>
 
                     <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4">
-                      <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Step 4: Send Confirmation</h4>
-                      <p className="text-gray-700 dark:text-gray-300 mb-2">
-                        After payment, send the M-Pesa confirmation message to:
+                      <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 mb-2">Step 4: Enter M-Pesa Confirmation Code</h4>
+                      <p className="text-gray-700 dark:text-gray-300 mb-3">
+                        After payment, enter the M-Pesa confirmation code you received:
                       </p>
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono text-lg font-bold text-yellow-600 dark:text-yellow-400">+254 700 123 456</span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyToClipboard('+254 700 123 456', 'Phone number')}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
+                      <div className="space-y-3">
+                        <Input
+                          name="mpesa_code"
+                          value={paymentDetails.mpesa_code}
+                          onChange={handlePaymentDetailsChange}
+                          placeholder="e.g., QEI4N2M8XY"
+                          className="font-mono"
+                        />
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          The confirmation code is usually 10 characters long and contains letters and numbers.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -186,10 +534,16 @@ const Cart = () => {
                         <span>KSh {(item.price * item.quantity).toLocaleString()}</span>
                       </div>
                     ))}
+                    {selectedPickupPoint && selectedPickupPoint.cost > 0 && (
+                      <div className="flex justify-between text-sm mb-1 text-foreground">
+                        <span>Delivery ({selectedPickupPoint.name})</span>
+                        <span>KSh {selectedPickupPoint.cost.toLocaleString()}</span>
+                      </div>
+                    )}
                     <div className="border-t pt-2 mt-2 font-bold">
                       <div className="flex justify-between text-foreground">
                         <span>Total:</span>
-                        <span className="text-purple-600 dark:text-purple-400">KSh {getCartTotal().toLocaleString()}</span>
+                        <span className="text-purple-600 dark:text-purple-400">KSh {paymentDetails.amount.toLocaleString()}</span>
                       </div>
                     </div>
                   </div>
@@ -199,15 +553,26 @@ const Cart = () => {
                       onClick={() => setShowPayment(false)}
                       variant="outline"
                       className="flex-1"
+                      disabled={isProcessingPayment}
                     >
                       Back to Cart
                     </Button>
                     <Button
                       onClick={handlePaymentComplete}
                       className="flex-1 bg-green-600 hover:bg-green-700"
+                      disabled={isProcessingPayment || !paymentDetails.mpesa_code.trim()}
                     >
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Payment Completed
+                      {isProcessingPayment ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Confirm Payment
+                        </>
+                      )}
                     </Button>
                   </div>
 
@@ -264,9 +629,14 @@ const Cart = () => {
                       <div className="flex-1">
                         <h3 className="font-semibold text-lg">{item.name}</h3>
                         <p className="text-gray-600 text-sm">{item.description}</p>
-                        {item.customImages && (
+                        {item.customImages && item.customImages.length > 0 && (
                           <p className="text-purple-600 text-sm font-medium mt-1">
                             {item.customImages.length} custom design(s) uploaded
+                          </p>
+                        )}
+                        {item.orderId && (
+                          <p className="text-blue-600 text-sm font-medium mt-1">
+                            Order ID: {item.orderId}
                           </p>
                         )}
                         <div className="text-purple-600 font-bold text-lg mt-2">
@@ -278,6 +648,7 @@ const Cart = () => {
                           variant="outline"
                           size="icon"
                           onClick={() => handleQuantityChange(item.id, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
@@ -316,12 +687,17 @@ const Cart = () => {
                   </div>
                   <div className="flex justify-between">
                     <span>Delivery:</span>
-                    <span className="text-green-600">Free</span>
+                    <span className="text-green-600">
+                      {selectedPickupPoint ? 
+                        (selectedPickupPoint.cost > 0 ? `KSh ${selectedPickupPoint.cost.toLocaleString()}` : 'Free') 
+                        : 'Select pickup point'
+                      }
+                    </span>
                   </div>
                   <div className="border-t pt-4">
                     <div className="flex justify-between font-bold text-lg">
                       <span>Total:</span>
-                      <span className="text-purple-600">KSh {getCartTotal().toLocaleString()}</span>
+                      <span className="text-purple-600">KSh {calculateTotal().toLocaleString()}</span>
                     </div>
                   </div>
                   <Button
@@ -370,81 +746,168 @@ const Cart = () => {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium mb-2">Email Address *</label>
-                    <Input
-                      type="email"
-                      name="email"
-                      value={customerDetails.email}
-                      onChange={handleInputChange}
-                      placeholder="your.email@example.com"
-                      required
-                    />
+                    <label className="block text-sm font-medium mb-2">Pickup Point *</label>
+                    <Select 
+                      value={selectedPickupPoint?.id || ""} 
+                      onValueChange={handlePickupPointChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={loadingPickupPoints ? "Loading pickup points..." : "Select a pickup point"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pickupPoints.map((point) => (
+                          <SelectItem key={point.id} value={point.id}>
+                            <div className="flex flex-col">
+                              <div className="flex items-center space-x-2">
+                                <MapPin className="w-4 h-4" />
+                                <span className="font-medium">{point.name}</span>
+                                {point.cost > 0 && (
+                                  <span className="text-sm text-green-600 font-medium">
+                                    +KSh {point.cost}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="text-sm text-gray-500 ml-6">
+                                {point.location_details}, {point.city}
+                              </div>
+                              <div className="text-xs text-gray-400 ml-6 flex items-center space-x-2">
+                                <span>{point.delivery_method}</span>
+                                {point.phone_number && (
+                                  <>
+                                    <span>•</span>
+                                    <span>{point.phone_number}</span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {selectedPickupPoint && (
+                      <div className="mt-2 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                        <div className="flex items-start space-x-2">
+                          <MapPin className="w-4 h-4 mt-0.5 text-blue-600" />
+                          <div className="text-sm">
+                            <p className="font-medium text-blue-800 dark:text-blue-200">{selectedPickupPoint.name}</p>
+                            <p className="text-blue-600 dark:text-blue-300">{selectedPickupPoint.location_details}, {selectedPickupPoint.city}</p>
+                            <div className="flex items-center space-x-4 mt-1 text-xs text-blue-600 dark:text-blue-400">
+                              <span className="flex items-center space-x-1">
+                                <Clock className="w-3 h-3" />
+                                <span>{selectedPickupPoint.delivery_method}</span>
+                              </span>
+                              {selectedPickupPoint.phone_number && (
+                                <span className="flex items-center space-x-1">
+                                  <Phone className="w-3 h-3" />
+                                  <span>{selectedPickupPoint.phone_number}</span>
+                                </span>
+                              )}
+                              {selectedPickupPoint.cost > 0 && (
+                                <span className="font-medium text-green-600 dark:text-green-400">
+                                  Delivery: KSh {selectedPickupPoint.cost.toLocaleString()}
+                                </span>
+                              )}
+                              {selectedPickupPoint.cost === 0 && (
+                                <span className="font-medium text-green-600 dark:text-green-400">
+                                  Free Delivery
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Delivery Address *</label>
-                    <Input
-                      name="address"
-                      value={customerDetails.address}
-                      onChange={handleInputChange}
-                      placeholder="Your delivery address"
-                      required
-                    />
+
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Delivery Address</label>
+                      <Input
+                        name="address"
+                        value={customerDetails.address}
+                        onChange={handleInputChange}
+                        placeholder="Your delivery address"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">City</label>
+                      <Input
+                        name="city"
+                        value={customerDetails.city}
+                        onChange={handleInputChange}
+                        placeholder="Your city"
+                      />
+                    </div>
                   </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium mb-2">City *</label>
-                    <Input
-                      name="city"
-                      value={customerDetails.city}
-                      onChange={handleInputChange}
-                      placeholder="Your city"
-                      required
-                    />
-                  </div>
-                  
+
                   <div>
                     <label className="block text-sm font-medium mb-2">Order Notes (Optional)</label>
                     <Textarea
-                      name="orderNotes"
-                      value={customerDetails.orderNotes}
+                      name="notes"
+                      value={customerDetails.notes}
                       onChange={handleInputChange}
-                      placeholder="Any special instructions for your order..."
+                      placeholder="Any special instructions or notes for your order..."
                       rows={3}
                     />
                   </div>
 
-                  {/* Order Summary */}
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">Order Summary:</h3>
-                    {cartItems.map((item) => (
-                      <div key={item.id} className="flex justify-between text-sm mb-1">
-                        <span>{item.name} x {item.quantity}</span>
-                        <span>KSh {(item.price * item.quantity).toLocaleString()}</span>
+                  {/* Order Summary in Checkout */}
+                  <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mt-6">
+                    <h3 className="font-semibold mb-3">Order Summary</h3>
+                    <div className="space-y-2">
+                      {cartItems.map((item) => (
+                        <div key={item.id} className="flex justify-between text-sm">
+                          <span>{item.name} x {item.quantity}</span>
+                          <span>KSh {(item.price * item.quantity).toLocaleString()}</span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between text-sm">
+                        <span>Subtotal:</span>
+                        <span>KSh {getCartTotal().toLocaleString()}</span>
                       </div>
-                    ))}
-                    <div className="border-t pt-2 mt-2 font-bold">
-                      <div className="flex justify-between">
-                        <span>Total:</span>
-                        <span className="text-purple-600">KSh {getCartTotal().toLocaleString()}</span>
+                      {selectedPickupPoint && (
+                        <div className="flex justify-between text-sm">
+                          <span>Delivery ({selectedPickupPoint.name}):</span>
+                          <span className={selectedPickupPoint.cost > 0 ? "text-orange-600" : "text-green-600"}>
+                            {selectedPickupPoint.cost > 0 ? `KSh ${selectedPickupPoint.cost.toLocaleString()}` : 'Free'}
+                          </span>
+                        </div>
+                      )}
+                      <div className="border-t pt-2 mt-2">
+                        <div className="flex justify-between font-bold">
+                          <span>Total:</span>
+                          <span className="text-purple-600 dark:text-purple-400">KSh {calculateTotal().toLocaleString()}</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                  
-                  <div className="flex space-x-4">
+
+                  <div className="flex space-x-4 mt-6">
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setShowCheckout(false)}
                       className="flex-1"
+                      disabled={isSubmitting}
                     >
                       Back to Cart
                     </Button>
                     <Button
                       type="submit"
                       className="flex-1 bg-purple-600 hover:bg-purple-700"
+                      disabled={isSubmitting || !selectedPickupPoint}
                     >
-                      Place Order
+                      {isSubmitting ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Creating Order...
+                        </>
+                      ) : (
+                        <>
+                          <CreditCard className="w-4 h-4 mr-2" />
+                          Create Order & Proceed to Payment
+                        </>
+                      )}
                     </Button>
                   </div>
                 </form>
