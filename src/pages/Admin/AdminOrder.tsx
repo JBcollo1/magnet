@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -17,73 +17,104 @@ import {
     Edit3,
     Trash2,
     Filter,
-    MoreHorizontal,
     Package,
     Users,
     DollarSign,
     Calendar,
-    Eye
 } from 'lucide-react';
 
 interface Order {
     id: string;
     order_number: string;
-    customer_name: string;
-    items: string;
+    customer_name: string; // Assuming this comes from the backend now
+    items: string; // This might be an array of item objects in a real system, but based on current usage, it's a string.
     total: number;
     status: string;
-    paymentMethod: string;
-    date: string;
+    paymentMethod: string; // Assuming this comes from the backend
+    date: string; // Assuming this comes from the backend, formatted as a string
     notes?: string;
 }
 
-interface AdminOrderProps {
-    allOrders: Order[];
-    fetchAdminData: (page?: number) => void;
-    getStatusColor: (status: string) => string; // This prop seems unused, but kept for completeness
-    totalOrders: number;
-    totalPages: number;
-    currentPage: number;
-    onPageChange: (page: number) => void;
-}
+// Remove AdminOrderProps as data will be fetched internally
+interface AdminOrderProps {}
 
-const AdminOrder: React.FC<AdminOrderProps> = ({
-    allOrders,
-    fetchAdminData,
-    // getStatusColor, // Unused prop
-    totalOrders,
-    totalPages,
-    currentPage,
-    onPageChange
-}) => {
+const AdminOrder: React.FC<AdminOrderProps> = () => {
+    const [orders, setOrders] = useState<Order[]>([]);
+    const [totalOrders, setTotalOrders] = useState(0);
+    const [totalPages, setTotalPages] = useState(1);
+    const [currentPage, setCurrentPage] = useState(1);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
     const [newStatus, setNewStatus] = useState('');
     const [orderNotes, setOrderNotes] = useState('');
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
     const [statusFilter, setStatusFilter] = useState('all');
 
+    // Fetch orders from the API
+    const fetchAdminOrders = useCallback(async (page: number = currentPage) => {
+        setLoading(true);
+        try {
+            const params = {
+                page,
+                per_page: 10, // Assuming a default per_page of 10 as per Flask API
+                status: statusFilter === 'all' ? undefined : statusFilter,
+                // Add search query if your backend supports it directly.
+                // For now, search and filter will be done client-side based on the prompt's existing logic.
+                // If the backend search is needed, the Flask API needs to be extended.
+            };
+
+            // Use import.meta.env.VITE_API_URL for the base URL
+            interface OrdersResponse {
+                orders: Order[];
+                total: number;
+                pages: number;
+                current_page: number;
+            }
+            const response = await axios.get<OrdersResponse>(`${import.meta.env.VITE_API_URL}/admin/orders`, {
+                params,
+                withCredentials: true
+            });
+
+            // Assuming the Flask API returns 'orders', 'total', 'pages', 'current_page'
+            setOrders(response.data.orders);
+            setTotalOrders(response.data.total);
+            setTotalPages(response.data.pages);
+            setCurrentPage(response.data.current_page);
+
+        } catch (error) {
+            console.error('Failed to fetch admin orders:', error);
+            // Optionally, add user-friendly error feedback here
+        } finally {
+            setLoading(false);
+        }
+    }, [currentPage, statusFilter]); // Depend on currentPage and statusFilter
+
     useEffect(() => {
-        let filtered = allOrders;
+        fetchAdminOrders(currentPage);
+    }, [currentPage, statusFilter, fetchAdminOrders]); // Re-fetch when currentPage or statusFilter changes
+
+    // Client-side filtering and searching based on existing component logic
+    const filteredOrders = React.useMemo(() => {
+        let currentFiltered = orders; // Start with the fetched orders
 
         if (searchQuery) {
-            filtered = filtered.filter(order =>
+            currentFiltered = currentFiltered.filter(order =>
                 order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 order.items.toLowerCase().includes(searchQuery.toLowerCase())
             );
         }
 
-        if (statusFilter !== 'all') {
-            filtered = filtered.filter(order => order.status === statusFilter);
-        }
+        // Status filter is now handled by the backend, but keeping this for consistency if needed for other client-side filters
+        // if (statusFilter !== 'all') {
+        //     currentFiltered = currentFiltered.filter(order => order.status === statusFilter);
+        // }
 
-        setFilteredOrders(filtered);
-    }, [searchQuery, statusFilter, allOrders]);
+        return currentFiltered;
+    }, [orders, searchQuery]); // Depend on fetched orders and client-side search query
 
-    const handleEditClick = (order: Order) => { // Type annotation added here
+    const handleEditClick = (order: Order) => {
         setSelectedOrder(order);
         setNewStatus(order.status);
         setOrderNotes(order.notes || '');
@@ -95,12 +126,13 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
 
         setLoading(true);
         try {
+            // Assuming this API endpoint is for updating order status and notes
             await axios.put(
                 `${import.meta.env.VITE_API_URL}/orders/${selectedOrder.id}/status`,
                 { status: newStatus, order_notes: orderNotes },
                 { withCredentials: true }
             );
-            fetchAdminData(currentPage);
+            fetchAdminOrders(currentPage); // Re-fetch data after update
             setIsEditDialogOpen(false);
         } catch (error) {
             console.error('Failed to update order:', error);
@@ -110,12 +142,13 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
         }
     };
 
-    const handleDeleteOrder = async (orderId: string) => { // Type annotation added here
+    const handleDeleteOrder = async (orderId: string) => {
         if (window.confirm(`Are you sure you want to delete order ${orderId}? This action cannot be undone.`)) {
             setLoading(true);
             try {
+                // Assuming this API endpoint is for deleting orders
                 await axios.delete(`${import.meta.env.VITE_API_URL}/orders/${orderId}`, { withCredentials: true });
-                fetchAdminData(currentPage);
+                fetchAdminOrders(currentPage); // Re-fetch data after deletion
             } catch (error) {
                 console.error('Failed to delete order:', error);
                 // Optionally, add user-friendly error feedback here
@@ -125,13 +158,13 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
         }
     };
 
-    const handlePageChange = (page: number) => { // Type annotation added here
+    const handlePageChange = (page: number) => {
         if (page >= 1 && page <= totalPages) {
-            onPageChange(page);
+            setCurrentPage(page); // This will trigger fetchAdminOrders via useEffect
         }
     };
 
-    const getStatusBadgeStyle = (status: string) => { // Type annotation added here
+    const getStatusBadgeStyle = (status: string) => {
         const baseClasses = "font-medium transition-all duration-200 hover:scale-105";
         switch (status.toLowerCase()) {
             case 'pending':
@@ -149,7 +182,8 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
         }
     };
 
-    const uniqueStatuses = [...new Set(allOrders.map(order => order.status))];
+    // Get unique statuses from the fetched orders for the filter dropdown
+    const uniqueStatuses = [...new Set(orders.map(order => order.status))];
 
     return (
         <div className="space-y-6">
@@ -214,7 +248,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                         </div>
                         <div className="flex items-center gap-2">
                             <Filter className="h-4 w-4 text-muted-foreground" />
-                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                            <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value)}>
                                 <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800 dark:border-gray-600">
                                     <SelectValue placeholder="Filter by status" />
                                 </SelectTrigger>
