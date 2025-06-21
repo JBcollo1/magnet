@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'sonner';
 
-// Helper function to check if error is an Axios error
+
 const isAxiosError = (error: any): error is { response?: { data?: { msg: string } }, isAxiosError: true } => {
   return error && typeof error === 'object' && (error as any).isAxiosError === true;
 };
