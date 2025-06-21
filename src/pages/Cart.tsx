@@ -56,6 +56,7 @@ const Cart = () => {
     cartItems, 
     updateQuantity, 
     removeFromCart, 
+    isLoading,
     clearCart, 
     getCartTotal,
     getOrderIds,
@@ -86,7 +87,14 @@ const Cart = () => {
     city: '',
     notes: ''
   });
-
+    if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[200px]">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        <span className="ml-2">Loading cart...</span>
+      </div>
+    );
+  }
   const handleQuantityChange = (productId: number, newQuantity: number) => {
     if (newQuantity > 0) {
       updateQuantity(productId, newQuantity);
@@ -121,9 +129,12 @@ const Cart = () => {
     }
   };
 
-  useEffect(() => {
-    fetchPickupPoints();
-  }, []);
+ useEffect(() => {
+    // Only fetch pickup points after cart has loaded
+    if (!isLoading) {
+      fetchPickupPoints();
+    }
+  }, [isLoading]); 
 
   const handlePickupPointChange = (pickupPointId: string) => {
     const selectedPoint = pickupPoints.find(point => point.id === pickupPointId);

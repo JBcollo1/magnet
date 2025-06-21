@@ -1,5 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
-import axios from 'axios';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 export interface Product {
   id: number;
@@ -28,6 +27,7 @@ export interface CartItem extends Product {
 
 interface CartContextType {
   cartItems: CartItem[];
+  isLoading: boolean;
   addToCart: (product: Product & { customImages?: CustomImage[] }) => void;
   addCustomProductToCart: (customProduct: CartItem) => void;
   removeFromCart: (productId: number) => void;
@@ -39,10 +39,79 @@ interface CartContextType {
   getItemsByOrderId: (orderId: string | number) => CartItem[];
 }
 
+// Cookie utility functions
+const setCookie = (name: string, value: string, days: number = 30) => {
+  const expires = new Date();
+  expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+};
+
+const getCookie = (name: string): string | null => {
+  const nameEQ = name + "=";
+  const ca = document.cookie.split(';');
+  for (let i = 0; i < ca.length; i++) {
+    let c = ca[i];
+    while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+    if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+  }
+  return null;
+};
+
+const deleteCookie = (name: string) => {
+  document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+};
+
+// Cart data persistence functions
+const saveCartToCookies = (cartItems: CartItem[]) => {
+  try {
+    const cartData = JSON.stringify(cartItems);
+    setCookie('cart_items', cartData, 30); // Store for 30 days
+  } catch (error) {
+    console.error('Error saving cart to cookies:', error);
+  }
+};
+
+const loadCartFromCookies = (): CartItem[] => {
+  try {
+    const cartData = getCookie('cart_items');
+    if (cartData) {
+      return JSON.parse(cartData);
+    }
+  } catch (error) {
+    console.error('Error loading cart from cookies:', error);
+  }
+  return [];
+};
+
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
 export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load cart data from cookies on component mount
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        const savedCart = loadCartFromCookies();
+        setCartItems(savedCart);
+      } catch (error) {
+        console.error('Error loading cart from cookies:', error);
+        setCartItems([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadCart();
+  }, []);
+
+  // Save cart data to cookies whenever cartItems changes (but not during initial load)
+  useEffect(() => {
+    if (!isLoading) {
+      saveCartToCookies(cartItems);
+    }
+  }, [cartItems, isLoading]);
 
   const addToCart = (product: Product & { customImages?: CustomImage[] }) => {
     setCartItems(prev => {
@@ -54,12 +123,19 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
             : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { 
+        ...product, 
+        quantity: 1,
+        addedAt: new Date().toISOString()
+      }];
     });
   };
 
   const addCustomProductToCart = (customProduct: CartItem) => {
-    setCartItems(prev => [...prev, customProduct]);
+    setCartItems(prev => [...prev, {
+      ...customProduct,
+      addedAt: customProduct.addedAt || new Date().toISOString()
+    }]);
   };
 
   const removeFromCart = (productId: number) => {
@@ -80,6 +156,8 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const clearCart = () => {
     setCartItems([]);
+    // Also clear the cookie
+    deleteCookie('cart_items');
   };
 
   const getCartTotal = () => {
@@ -107,6 +185,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <CartContext.Provider value={{
       cartItems,
+      isLoading,
       addToCart,
       addCustomProductToCart,
       removeFromCart,

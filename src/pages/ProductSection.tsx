@@ -315,12 +315,12 @@ const removeImage = async (imageId: string | number) => {
       order_items: [
         {
           product_id: selectedProduct.id,
-          quantity: selectedProduct.quantity,
+          quantity: products.find(p => p.id === selectedProduct.id)?.quantity || 1,
         }
       ]
     };
 
-    const response = await axios.post<{ order_id: string | number }>(
+    const response = await axios.post<{ id: string | number }>(
       `${import.meta.env.VITE_API_URL}/orders`,
       orderData,
       {
@@ -349,7 +349,7 @@ const removeImage = async (imageId: string | number) => {
       addedAt: new Date().toISOString(),
       approvedCount: approvedImages.length,
       pendingCount: pendingImages.length,
-      orderId: response.data.order_id
+      orderId: response.data.id
     };
 
     // Fixed: Removed duplicate call
