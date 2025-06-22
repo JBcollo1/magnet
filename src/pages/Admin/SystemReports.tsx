@@ -19,14 +19,34 @@ import {
 } from 'lucide-react';
 
 // Define the Order interface
+interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  custom_images: boolean;
+  created_at: string;
+}
 interface Order {
   id: string;
-  date: string;
-  items: string;
-  total: number;
+  user_id: string;
+  order_number: string;
   status: string;
-  paymentMethod: string;
-  customer: string;
+  total_amount: number;
+  customer_name: string | null;
+  customer_phone: string | null;
+  delivery_address: string | null;
+  city: string | null;
+  pickup_point_id: string | null;
+  pickup_point: string | null;
+  order_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  approved_by: string | null;
+  order_items: OrderItem[];
 }
 
 // Interface for a single report object received from the backend

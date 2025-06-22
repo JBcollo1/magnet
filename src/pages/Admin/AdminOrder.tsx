@@ -25,22 +25,41 @@ import {
     Eye
 } from 'lucide-react';
 
+interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  custom_images: boolean;
+  created_at: string;
+}
+
 interface Order {
-    id: string;
-    order_number: string;
-    customer_name: string;
-    items: string;
-    total: number;
-    status: string;
-    paymentMethod: string;
-    date: string;
-    notes?: string;
+  id: string;
+  user_id: string;
+  order_number: string;
+  status: string;
+  total_amount: number;
+  customer_name: string | null;
+  customer_phone: string | null;
+  delivery_address: string | null;
+  city: string | null;
+  pickup_point_id: string | null;
+  pickup_point: string | null;
+  order_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  approved_by: string | null;
+  order_items: OrderItem[];
 }
 
 interface AdminOrderProps {
     allOrders: Order[];
     fetchAdminData: (page?: number) => void;
-    getStatusColor: (status: string) => string; // This prop seems unused, but kept for completeness
+    getStatusColor: (status: string) => string;
     totalOrders: number;
     totalPages: number;
     currentPage: number;
@@ -50,7 +69,7 @@ interface AdminOrderProps {
 const AdminOrder: React.FC<AdminOrderProps> = ({
     allOrders,
     fetchAdminData,
-    // getStatusColor, // Unused prop
+    getStatusColor,
     totalOrders,
     totalPages,
     currentPage,
@@ -67,13 +86,17 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
 
     useEffect(() => {
         let filtered = allOrders;
-
+       console.log('orders:', allOrders );
         if (searchQuery) {
-            filtered = filtered.filter(order =>
-                order.customer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                order.order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                order.items.toLowerCase().includes(searchQuery.toLowerCase())
-            );
+            filtered = filtered.filter(order => {
+                const customerName = order.customer_name || '';
+                const orderNumber = order.order_number || '';
+                const itemsText = order.order_items.map(item => item.product_name).join(', ');
+                
+                return customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                       orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                       itemsText.toLowerCase().includes(searchQuery.toLowerCase());
+            });
         }
 
         if (statusFilter !== 'all') {
@@ -83,10 +106,10 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
         setFilteredOrders(filtered);
     }, [searchQuery, statusFilter, allOrders]);
 
-    const handleEditClick = (order: Order) => { // Type annotation added here
+    const handleEditClick = (order: Order) => {
         setSelectedOrder(order);
         setNewStatus(order.status);
-        setOrderNotes(order.notes || '');
+        setOrderNotes(order.order_notes || '');
         setIsEditDialogOpen(true);
     };
 
@@ -110,7 +133,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
         }
     };
 
-    const handleDeleteOrder = async (orderId: string) => { // Type annotation added here
+    const handleDeleteOrder = async (orderId: string) => {
         if (window.confirm(`Are you sure you want to delete order ${orderId}? This action cannot be undone.`)) {
             setLoading(true);
             try {
@@ -125,13 +148,13 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
         }
     };
 
-    const handlePageChange = (page: number) => { // Type annotation added here
+    const handlePageChange = (page: number) => {
         if (page >= 1 && page <= totalPages) {
             onPageChange(page);
         }
     };
 
-    const getStatusBadgeStyle = (status: string) => { // Type annotation added here
+    const getStatusBadgeStyle = (status: string) => {
         const baseClasses = "font-medium transition-all duration-200 hover:scale-105";
         switch (status.toLowerCase()) {
             case 'pending':
@@ -147,6 +170,18 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
             default:
                 return `${baseClasses} bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200`;
         }
+    };
+
+    // Helper function to format order items for display
+    const formatOrderItems = (orderItems: OrderItem[]) => {
+        return orderItems.map(item => 
+            `${item.product_name} (${item.quantity}x)`
+        ).join(', ');
+    };
+
+    // Helper function to calculate total items count
+    const getTotalItemsCount = (orderItems: OrderItem[]) => {
+        return orderItems.reduce((total, item) => total + item.quantity, 0);
     };
 
     const uniqueStatuses = [...new Set(allOrders.map(order => order.status))];
@@ -265,7 +300,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                         <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Items</TableHead>
                                         <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Total</TableHead>
                                         <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Status</TableHead>
-                                        <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Payment</TableHead>
+                                        <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Phone</TableHead>
                                         <TableHead className="font-semibold text-gray-900 dark:text-gray-100">Date</TableHead>
                                         <TableHead className="font-semibold text-gray-900 dark:text-gray-100 text-center">Actions</TableHead>
                                     </TableRow>
@@ -286,27 +321,33 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                             <TableCell className="font-medium">
                                                 <div className="flex items-center gap-2">
                                                     <Users className="h-4 w-4 text-muted-foreground" />
-                                                    {order.customer_name}
+                                                    {order.customer_name || 'N/A'}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="max-w-[200px] truncate" title={order.items}>
-                                                {order.items}
+                                            <TableCell className="max-w-[200px] truncate" title={formatOrderItems(order.order_items)}>
+                                                <div className="flex items-center gap-1">
+                                                    <Package className="h-3 w-3 text-muted-foreground" />
+                                                    <span>{formatOrderItems(order.order_items)}</span>
+                                                    <Badge variant="secondary" className="ml-1 text-xs">
+                                                        {getTotalItemsCount(order.order_items)}
+                                                    </Badge>
+                                                </div>
                                             </TableCell>
                                             <TableCell className="font-semibold text-green-700 dark:text-green-400">
-                                                KSh {order.total.toLocaleString()}
+                                                KSh {order.total_amount.toLocaleString()}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge className={getStatusBadgeStyle(order.status)}>
-                                                    {order.status}
+                                                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell className="capitalize text-muted-foreground">
-                                                {order.paymentMethod}
+                                            <TableCell className="text-muted-foreground">
+                                                {order.customer_phone || 'N/A'}
                                             </TableCell>
                                             <TableCell className="text-muted-foreground">
                                                 <div className="flex items-center gap-1">
                                                     <Calendar className="h-3 w-3" />
-                                                    {order.date}
+                                                    {new Date(order.created_at).toLocaleDateString()}
                                                 </div>
                                             </TableCell>
                                             <TableCell>
@@ -316,6 +357,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                                         size="sm"
                                                         onClick={() => handleEditClick(order)}
                                                         className="h-8 w-8 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+                                                        title="Edit Order"
                                                     >
                                                         <Edit3 className="h-4 w-4" />
                                                     </Button>
@@ -324,6 +366,7 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                                         size="sm"
                                                         onClick={() => handleDeleteOrder(order.id)}
                                                         className="h-8 w-8 p-0 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-700 dark:hover:text-red-400 transition-colors"
+                                                        title="Delete Order"
                                                     >
                                                         <Trash2 className="h-4 w-4" />
                                                     </Button>
@@ -405,12 +448,36 @@ const AdminOrder: React.FC<AdminOrderProps> = ({
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <span className="font-medium text-gray-600 dark:text-gray-300">Customer:</span>
-                                        <p className="font-semibold dark:text-white">{selectedOrder.customer_name}</p>
+                                        <p className="font-semibold dark:text-white">{selectedOrder.customer_name || 'N/A'}</p>
                                     </div>
                                     <div>
                                         <span className="font-medium text-gray-600 dark:text-gray-300">Total:</span>
-                                        <p className="font-semibold text-green-700 dark:text-green-400">KSh {selectedOrder.total.toLocaleString()}</p>
+                                        <p className="font-semibold text-green-700 dark:text-green-400">KSh {selectedOrder.total_amount.toLocaleString()}</p>
                                     </div>
+                                    <div>
+                                        <span className="font-medium text-gray-600 dark:text-gray-300">Phone:</span>
+                                        <p className="font-semibold dark:text-white">{selectedOrder.customer_phone || 'N/A'}</p>
+                                    </div>
+                                    <div>
+                                        <span className="font-medium text-gray-600 dark:text-gray-300">Items:</span>
+                                        <p className="font-semibold dark:text-white">{getTotalItemsCount(selectedOrder.order_items)} items</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="order-items" className="text-sm font-medium">
+                                    Order Items
+                                </Label>
+                                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-md max-h-32 overflow-y-auto">
+                                    {selectedOrder.order_items.map((item, index) => (
+                                        <div key={index} className="flex justify-between items-center text-sm py-1">
+                                            <span>{item.product_name}</span>
+                                            <span className="text-muted-foreground">
+                                                {item.quantity}x @ KSh {item.unit_price.toLocaleString()}
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
                             </div>
 

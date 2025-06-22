@@ -19,7 +19,7 @@ interface Product {
 
 interface AdminProductProps {
   allProducts: Product[];
-  fetchAdminData: () => Promise<void>;
+  fetchAdminData: () => void;
 }
 
 const AdminProduct: React.FC<AdminProductProps> = ({ allProducts = [], fetchAdminData }) => {

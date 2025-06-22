@@ -33,7 +33,7 @@ interface Payment {
 
 interface AdminPaymentProps {
   allOrders: Order[];
-  fetchAdminData: () => Promise<void>;
+  fetchAdminData: () => void;
 }
 
 const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }) => {

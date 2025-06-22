@@ -37,7 +37,7 @@ type FormPickupPoint = Omit<PickupPoint, 'id' | 'created_at' | 'updated' | 'is_a
 
 interface AdminPickupPointProps {
   allPickupPoints: PickupPoint[];
-  fetchAdminData: () => Promise<void>;
+  fetchAdminData: () => void;
 }
 
 const AdminPickupPoint: React.FC<AdminPickupPointProps> = ({ allPickupPoints: initialPickupPoints, fetchAdminData }) => {
