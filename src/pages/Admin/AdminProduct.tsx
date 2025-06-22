@@ -62,7 +62,7 @@ const AdminProduct: React.FC<AdminProductProps> = ({ allProducts = [], fetchAdmi
       imageUrl: 'https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=400&fit=crop'
     }
   ];
-
+  
   const displayProducts = allProducts.length > 0 ? allProducts : mockProducts;
 
   const filteredProducts = displayProducts.filter(product =>

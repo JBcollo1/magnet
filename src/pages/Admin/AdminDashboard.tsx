@@ -73,7 +73,12 @@ interface PaginatedOrdersResponse {
   pages: number;
   current_page: number;
 }
-
+interface RawProductResponse {
+  products: RawProduct[];
+  total: number;
+  pages: number;
+  current_page: number;
+}
 interface Product {
   id: string;
   name: string;
@@ -92,6 +97,15 @@ interface UserData {
   role: 'ADMIN' | 'CUSTOMER' | 'STAFF';
   is_active: boolean;
   created_at: string;
+}
+interface RawProduct {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  quantity: number;     
+  image_url: string;     
+
 }
 
 interface AppUser {
@@ -148,7 +162,8 @@ const fetchAdminData = async (page: number = 1) => {
     const results = await Promise.allSettled([
       axios.get<UserData[]>(`${import.meta.env.VITE_API_URL}/admin/users`, { withCredentials: true }),
       axios.get<PaginatedOrdersResponse>(`${import.meta.env.VITE_API_URL}/admin/orders?page=${page}`, { withCredentials: true }),
-      axios.get<Product[]>(`${import.meta.env.VITE_API_URL}/admin/products`, { withCredentials: true }),
+      axios.get<RawProductResponse>(`${import.meta.env.VITE_API_URL}/admin/products`, { withCredentials: true }),
+
       axios.get<PickupPoint[]>(`${import.meta.env.VITE_API_URL}/admin/pickup-points`, { withCredentials: true })
     ]);
 
@@ -225,17 +240,42 @@ const fetchAdminData = async (page: number = 1) => {
     }
 
     // Handle products
-    let productsData: Product[] = [];
-    if (productsResult.status === 'fulfilled') {
-      productsData = Array.isArray(productsResult.value.data) ? productsResult.value.data : [];
-    } else {
-      console.error('Failed to fetch products:', productsResult.reason);
-      // Mock products data as fallback
-      productsData = [
-        { id: 'PROD-001', name: 'Standard Magnet', description: 'Classic custom magnet', price: 150, stock: 100, imageUrl: '/images/magnet1.jpg' },
-        { id: 'PROD-002', name: 'Premium Magnet', description: 'High-quality durable magnet', price: 250, stock: 50, imageUrl: '/images/magnet2.jpg' }
-      ];
+let productsData: Product[] = [];
+
+if (productsResult.status === 'fulfilled') {
+ 
+  const response = productsResult.value.data;
+  const rawProducts = response.products; 
+  
+
+
+  productsData = Array.isArray(rawProducts)
+    ? rawProducts.map(p => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        price: p.price,
+        stock: p.quantity,     
+        imageUrl: p.image_url  
+      }))
+    : [];
+    
+}
+else {
+  console.error('Failed to fetch products:', productsResult.reason);
+  // fallback
+  productsData = [
+    {
+      id: 'PROD-001',
+      name: 'Standard Magnet',
+      description: 'Classic custom magnet',
+      price: 150,
+      stock: 100,
+      imageUrl: '/images/magnet1.jpg'
     }
+  ];
+}
+
 
     // Handle pickup points
     let pickupPointsData: PickupPoint[] = [];
@@ -274,7 +314,7 @@ const fetchAdminData = async (page: number = 1) => {
   const totalOrders = ordersPagination.total;
   const totalCustomers = allUsers.filter(u => u.role === 'CUSTOMER').length;
   const totalProducts = allProducts.length;
-
+  console.log('Total Products:', allProducts);
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'delivered': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
