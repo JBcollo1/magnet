@@ -20,15 +20,22 @@ interface Order {
   // Add other properties of Order as needed
 }
 
+interface OrderInfo {
+  order_number: string;
+  customer_name: string;
+  customer_phone: string;
+  status: string; 
+}
+
 interface Payment {
   id: string;
-  orderId: string;
+  order_id: string;
   amount: number;
-  method: 'M-Pesa' | 'Card' | 'Cash on Delivery';
+  mpesa_code: string;
   status: 'Pending' | 'Completed' | 'Failed' | 'Refunded';
-  transactionId?: string;
-  paymentDate: string;
-  customerEmail: string;
+  phone_number: string;
+  payment_date: string;
+  order_info: OrderInfo;
 }
 
 interface AdminPaymentProps {
@@ -48,62 +55,87 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // Mock data for demonstration
+  // Mock data updated to match the new interface
   const mockPayments: Payment[] = [
     {
       id: '1',
-      orderId: 'ORD-001',
+      order_id: 'ORD-001',
       amount: 1500,
-      method: 'M-Pesa',
+      mpesa_code: 'MP12345678',
       status: 'Pending',
-      transactionId: 'MP12345678',
-      paymentDate: '2023-10-01',
-      customerEmail: 'john.doe@example.com'
+      phone_number: '+254712345678',
+      payment_date: '2023-10-01T10:30:00Z',
+      order_info: {
+        order_number: 'ORD-001',
+        customer_name: 'John Doe',
+        customer_phone: '+254712345678',
+        status: "fe"
+      }
     },
     {
       id: '2',
-      orderId: 'ORD-002',
+      order_id: 'ORD-002',
       amount: 2700,
-      method: 'Card',
+      mpesa_code: 'MP98765432',
       status: 'Completed',
-      transactionId: 'CARD98765432',
-      paymentDate: '2023-10-02',
-      customerEmail: 'jane.smith@example.com'
+      phone_number: '+254723456789',
+      payment_date: '2023-10-02T14:20:00Z',
+      order_info: {
+        order_number: 'ORD-002',
+        customer_name: 'Jane Smith',
+        customer_phone: '+254723456789',
+        status: "fe"
+      }
     },
     {
       id: '3',
-      orderId: 'ORD-003',
+      order_id: 'ORD-003',
       amount: 3200,
-      method: 'Cash on Delivery',
+      mpesa_code: 'MP56789012',
       status: 'Failed',
-      transactionId: 'COD56789012',
-      paymentDate: '2023-10-03',
-      customerEmail: 'mike.johnson@example.com'
+      phone_number: '+254734567890',
+      payment_date: '2023-10-03T09:15:00Z',
+      order_info: {
+        order_number: 'ORD-003',
+        customer_name: 'Mike Johnson',
+        customer_phone: '+254734567890',
+        status: "fe"
+      }
     },
     {
       id: '4',
-      orderId: 'ORD-004',
+      order_id: 'ORD-004',
       amount: 500,
-      method: 'M-Pesa',
+      mpesa_code: 'MP87654321',
       status: 'Pending',
-      transactionId: 'MP87654321',
-      paymentDate: '2023-09-25',
-      customerEmail: 'alice.brown@example.com'
+      phone_number: '+254745678901',
+      payment_date: '2023-09-25T16:45:00Z',
+      order_info: {
+        order_number: 'ORD-004',
+        customer_name: 'Alice Brown',
+        customer_phone: '+254745678901',
+        status:"fe"
+      }
     },
     {
       id: '5',
-      orderId: 'ORD-005',
+      order_id: 'ORD-005',
       amount: 1200,
-      method: 'Card',
+      mpesa_code: 'MP11223344',
       status: 'Pending',
-      transactionId: 'CARD11223344',
-      paymentDate: '2023-10-05',
-      customerEmail: 'bob.wilson@example.com'
+      phone_number: '+254756789012',
+      payment_date: '2023-10-05T11:30:00Z',
+      order_info: {
+        order_number: 'ORD-005',
+        customer_name: 'Bob Wilson',
+        customer_phone: '+254756789012',
+        status: "fe"
+      }
     }
   ];
 
   // Function to determine whether to use mock data or real API
-  const USE_MOCK_DATA = !import.meta.env.VITE_API_URL;
+  const USE_MOCK_DATA = !import.meta.env?.VITE_API_URL;
 
   // Function to fetch payments
   const fetchPayments = async () => {
@@ -146,12 +178,15 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
   useEffect(() => {
     let filtered = payments;
 
-    if (searchQuery) {
-      filtered = filtered.filter(payment =>
-        payment.orderId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        payment.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        payment.transactionId?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
+  if (searchQuery) {
+    filtered = filtered.filter(payment =>
+      payment.order_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      payment.mpesa_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      payment.phone_number.includes(searchQuery) ||
+      payment.order_info?.customer_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      payment.order_info?.order_number?.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+      
     }
 
     if (statusFilter !== 'all') {
@@ -181,15 +216,6 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
     }
   };
 
-  const getMethodIcon = (method: string) => {
-    switch (method) {
-      case 'M-Pesa': return <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold">M</div>;
-      case 'Card': return <CreditCard className="w-4 h-4 text-blue-500" />;
-      case 'Cash on Delivery': return <DollarSign className="w-4 h-4 text-gray-500" />;
-      default: return <DollarSign className="w-4 h-4 text-gray-500" />;
-    }
-  };
-
   const handleVerifyClick = (payment: Payment) => {
     setSelectedPayment(payment);
     setNewPaymentStatus(payment.status);
@@ -211,10 +237,10 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
           p.id === selectedPayment.id ? { ...p, status: newPaymentStatus as Payment['status'] } : p
         );
         setPayments(updatedPayments);
-        setSuccessMessage(`Payment ${selectedPayment.orderId} status updated to ${newPaymentStatus} (mock data).`);
+        setSuccessMessage(`Payment ${selectedPayment.order_id} status updated to ${newPaymentStatus} (mock data).`);
       } else {
         const response = await axios.put(
-          `${import.meta.env.VITE_API_URL}/admin/payments/${selectedPayment.id}`,
+          `${import.meta.env.VITE_API_URL}/payments/${selectedPayment.id}/verify`,
           { status: newPaymentStatus },
           { withCredentials: true }
         );
@@ -224,7 +250,7 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
             p.id === selectedPayment.id ? { ...p, status: newPaymentStatus as Payment['status'] } : p
           );
           setPayments(updatedPayments);
-          setSuccessMessage(`Payment ${selectedPayment.orderId} status updated to ${newPaymentStatus} (backend).`);
+          setSuccessMessage(`Payment ${selectedPayment.order_id} status updated to ${newPaymentStatus} (backend).`);
         } else {
           throw new Error('Failed to update payment status on backend.');
         }
@@ -238,7 +264,7 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
     }
   };
 
-  const handleCheckMpesaStatus = async (paymentId: string, transactionId: string) => {
+  const handleCheckMpesaStatus = async (paymentId: string, mpesaCode: string) => {
     setLoading(true);
     setError(null);
     setSuccessMessage(null);
@@ -248,14 +274,14 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
         await new Promise(resolve => setTimeout(resolve, 1500));
 
         let newStatus: Payment['status'] = 'Failed';
-        let message = `M-Pesa Transaction Status for ${transactionId}: Not found.`;
+        let message = `M-Pesa Transaction Status for ${mpesaCode}: Not found.`;
 
-        if (transactionId === 'MP12345678' || transactionId === 'MP87654321') {
+        if (mpesaCode === 'MP12345678' || mpesaCode === 'MP87654321') {
           newStatus = 'Completed';
-          message = `M-Pesa Transaction Status for ${transactionId}: Verified successfully! (mock data)`;
+          message = `M-Pesa Transaction Status for ${mpesaCode}: Verified successfully! (mock data)`;
         } else {
           newStatus = 'Failed';
-          message = `M-Pesa Transaction Status for ${transactionId}: Verification failed. (mock data)`;
+          message = `M-Pesa Transaction Status for ${mpesaCode}: Verification failed. (mock data)`;
         }
 
         const updatedPayments = payments.map(p =>
@@ -265,7 +291,7 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
         setSuccessMessage(message);
       } else {
         const response = await axios.get(
-          `${import.meta.env.VITE_API_URL}/admin/payments/mpesa/verify?transactionId=${transactionId}`,
+          `${import.meta.env.VITE_API_URL}/admin/payments/mpesa/verify?transactionId=${mpesaCode}`,
           { withCredentials: true }
         );
 
@@ -276,7 +302,7 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
             p.id === paymentId ? { ...p, status: receivedStatus } : p
           );
           setPayments(updatedPayments);
-          setSuccessMessage(`M-Pesa Transaction Status for ${transactionId}: ${receivedStatus} (backend).`);
+          setSuccessMessage(`M-Pesa Transaction Status for ${mpesaCode}: ${receivedStatus} (backend).`);
         } else {
           throw new Error('M-Pesa verification failed or returned unexpected data.');
         }
@@ -287,6 +313,33 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
     } finally {
       setLoading(false);
     }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const getCustomerInfo = (payment: Payment) => {
+    if (payment.order_info ) {
+      return {
+        name: payment.order_info.customer_name,
+        phone: payment.order_info.customer_phone
+      };
+    }
+    return {
+      name: 'Unknown Customer',
+      phone: payment.phone_number
+    };
   };
 
   const stats = {
@@ -444,13 +497,7 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
                 <th className="font-semibold text-gray-900 dark:text-gray-100 py-2 px-3 text-left text-xs">
                   <div className="flex items-center gap-1">
                     <CreditCard className="h-3 w-3" />
-                    Method
-                  </div>
-                </th>
-                <th className="font-semibold text-gray-900 dark:text-gray-100 py-2 px-3 text-left text-xs">
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="h-3 w-3" />
-                    Transaction ID
+                    M-Pesa Code
                   </div>
                 </th>
                 <th className="font-semibold text-gray-900 dark:text-gray-100 py-2 px-3 text-left text-xs">
@@ -469,87 +516,82 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
               </tr>
             </thead>
             <tbody>
-              {filteredPayments.map((payment, index) => (
-                <tr
-                  key={payment.id}
-                  className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 transition-all duration-200 border-b border-gray-100 dark:border-gray-700 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/30 dark:bg-gray-750/30'}`}
-                >
-                  <td className="py-2 px-3">
-                    <div className="font-medium text-blue-700 dark:text-blue-400 text-xs">
-                      {payment.orderId}
-                    </div>
-                  </td>
-                  <td className="py-2 px-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-lg">
-                        {payment.customerEmail.charAt(0).toUpperCase()}
+              {filteredPayments.map((payment, index) => {
+                const customerInfo = getCustomerInfo(payment);
+                return (
+                  <tr
+                    key={payment.id}
+                    className={`hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 transition-all duration-200 border-b border-gray-100 dark:border-gray-700 ${index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50/30 dark:bg-gray-750/30'}`}
+                  >
+                    <td className="py-2 px-3">
+                      <div className="font-medium text-blue-700 dark:text-blue-400 text-xs">
+                        {payment.order_id}
                       </div>
-                      <div>
-                        <div className="text-xs font-medium text-gray-900 dark:text-gray-100">
-                          {payment.customerEmail.split('@')[0].replace('.', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow-lg">
+                          {customerInfo.name.charAt(0).toUpperCase()}
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-gray-400">
-                          {payment.customerEmail}
+                        <div>
+                          <div className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                            {customerInfo.name}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            {customerInfo.phone}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </td>
-                  <td className="py-2 px-3">
-                    <div className="text-xs font-bold text-green-700 dark:text-green-400">
-                      KSh {payment.amount.toLocaleString()}
-                    </div>
-                  </td>
-                  <td className="py-2 px-3">
-                    <div className="flex items-center gap-1">
-                      {getMethodIcon(payment.method)}
-                      <span className="text-xs font-medium text-gray-700 dark:text-gray-300">
-                        {payment.method}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="py-2 px-3">
-                    <div className="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
-                      {payment.transactionId || 'N/A'}
-                    </div>
-                  </td>
-                  <td className="py-2 px-3">
-                    <div className="text-xs text-gray-700 dark:text-gray-300">
-                      {new Date(payment.paymentDate).toLocaleDateString()}
-                    </div>
-                  </td>
-                  <td className="py-2 px-3">
-                    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(payment.status)}`}>
-                      {getStatusIcon(payment.status)}
-                      {payment.status}
-                    </div>
-                  </td>
-                  <td className="py-2 px-3 text-right">
-                    <div className="flex justify-end gap-1">
-                      <button
-                        onClick={() => handleVerifyClick(payment)}
-                        className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors rounded-sm flex items-center justify-center"
-                        title="Edit Payment Status"
-                      >
-                        <Eye className="h-3 w-3" />
-                      </button>
-                      {payment.method === 'M-Pesa' && payment.transactionId && (
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="text-xs font-bold text-green-700 dark:text-green-400">
+                        KSh {payment.amount.toLocaleString()}
+                      </div>
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="text-xs font-mono text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                        {payment.mpesa_code || 'N/A'}
+                      </div>
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="text-xs text-gray-700 dark:text-gray-300">
+                        {formatDate(payment.payment_date)}
+                      </div>
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border ${getPaymentStatusColor(payment.status)}`}>
+                        {getStatusIcon(payment.status)}
+                        {payment.status}
+                      </div>
+                    </td>
+                    <td className="py-2 px-3 text-right">
+                      <div className="flex justify-end gap-1">
                         <button
-                          onClick={() => handleCheckMpesaStatus(payment.id, payment.transactionId!)}
-                          disabled={loading}
-                          className="h-6 w-6 p-0 hover:bg-green-100 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 transition-colors rounded-sm flex items-center justify-center"
-                          title="Verify M-Pesa Transaction"
+                          onClick={() => handleVerifyClick(payment)}
+                          className="h-6 w-6 p-0 hover:bg-blue-100 dark:hover:bg-blue-900/30 hover:text-blue-700 dark:hover:text-blue-400 transition-colors rounded-sm flex items-center justify-center"
+                          title="Edit Payment Status"
                         >
-                          {loading ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
-                          ) : (
-                            <RefreshCw className="h-3 w-3" />
-                          )}
+                          <Eye className="h-3 w-3" />
                         </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                        {payment.mpesa_code && (
+                          <button
+                            onClick={() => handleCheckMpesaStatus(payment.id, payment.mpesa_code)}
+                            disabled={loading}
+                            className="h-6 w-6 p-0 hover:bg-green-100 dark:hover:bg-green-900/30 hover:text-green-700 dark:hover:text-green-400 transition-colors rounded-sm flex items-center justify-center"
+                            title="Verify M-Pesa Transaction"
+                          >
+                            {loading ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <RefreshCw className="h-3 w-3" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -559,17 +601,32 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
       {isVerifyDialogOpen && selectedPayment && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md border border-gray-200 dark:border-gray-700">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Edit Payment for Order: {selectedPayment.orderId}</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-4">Edit Payment for Order: {selectedPayment.order_id}</h3>
             <div className="mb-4">
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">Current Status: <span className={`font-semibold ${getPaymentStatusColor(selectedPayment.status)} px-2 py-0.5 rounded-full`}>{selectedPayment.status}</span></p>
-              <label htmlFor="paymentStatus" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Update Status
+              <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                  <strong>Customer:</strong> {getCustomerInfo(selectedPayment).name}
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                  <strong>Phone:</strong> {getCustomerInfo(selectedPayment).phone}
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">
+                  <strong>Amount:</strong> KSh {selectedPayment.amount.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-700 dark:text-gray-300">
+                  <strong>M-Pesa Code:</strong> {selectedPayment.mpesa_code}
+                </p>
+              </div>
+             <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                Update the payment status for this transaction:
+              </p>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Payment Status
               </label>
               <select
-                id="paymentStatus"
                 value={newPaymentStatus}
                 onChange={(e) => setNewPaymentStatus(e.target.value)}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100"
+                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400 text-sm"
               >
                 <option value="Pending">Pending</option>
                 <option value="Completed">Completed</option>
@@ -577,24 +634,60 @@ const AdminPayment: React.FC<AdminPaymentProps> = ({ allOrders, fetchAdminData }
                 <option value="Refunded">Refunded</option>
               </select>
             </div>
-            <div className="flex justify-end gap-3">
+            <div className="flex gap-3 justify-end">
               <button
                 onClick={() => setIsVerifyDialogOpen(false)}
-                className="px-4 py-2 text-sm font-medium rounded-md text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-md transition-colors border border-gray-300 dark:border-gray-600"
               >
                 Cancel
               </button>
               <button
                 onClick={handleUpdatePaymentStatus}
-                className="px-4 py-2 text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:bg-blue-500 dark:hover:bg-blue-600 dark:focus:ring-offset-gray-800"
                 disabled={loading}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 rounded-md transition-colors flex items-center gap-2"
               >
-                {loading ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : null}
-                Update Status
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  'Update Status'
+                )}
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {filteredPayments.length === 0 && !loading && (
+        <div className="text-center py-8">
+          <div className="text-gray-400 dark:text-gray-600 mb-2">
+            <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          </div>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">
+            {searchQuery || statusFilter !== 'all' 
+              ? 'No payments found matching your search criteria.' 
+              : 'No payments available yet.'}
+          </p>
+          {(searchQuery || statusFilter !== 'all') && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('all');
+              }}
+              className="mt-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 text-sm font-medium"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+      )}
+
+      {loading && (
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 dark:text-blue-400" />
+          <span className="ml-2 text-gray-600 dark:text-gray-400">Loading payments...</span>
         </div>
       )}
     </div>

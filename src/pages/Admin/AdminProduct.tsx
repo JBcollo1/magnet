@@ -7,6 +7,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Loader2, Plus, Edit3, Trash2, Package, DollarSign, Archive, Search, Filter } from 'lucide-react';
+import axios from 'axios';
+import { toast } from '@/components/ui/use-toast';
 
 interface Product {
   id: string;
@@ -96,37 +98,66 @@ const AdminProduct: React.FC<AdminProductProps> = ({ allProducts = [], fetchAdmi
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+  setLoading(true);
+  try {
+    const payload = {
+      name: formState.name,
+      description: formState.description,
+      price: Number(formState.price),
+      quantity: Number(formState.stock), // backend expects "quantity"
+      image_url: formState.imageUrl,
+    };
 
-      if (currentProduct) {
-        console.log('Updating product:', currentProduct.id, formState);
-      } else {
-        console.log('Creating product:', formState);
-      }
-
-      setIsFormDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to save product:', error);
-    } finally {
-      setLoading(false);
+    if (currentProduct) {
+      // Update existing product
+      await axios.put(
+        `${import.meta.env.VITE_API_URL}/products/${currentProduct.id}`,
+        payload,
+        { withCredentials: true }
+      );
+      console.log("Updated product:", currentProduct.id);
+    } else {
+      // Create new product
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/products`,
+        payload,
+        { withCredentials: true }
+      );
+      console.log("Created product");
     }
-  };
 
-  const confirmDelete = async () => {
-    if (!currentProduct) return;
-    setLoading(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Deleting product:', currentProduct.id);
-      setIsDeleteDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to delete product:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    toast({ title: "Success", description: `Product ${currentProduct ? "updated" : "created"} successfully.` });
+
+    setIsFormDialogOpen(false);
+    setCurrentProduct(null);
+    
+  } catch (error) {
+    console.error("Failed to save product:", error);
+    toast({ title: "Error", description: "Failed to save product.", variant: "destructive" });
+  } finally {
+    setLoading(false);
+  }
+};
+
+const confirmDelete = async () => {
+  if (!currentProduct) return;
+  setLoading(true);
+  try {
+    
+    await axios.delete(`${import.meta.env.VITE_API_URL}/admin/products/${currentProduct.id}`, {
+      withCredentials: true 
+    });
+
+    console.log('Deleted product:', currentProduct.id);
+
+   
+    setIsDeleteDialogOpen(false);
+  } catch (error) {
+    console.error('Failed to delete product:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const totalValue = filteredProducts.reduce((sum, product) => sum + (product.price * product.stock), 0);
 
