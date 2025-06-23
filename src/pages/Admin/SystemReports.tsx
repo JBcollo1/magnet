@@ -476,16 +476,22 @@ const ReportsAnalytics = ({ allOrders, getStatusColor }) => {
                     <TableCell className="font-medium text-gray-900 dark:text-gray-100">{order.customer}</TableCell>
                     <TableCell className="text-gray-700 dark:text-gray-300">{new Date(order.date).toLocaleDateString()}</TableCell>
                     <TableCell className="max-w-xs truncate text-gray-700 dark:text-gray-300">{order.items}</TableCell>
-                    <TableCell className="font-semibold text-green-600 dark:text-green-400">
-                      KSh {order.total.toLocaleString()}
+                   <TableCell className="font-semibold text-green-600 dark:text-green-400">
+                      {order.total
+                        ? `KSh ${order.total.toLocaleString()}`
+                        : <span className="text-gray-500 dark:text-gray-400">N/A</span>}
                     </TableCell>
+
                     <TableCell>
                       <StatusBadge status={order.status} getStatusColor={getStatusColor} />
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline" className="capitalize bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100">
-                        {order.paymentMethod.replace('_', ' ')}
+                        {order.paymentMethod
+                          ? order.paymentMethod.replace('_', ' ')
+                          : <span className="text-gray-500 dark:text-gray-400">N/A</span>}
                       </Badge>
+
                     </TableCell>
                   </TableRow>
                 ))}
