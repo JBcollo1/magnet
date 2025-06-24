@@ -212,12 +212,14 @@ const CustomerProfile = () => {
         address: userDetails.address,
         city: userDetails.city,
       };
+
       const response = await axios.put<ApiResponse<UserDetails>>(
         `${import.meta.env.VITE_API_URL}/auth/profile`,
         updatePayload,
         { withCredentials: true }
       );
-      if (response.data?.success) {
+
+      if (response.data) {
         await refreshUser();
         setIsEditing(false);
         setShowSuccess(true);
@@ -227,7 +229,7 @@ const CustomerProfile = () => {
           description: "Your profile has been updated successfully.",
         });
       } else {
-        throw new Error(response.data?.message || "Profile update failed on server.");
+        throw new Error("Profile update failed on server.");
       }
     } catch (error) {
       console.error('Failed to update profile:', error);
