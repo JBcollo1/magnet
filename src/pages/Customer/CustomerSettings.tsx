@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -42,6 +42,7 @@ const CustomerSettings = () => {
   const { user, logout, changePassword } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
 
   // State for password change form inputs
   const [currentPassword, setCurrentPassword] = useState('');
@@ -67,6 +68,11 @@ const CustomerSettings = () => {
     logout: 'idle',
     deleteAccount: 'idle'
   });
+
+  // Toggle between light and dark mode
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
 
   // Password validation helper
   const validatePassword = (password: string): string | null => {
@@ -135,7 +141,6 @@ const CustomerSettings = () => {
     } catch (error) {
       console.error('Failed to change password:', error);
       setActionStates(prev => ({ ...prev, password: 'error' }));
-      // The error toast is already handled in the AuthContext
     } finally {
       setTimeout(() => {
         setActionStates(prev => ({ ...prev, password: 'idle' }));
@@ -275,53 +280,26 @@ const CustomerSettings = () => {
           transition-all duration-500 ease-out transform
           backdrop-blur-xl border-2
           hover:scale-[1.02] active:scale-[0.98]
-          ${
-            destructive
-              ? `
-                bg-gradient-to-br from-red-500/20 via-red-600/10 to-red-700/20
-                hover:from-red-500/30 hover:via-red-600/20 hover:to-red-700/30
-                border-red-400/50 hover:border-red-400/80
-                hover:shadow-2xl hover:shadow-red-500/40
-                text-red-50 hover:text-white
-                before:absolute before:inset-0 before:bg-gradient-to-r
-                before:from-red-600/0 before:via-red-500/20 before:to-red-600/0
-                before:translate-x-[-100%] hover:before:translate-x-[100%]
-                before:transition-transform before:duration-700
-              `
-              : state === 'success'
-              ? `
-                bg-gradient-to-br from-emerald-500/20 via-green-500/10 to-teal-500/20
-                border-emerald-400/60 text-emerald-50
-                hover:from-emerald-500/30 hover:via-green-500/20 hover:to-teal-500/30
-                hover:border-emerald-400/80 hover:shadow-2xl hover:shadow-emerald-500/40
-                before:absolute before:inset-0 before:bg-gradient-to-r
-                before:from-emerald-600/0 before:via-emerald-400/30 before:to-emerald-600/0
-                before:translate-x-[-100%] hover:before:translate-x-[100%]
-                before:transition-transform before:duration-700
-              `
-              : state === 'error'
-              ? `
-                bg-gradient-to-br from-orange-500/20 via-orange-600/10 to-orange-700/20
-                border-orange-400/50 text-orange-50
-                hover:from-orange-500/30 hover:via-orange-600/20 hover:to-orange-700/30
-                hover:border-orange-400/80 hover:shadow-2xl hover:shadow-orange-500/40
-                before:absolute before:inset-0 before:bg-gradient-to-r
-                before:from-orange-600/0 before:via-orange-500/20 before:to-orange-600/0
-                before:translate-x-[-100%] hover:before:translate-x-[100%]
-                before:transition-transform before:duration-700
-              `
-              : `
-                bg-gradient-to-br from-slate-800/60 via-slate-700/40 to-slate-900/60
-                border-slate-600/60 hover:border-slate-500/80
-                text-slate-50 hover:text-white
-                hover:from-slate-700/70 hover:via-slate-600/50 hover:to-slate-800/70
-                hover:shadow-2xl hover:shadow-slate-500/30
-                before:absolute before:inset-0 before:bg-gradient-to-r
-                before:from-slate-600/0 before:via-slate-400/20 before:to-slate-600/0
-                before:translate-x-[-100%] hover:before:translate-x-[100%]
-                before:transition-transform before:duration-700
-              `
-          }
+          ${isDarkMode ? `
+            bg-gradient-to-br from-slate-800/60 via-slate-700/40 to-slate-900/60
+            border-slate-600/60 hover:border-slate-500/80
+            text-slate-50 hover:text-white
+            hover:from-slate-700/70 hover:via-slate-600/50 hover:to-slate-800/70
+            hover:shadow-2xl hover:shadow-slate-500/30
+            before:absolute before:inset-0 before:bg-gradient-to-r
+            before:from-slate-600/0 before:via-slate-400/20 before:to-slate-600/0
+            before:translate-x-[-100%] hover:before:translate-x-[100%]
+            before:transition-transform before:duration-700
+          ` : `
+            bg-gradient-to-br from-blue-50 via-white to-purple-50
+            border-gray-200 hover:border-gray-300
+            text-gray-800 hover:text-gray-900
+            hover:shadow-lg hover:shadow-gray-300/50
+            before:absolute before:inset-0 before:bg-gradient-to-r
+            before:from-gray-100/0 before:via-gray-200/20 before:to-gray-100/0
+            before:translate-x-[-100%] hover:before:translate-x-[100%]
+            before:transition-transform before:duration-700
+          `}
           ${state === 'processing' ? 'animate-pulse shadow-lg' : ''}
         `}
         disabled={state === 'processing'}
@@ -343,7 +321,9 @@ const CustomerSettings = () => {
                   ? 'text-orange-300 drop-shadow-lg'
                   : destructive
                   ? 'text-red-300 drop-shadow-lg'
-                  : 'text-slate-300 drop-shadow-lg group-hover:text-white'
+                  : isDarkMode
+                  ? 'text-slate-300 drop-shadow-lg group-hover:text-white'
+                  : 'text-gray-500 drop-shadow-lg group-hover:text-gray-900'
               }`} />
               {state === 'success' && (
                 <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-emerald-400 animate-pulse" />
@@ -361,7 +341,9 @@ const CustomerSettings = () => {
               ? 'text-orange-300 rotate-0 scale-110'
               : destructive
               ? 'text-red-300 group-hover:translate-x-2 group-hover:scale-110'
-              : 'text-slate-300 group-hover:translate-x-2 group-hover:scale-110 group-hover:text-white'
+              : isDarkMode
+              ? 'text-slate-300 group-hover:translate-x-2 group-hover:scale-110 group-hover:text-white'
+              : 'text-gray-500 group-hover:translate-x-2 group-hover:scale-110 group-hover:text-gray-900'
           }`} />
         </div>
 
@@ -374,7 +356,17 @@ const CustomerSettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 transition-all duration-500 relative overflow-hidden">
+    <div className={`min-h-screen p-6 transition-all duration-500 relative overflow-hidden ${isDarkMode ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950' : 'bg-gradient-to-br from-blue-50 via-white to-purple-50'}`}>
+      <div className="absolute top-4 right-4 z-50">
+        <button
+          onClick={toggleDarkMode}
+          className={`p-2 rounded-full shadow-lg transition-all duration-300 ${isDarkMode ? 'bg-slate-700 text-yellow-300 hover:bg-slate-600' : 'bg-white text-yellow-600 hover:bg-gray-100'}`}
+          aria-label="Toggle Dark Mode"
+        >
+          {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </button>
+      </div>
+
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-radial from-blue-500/20 via-purple-500/10 to-transparent rounded-full blur-3xl animate-pulse" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-radial from-emerald-500/20 via-teal-500/10 to-transparent rounded-full blur-3xl animate-pulse delay-1000" />
@@ -384,61 +376,48 @@ const CustomerSettings = () => {
       <div className="max-w-4xl mx-auto relative z-10">
         <div className="mb-12 text-center">
           <div className="relative inline-flex items-center justify-center mb-6">
-            <div className="w-24 h-24 bg-gradient-to-br from-slate-700 via-slate-600 to-slate-800 rounded-3xl shadow-2xl
-              flex items-center justify-center transform hover:scale-110 transition-all duration-500
-              hover:shadow-slate-500/40 relative overflow-hidden group border-2 border-slate-600/50">
-              <Settings className="w-12 h-12 text-slate-200 group-hover:text-white transition-all duration-300 relative z-10" />
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20 opacity-0
-                group-hover:opacity-100 transition-opacity duration-500" />
-              <Zap className="absolute top-2 right-2 w-4 h-4 text-yellow-400 opacity-0 group-hover:opacity-100
-                animate-ping transition-opacity duration-300" />
+            <div className={`w-24 h-24 rounded-3xl shadow-2xl flex items-center justify-center transform hover:scale-110 transition-all duration-500 hover:shadow-slate-500/40 relative overflow-hidden group border-2 ${isDarkMode ? 'bg-gradient-to-br from-slate-700 via-slate-600 to-slate-800 border-slate-600/50' : 'bg-gradient-to-br from-blue-100 via-white to-purple-100 border-gray-200'}`}>
+              <Settings className={`w-12 h-12 transition-all duration-300 relative z-10 ${isDarkMode ? 'text-slate-200 group-hover:text-white' : 'text-gray-700 group-hover:text-gray-900'}`} />
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <Zap className="absolute top-2 right-2 w-4 h-4 text-yellow-400 opacity-0 group-hover:opacity-100 animate-ping transition-opacity duration-300" />
             </div>
           </div>
 
           <h1 className="text-5xl font-bold mb-4 relative">
-            <span className="bg-gradient-to-r from-slate-200 via-white to-slate-200 bg-clip-text text-transparent
-              drop-shadow-2xl animate-gradient bg-300% leading-tight">
+            <span className={`bg-gradient-to-r bg-clip-text text-transparent drop-shadow-2xl animate-gradient bg-300% leading-tight ${isDarkMode ? 'from-slate-200 via-white to-slate-200' : 'from-blue-600 via-purple-600 to-pink-600'}`}>
               Account Settings
             </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20
-              bg-clip-text text-transparent blur-sm -z-10">
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 bg-clip-text text-transparent blur-sm -z-10">
               Account Settings
             </div>
           </h1>
 
-          <p className="text-slate-300 text-xl font-light leading-relaxed max-w-2xl mx-auto">
+          <p className={`text-xl font-light leading-relaxed max-w-2xl mx-auto ${isDarkMode ? 'text-slate-300' : 'text-gray-600'}`}>
             Manage your account preferences and security settings with
-            <span className="text-emerald-400 font-medium"> enhanced controls</span>
+            <span className="font-medium text-emerald-400"> enhanced controls</span>
           </p>
         </div>
 
         <div className="grid lg:grid-cols-1 gap-8">
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-slate-800/40 border-2 border-slate-700/60
-            shadow-2xl rounded-3xl transition-all duration-500 hover:shadow-slate-500/30
-            hover:border-slate-600/80 hover:bg-slate-800/60 group">
-
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-700/20 via-transparent to-slate-900/20 opacity-0
-              group-hover:opacity-100 transition-opacity duration-500" />
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500
-              opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <Card className={`relative overflow-hidden backdrop-blur-xl border-2 shadow-2xl rounded-3xl transition-all duration-500 hover:shadow-slate-500/30 hover:border-slate-600/80 group ${isDarkMode ? 'bg-slate-800/40 border-slate-700/60 hover:bg-slate-800/60' : 'bg-white/80 border-gray-200 hover:bg-white'}`}>
+            <div className="absolute inset-0 bg-gradient-to-br from-slate-700/20 via-transparent to-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <CardHeader className="pb-6 relative z-10">
-              <CardTitle className="text-slate-100 flex items-center text-2xl font-bold">
+              <CardTitle className={`flex items-center text-2xl font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-800'}`}>
                 <div className="relative">
-                  <Lock className="w-7 h-7 mr-4 text-slate-400 transition-all duration-300 group-hover:text-emerald-400" />
-                  <div className="absolute inset-0 w-7 h-7 mr-4 bg-emerald-400/20 rounded-full blur-lg opacity-0
-                    group-hover:opacity-100 transition-opacity duration-300" />
+                  <Lock className={`w-7 h-7 mr-4 transition-all duration-300 ${isDarkMode ? 'text-slate-400 group-hover:text-emerald-400' : 'text-gray-500 group-hover:text-emerald-500'}`} />
+                  <div className="absolute inset-0 w-7 h-7 mr-4 bg-emerald-400/20 rounded-full blur-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
                 Account Security & Data
               </CardTitle>
-              <CardDescription className="text-slate-300 text-lg font-light leading-relaxed mt-2">
+              <CardDescription className={`text-lg font-light leading-relaxed mt-2 ${isDarkMode ? 'text-slate-300' : 'text-gray-500'}`}>
                 Secure your account and manage your personal information with
-                <span className="text-blue-400 font-medium"> advanced controls</span>
+                <span className="font-medium text-blue-400"> advanced controls</span>
               </CardDescription>
             </CardHeader>
 
-            <CardContent className="space-y-6 relative z-10 pb-8">
-              {/* Toggle Password Change Fields */}
+            <CardContent className={`space-y-6 relative z-10 pb-8 ${isDarkMode ? '' : ''}`}>
               <ActionButton
                 onClick={() => setShowPasswordFields(!showPasswordFields)}
                 icon={showPasswordFields ? EyeOff : Lock}
@@ -449,10 +428,10 @@ const CustomerSettings = () => {
               </ActionButton>
 
               {showPasswordFields && (
-                <div className="space-y-4 p-4 rounded-xl bg-slate-700/30 border border-slate-600/50 animate-fadeIn">
-                  <div className="mb-4 p-3 bg-blue-900/20 border border-blue-700/30 rounded-lg">
-                    <h4 className="text-blue-300 font-medium mb-2">Password Requirements:</h4>
-                    <ul className="text-sm text-blue-200 space-y-1">
+                <div className={`space-y-4 p-4 rounded-xl border animate-fadeIn ${isDarkMode ? 'bg-slate-700/30 border-slate-600/50' : 'bg-gray-100 border-gray-200'}`}>
+                  <div className={`mb-4 p-3 rounded-lg ${isDarkMode ? 'bg-blue-900/20 border-blue-700/30' : 'bg-blue-50 border-blue-200'}`}>
+                    <h4 className={`font-medium mb-2 ${isDarkMode ? 'text-blue-300' : 'text-blue-700'}`}>Password Requirements:</h4>
+                    <ul className={`text-sm space-y-1 ${isDarkMode ? 'text-blue-200' : 'text-blue-600'}`}>
                       <li>• At least 8 characters long</li>
                       <li>• Contains uppercase and lowercase letters</li>
                       <li>• Contains at least one number</li>
@@ -466,8 +445,7 @@ const CustomerSettings = () => {
                       placeholder="Current Password"
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
-                      className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
-                        placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full p-3 pr-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isDarkMode ? 'bg-slate-800/60 border-slate-600 text-slate-50 placeholder-slate-400' : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'}`}
                       disabled={actionStates.password === 'processing'}
                     />
                     <button
@@ -487,8 +465,7 @@ const CustomerSettings = () => {
                       placeholder="New Password"
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
-                      className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
-                        placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full p-3 pr-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isDarkMode ? 'bg-slate-800/60 border-slate-600 text-slate-50 placeholder-slate-400' : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'}`}
                       disabled={actionStates.password === 'processing'}
                     />
                     <button
@@ -508,8 +485,7 @@ const CustomerSettings = () => {
                       placeholder="Confirm New Password"
                       value={confirmNewPassword}
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
-                      className="w-full p-3 pr-10 rounded-md bg-slate-800/60 border border-slate-600 text-slate-50
-                        placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className={`w-full p-3 pr-10 rounded-md border focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${isDarkMode ? 'bg-slate-800/60 border-slate-600 text-slate-50 placeholder-slate-400' : 'bg-gray-100 border-gray-300 text-gray-900 placeholder-gray-500'}`}
                       disabled={actionStates.password === 'processing'}
                     />
                     <button
@@ -562,25 +538,24 @@ const CustomerSettings = () => {
               </ActionButton>
 
               {showDeleteConfirm && (
-                <div className="relative overflow-hidden p-6 bg-gradient-to-br from-red-950/80 via-red-900/60 to-red-950/80
-                  border-2 border-red-700/60 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-xl">
+                <div className={`relative overflow-hidden p-6 rounded-2xl shadow-2xl animate-fadeIn backdrop-blur-xl border-2 ${isDarkMode ? 'bg-gradient-to-br from-red-950/80 via-red-900/60 to-red-950/80 border-red-700/60' : 'bg-gradient-to-br from-red-50 via-red-100 to-red-50 border-red-200'}`}>
                   <div className="absolute inset-0 bg-gradient-to-r from-red-600/10 via-red-500/20 to-red-600/10" />
                   <div className="relative z-10">
                     <div className="flex items-center mb-4">
                       <div className="relative">
-                        <AlertTriangle className="w-7 h-7 text-red-400 mr-4 animate-bounce" />
+                        <AlertTriangle className={`w-7 h-7 mr-4 animate-bounce ${isDarkMode ? 'text-red-400' : 'text-red-500'}`} />
                         <div className="absolute inset-0 w-7 h-7 bg-red-400/30 rounded-full blur-lg animate-pulse" />
                       </div>
-                      <span className="text-red-100 font-bold text-xl">
+                      <span className={`font-bold text-xl ${isDarkMode ? 'text-red-100' : 'text-red-700'}`}>
                         ⚠️ CRITICAL ACTION REQUIRED
                       </span>
                     </div>
-                    <p className="text-red-200 mb-5 font-medium text-lg leading-relaxed">
+                    <p className={`mb-5 font-medium text-lg leading-relaxed ${isDarkMode ? 'text-red-200' : 'text-red-600'}`}>
                       This action is <strong className="text-red-100">irreversible</strong>. All your data, order history,
                       saved preferences, and account information will be permanently deleted.
                     </p>
-                    <div className="bg-gradient-to-r from-red-800/50 to-red-900/50 p-4 rounded-xl border border-red-600/30 backdrop-blur-sm">
-                      <p className="text-red-100 text-base font-medium">
+                    <div className={`bg-gradient-to-r p-4 rounded-xl border ${isDarkMode ? 'from-red-800/50 to-red-900/50 border-red-600/30' : 'from-red-100 to-red-200 border-red-200'}`}>
+                      <p className={`text-base font-medium ${isDarkMode ? 'text-red-100' : 'text-red-700'}`}>
                         🔒 Once confirmed, you will have 24 hours to cancel this request via email.
                       </p>
                     </div>
@@ -606,6 +581,7 @@ const CustomerSettings = () => {
         </div>
       </div>
 
+      
        <style>{`
         @keyframes gradient {
           0%, 100% { background-position: 0% 50%; }
