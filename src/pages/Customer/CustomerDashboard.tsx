@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { ShoppingBag, Star, Package, User, Heart, Gift, RefreshCw } from 'lucide-react';
+import { Provider } from '@radix-ui/react-toast';
+import { spawn } from 'child_process';
 
 interface Order {
   id: string;
@@ -155,7 +157,10 @@ const CustomerDashboard = ({ orders, onRefresh }: CustomerDashboardProps) => {
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-lg text-gray-900 dark:text-gray-100">
-                      KSh {order.total.toLocaleString()}
+                      {/* KSh {order.total.toLocaleString()} */}
+                      {order.total  
+                      ? `KSh ${order.total.toLocaleString()}`
+                    : <span className="text-grey-500 dark:text-gray-400">N/A</span>}
                     </p>
                     <Badge className={getStatusColor(order.status)}>
                       {order.status}
