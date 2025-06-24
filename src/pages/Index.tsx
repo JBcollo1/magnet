@@ -69,7 +69,7 @@ const Index = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-[#121212]">
       <Header />
       
       {/* Hero Carousel Section */}
@@ -83,29 +83,29 @@ const Index = () => {
           <CarouselContent>
             {heroSlides.map((slide, index) => (
               <CarouselItem key={index}>
-                <div className="relative h-[70vh] bg-gradient-to-r from-primary/90 via-primary/80 to-primary/70">
+                <div className="relative h-[70vh] bg-gradient-to-r from-[#00C896]/90 via-[#00C896]/80 to-[#00C896]/70">
                   <div 
                     className="absolute inset-0 bg-cover bg-center"
                     style={{ backgroundImage: `url(${slide.image})` }}
                   >
-                    <div className="absolute inset-0 bg-black/40 dark:bg-black/60"></div>
+                    <div className="absolute inset-0 bg-[#121212]/50"></div>
                   </div>
                   <div className="relative z-10 container mx-auto px-4 h-full flex items-center">
-                    <div className="max-w-2xl text-white">
+                    <div className="max-w-2xl text-[#E0E0E0]">
                       <h1 className="text-5xl md:text-6xl font-bold mb-4 leading-tight">
                         {slide.title}
                       </h1>
-                      <p className="text-xl md:text-2xl font-light mb-2 text-purple-200">
+                      <p className="text-xl md:text-2xl font-light mb-2 text-[#00C896]">
                         {slide.subtitle}
                       </p>
                       <p className="text-lg mb-8 max-w-xl leading-relaxed opacity-90">
                         {slide.description}
                       </p>
                       <div className="flex flex-col sm:flex-row gap-4">
-                        <Button size="lg" className="bg-white text-primary hover:bg-gray-100 text-lg px-8 py-4">
+                        <Button size="lg" className="bg-[#00BFA6] text-[#121212] hover:bg-[#1DB954] text-lg px-8 py-4 font-semibold">
                           {slide.cta}
                         </Button>
-                        <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-primary text-lg px-8 py-4">
+                        <Button size="lg" variant="outline" className="border-[#E0E0E0] text-[#E0E0E0] hover:bg-[#E0E0E0] hover:text-[#121212] text-lg px-8 py-4">
                           View Gallery
                         </Button>
                       </div>
@@ -115,22 +115,22 @@ const Index = () => {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="left-4" />
-          <CarouselNext className="right-4" />
+          <CarouselPrevious className="left-4 bg-[#2D2D2D] border-[#303030] text-[#E0E0E0] hover:bg-[#00C896] hover:text-[#121212]" />
+          <CarouselNext className="right-4 bg-[#2D2D2D] border-[#303030] text-[#E0E0E0] hover:bg-[#00C896] hover:text-[#121212]" />
         </Carousel>
       </section>
 
       {/* Stats Section */}
-      <section className="py-16 bg-card border-b">
+      <section className="py-16 bg-[#2D2D2D] border-b border-[#303030]">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {stats.map((stat, index) => (
               <div key={index} className="text-center">
-                <div className="bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <stat.icon className="h-8 w-8 text-primary" />
+                <div className="bg-[#00C896]/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <stat.icon className="h-8 w-8 text-[#00C896]" />
                 </div>
-                <div className="text-3xl font-bold text-foreground mb-2">{stat.value}</div>
-                <div className="text-muted-foreground">{stat.label}</div>
+                <div className="text-3xl font-bold text-[#E0E0E0] mb-2">{stat.value}</div>
+                <div className="text-gray-400">{stat.label}</div>
               </div>
             ))}
           </div>
@@ -138,40 +138,40 @@ const Index = () => {
       </section>
 
       {/* Enhanced Features Section */}
-      <section className="py-20 bg-background">
+      <section className="py-20 bg-[#121212]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 text-foreground">Why Choose MagnetCraft Kenya?</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">We combine quality craftsmanship with cutting-edge technology to deliver magnets that exceed expectations</p>
+            <h2 className="text-4xl font-bold mb-4 text-[#E0E0E0]">Why Choose MagnetCraft Kenya?</h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">We combine quality craftsmanship with cutting-edge technology to deliver magnets that exceed expectations</p>
           </div>
           <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center group hover:transform hover:scale-105 transition-all duration-300">
-              <div className="bg-gradient-to-br from-purple-100 to-purple-200 dark:from-purple-900/20 dark:to-purple-800/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:shadow-lg">
-                <Zap className="h-10 w-10 text-purple-600 dark:text-purple-400" />
+              <div className="bg-gradient-to-br from-[#00C896]/20 to-[#00C896]/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:shadow-lg group-hover:shadow-[#00C896]/20">
+                <Zap className="h-10 w-10 text-[#00C896]" />
               </div>
-              <h3 className="font-bold text-xl mb-3 text-foreground">Lightning Fast</h3>
-              <p className="text-muted-foreground">Same-day production for orders placed before 2 PM</p>
+              <h3 className="font-bold text-xl mb-3 text-[#E0E0E0]">Lightning Fast</h3>
+              <p className="text-gray-400">Same-day production for orders placed before 2 PM</p>
             </div>
             <div className="text-center group hover:transform hover:scale-105 transition-all duration-300">
-              <div className="bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-900/20 dark:to-blue-800/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:shadow-lg">
-                <Shield className="h-10 w-10 text-blue-600 dark:text-blue-400" />
+              <div className="bg-gradient-to-br from-[#00C896]/20 to-[#00C896]/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:shadow-lg group-hover:shadow-[#00C896]/20">
+                <Shield className="h-10 w-10 text-[#00C896]" />
               </div>
-              <h3 className="font-bold text-xl mb-3 text-foreground">Premium Quality</h3>
-              <p className="text-muted-foreground">UV-resistant printing with vibrant, long-lasting colors</p>
+              <h3 className="font-bold text-xl mb-3 text-[#E0E0E0]">Premium Quality</h3>
+              <p className="text-gray-400">UV-resistant printing with vibrant, long-lasting colors</p>
             </div>
             <div className="text-center group hover:transform hover:scale-105 transition-all duration-300">
-              <div className="bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/20 dark:to-green-800/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:shadow-lg">
-                <Truck className="h-10 w-10 text-green-600 dark:text-green-400" />
+              <div className="bg-gradient-to-br from-[#00C896]/20 to-[#00C896]/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:shadow-lg group-hover:shadow-[#00C896]/20">
+                <Truck className="h-10 w-10 text-[#00C896]" />
               </div>
-              <h3 className="font-bold text-xl mb-3 text-foreground">Free Delivery</h3>
-              <p className="text-muted-foreground">Complimentary delivery within Nairobi and suburbs</p>
+              <h3 className="font-bold text-xl mb-3 text-[#E0E0E0]">Free Delivery</h3>
+              <p className="text-gray-400">Complimentary delivery within Nairobi and suburbs</p>
             </div>
             <div className="text-center group hover:transform hover:scale-105 transition-all duration-300">
-              <div className="bg-gradient-to-br from-yellow-100 to-yellow-200 dark:from-yellow-900/20 dark:to-yellow-800/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:shadow-lg">
-                <Star className="h-10 w-10 text-yellow-600 dark:text-yellow-400" />
+              <div className="bg-gradient-to-br from-[#00C896]/20 to-[#00C896]/30 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:shadow-lg group-hover:shadow-[#00C896]/20">
+                <Star className="h-10 w-10 text-[#00C896]" />
               </div>
-              <h3 className="font-bold text-xl mb-3 text-foreground">100% Custom</h3>
-              <p className="text-muted-foreground">Unlimited design possibilities with our easy upload system</p>
+              <h3 className="font-bold text-xl mb-3 text-[#E0E0E0]">100% Custom</h3>
+              <p className="text-gray-400">Unlimited design possibilities with our easy upload system</p>
             </div>
           </div>
         </div>
@@ -181,25 +181,25 @@ const Index = () => {
       <ProductSection />
 
       {/* Testimonials Section */}
-      <section className="py-20 bg-background">
+      <section className="py-20 bg-[#121212]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold mb-4 text-foreground">What Our Customers Say</h2>
-            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">Don't just take our word for it - hear from our satisfied customers across Kenya</p>
+            <h2 className="text-4xl font-bold mb-4 text-[#E0E0E0]">What Our Customers Say</h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">Don't just take our word for it - hear from our satisfied customers across Kenya</p>
           </div>
           <div className="grid md:grid-cols-3 gap-8">
             {testimonials.map((testimonial, index) => (
-              <Card key={index} className="bg-card border">
+              <Card key={index} className="bg-[#2D2D2D] border-[#303030]">
                 <CardContent className="p-6">
                   <div className="flex mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Star key={i} className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+                      <Star key={i} className="h-5 w-5 fill-[#00C896] text-[#00C896]" />
                     ))}
                   </div>
-                  <p className="text-muted-foreground mb-4 italic">"{testimonial.comment}"</p>
+                  <p className="text-gray-400 mb-4 italic">"{testimonial.comment}"</p>
                   <div>
-                    <p className="font-semibold text-foreground">{testimonial.name}</p>
-                    <p className="text-sm text-muted-foreground">{testimonial.role}</p>
+                    <p className="font-semibold text-[#E0E0E0]">{testimonial.name}</p>
+                    <p className="text-sm text-gray-500">{testimonial.role}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -209,35 +209,35 @@ const Index = () => {
       </section>
 
       {/* Enhanced Footer */}
-      <footer className="bg-card border-t">
+      <footer className="bg-[#2D2D2D] border-t border-[#303030]">
         <div className="container mx-auto px-4 py-16">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
-              <h3 className="text-2xl font-bold mb-6 text-primary">MagnetCraft Kenya</h3>
-              <p className="text-muted-foreground mb-4">
+              <h3 className="text-2xl font-bold mb-6 text-[#00C896]">MagnetCraft Kenya</h3>
+              <p className="text-gray-400 mb-4">
                 Your trusted partner for premium custom magnets and promotional materials across Kenya.
               </p>
               <div className="flex space-x-4">
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-primary-foreground font-bold">FB</span>
+                <div className="w-10 h-10 bg-[#00C896] rounded-full flex items-center justify-center hover:bg-[#00BFA6] transition-colors">
+                  <span className="text-[#121212] font-bold">FB</span>
                 </div>
-                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold">IG</span>
+                <div className="w-10 h-10 bg-[#1DB954] rounded-full flex items-center justify-center hover:bg-[#00BFA6] transition-colors">
+                  <span className="text-[#121212] font-bold">IG</span>
                 </div>
               </div>
             </div>
             <div>
-              <h4 className="font-semibold mb-6 text-lg text-foreground">Quick Links</h4>
-              <ul className="space-y-3 text-muted-foreground">
-                <li><a href="/about" className="hover:text-foreground transition-colors">About Us</a></li>
-                <li><a href="/contact" className="hover:text-foreground transition-colors">Contact</a></li>
-                <li><a href="/cart" className="hover:text-foreground transition-colors">Cart</a></li>
-                <li><a href="/dashboard" className="hover:text-foreground transition-colors">Dashboard</a></li>
+              <h4 className="font-semibold mb-6 text-lg text-[#E0E0E0]">Quick Links</h4>
+              <ul className="space-y-3 text-gray-400">
+                <li><a href="/about" className="hover:text-[#00C896] transition-colors">About Us</a></li>
+                <li><a href="/contact" className="hover:text-[#00C896] transition-colors">Contact</a></li>
+                <li><a href="/cart" className="hover:text-[#00C896] transition-colors">Cart</a></li>
+                <li><a href="/dashboard" className="hover:text-[#00C896] transition-colors">Dashboard</a></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-6 text-lg text-foreground">Our Products</h4>
-              <ul className="space-y-3 text-muted-foreground">
+              <h4 className="font-semibold mb-6 text-lg text-[#E0E0E0]">Our Products</h4>
+              <ul className="space-y-3 text-gray-400">
                 <li>Custom Business Magnets</li>
                 <li>Photo Magnets</li>
                 <li>Promotional Magnets</li>
@@ -245,8 +245,8 @@ const Index = () => {
               </ul>
             </div>
             <div>
-              <h4 className="font-semibold mb-6 text-lg text-foreground">Contact Info</h4>
-              <div className="text-muted-foreground space-y-3">
+              <h4 className="font-semibold mb-6 text-lg text-[#E0E0E0]">Contact Info</h4>
+              <div className="text-gray-400 space-y-3">
                 <p className="flex items-center">📧 info@magnetcraft.ke</p>
                 <p className="flex items-center">📱 +254 700 123 456</p>
                 <p className="flex items-center">📍 Nairobi, Kenya</p>
@@ -254,7 +254,7 @@ const Index = () => {
               </div>
             </div>
           </div>
-          <div className="border-t border-border pt-8 text-center text-muted-foreground">
+          <div className="border-t border-[#303030] pt-8 text-center text-gray-400">
             <p>&copy; 2024 MagnetCraft Kenya. All rights reserved. | Crafted with ❤️ in Nairobi</p>
           </div>
         </div>
