@@ -122,17 +122,17 @@ const Dashboard = () => {
     try {
       const response = await axios.get<{ orders: Order[] }>(
         `${import.meta.env.VITE_API_URL}/orders`,
-        { 
+        {
           withCredentials: true,
           timeout: 10000 // 10 second timeout
         }
       );
 
       // Ensure we have an array of orders
-      const ordersData = Array.isArray(response.data.orders) 
-        ? response.data.orders 
-        : Array.isArray(response.data) 
-          ? response.data 
+      const ordersData = Array.isArray(response.data.orders)
+        ? response.data.orders
+        : Array.isArray(response.data)
+          ? response.data
           : [];
 
       if (ordersData.length === 0) {
@@ -151,7 +151,7 @@ const Dashboard = () => {
       }
     } catch (error) {
       console.error('Failed to fetch orders:', error);
-      
+
       // Check if it's a network error or server error
       if (isAxiosError(error)) {
         if (error.code === 'ECONNABORTED') {
@@ -164,7 +164,7 @@ const Dashboard = () => {
           console.log('API error, using mock data');
         }
       }
-      
+
       // Fallback to mock data
       setOrders(mockOrders);
     }
@@ -180,7 +180,7 @@ const Dashboard = () => {
 
   if (authLoading || dataLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/10 dark:to-blue-950/10 dark:bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 dark:from-[#121212] dark:to-[#2D2D2D] flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-900 dark:text-gray-100" />
           <p className="text-gray-700 dark:text-gray-300">Loading your dashboard...</p>
@@ -191,7 +191,7 @@ const Dashboard = () => {
 
   if (!user || user.role !== 'CUSTOMER') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/10 dark:to-blue-950/10 dark:bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 dark:from-[#121212] dark:to-[#2D2D2D] flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-700 dark:text-gray-300">Access denied. Customer account required.</p>
         </div>
@@ -200,7 +200,7 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-950/10 dark:to-blue-950/10 dark:bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 dark:from-[#121212] dark:to-[#2D2D2D]">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
@@ -208,7 +208,7 @@ const Dashboard = () => {
           <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">
             Welcome back, {user.name}! 👋
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
+          <p className="text-gray-600 dark:text-gray-400">
             Manage your account, track your magnet orders, and view payment status verified by our admin team.
           </p>
           {error && (
@@ -221,28 +221,28 @@ const Dashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-            <TabsTrigger 
-              value="overview" 
-              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white dark:data-[state=active]:bg-blue-500"
+          <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-[#2D2D2D] border border-gray-200 dark:border-[#303030]">
+            <TabsTrigger
+              value="overview"
+              className="data-[state=active]:bg-[#00C896] data-[state=active]:text-white dark:data-[state=active]:bg-[#00C896]"
             >
               Overview
             </TabsTrigger>
-            <TabsTrigger 
-              value="profile" 
-              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white dark:data-[state=active]:bg-blue-500"
+            <TabsTrigger
+              value="profile"
+              className="data-[state=active]:bg-[#00C896] data-[state=active]:text-white dark:data-[state=active]:bg-[#00C896]"
             >
               My Profile
             </TabsTrigger>
-            <TabsTrigger 
-              value="orders" 
-              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white dark:data-[state=active]:bg-blue-500"
+            <TabsTrigger
+              value="orders"
+              className="data-[state=active]:bg-[#00C896] data-[state=active]:text-white dark:data-[state=active]:bg-[#00C896]"
             >
               Order History
             </TabsTrigger>
-            <TabsTrigger 
-              value="settings" 
-              className="data-[state=active]:bg-blue-600 data-[state=active]:text-white dark:data-[state=active]:bg-blue-500"
+            <TabsTrigger
+              value="settings"
+              className="data-[state=active]:bg-[#00C896] data-[state=active]:text-white dark:data-[state=active]:bg-[#00C896]"
             >
               Settings
             </TabsTrigger>
