@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
-// Mock interfaces
+// Interfaces
 interface UserDetails {
   name: string;
   email: string;
@@ -50,8 +50,8 @@ interface PickupPoint {
 
 interface PickupPointsResponse {
   pickup_points: PickupPoint[];
-  success?: boolean;
-  message?: string;
+  county: string;
+  total: number;
 }
 
 interface ApiResponse<T> {
@@ -60,52 +60,16 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-// Mock data for demonstration
+// Mock data for user demonstration only (when no real user data)
 const mockUser: UserDetails = {
-  name: "siko  (Mock)",
-  email: "Siko@gmail.com",
-  phone: "+254711223344",
-  address: "Mock Address, Mock City",
-  county: "Kiambu",
+  name: "Demo User",
+  email: "demo@example.com",
+  phone: "+254700000000",
+  address: "Demo Address",
+  county: "Nairobi",
   dateJoined: "01/15/2023",
   lastUpdated: "12/01/2024"
 };
-
-const mockPickupPoints: PickupPoint[] = [
-  {
-    id: 101,
-    name: "Mock Kiambu Hub",
-    location_details: "Mock Main St, Opp Mock Bank",
-    county: "Kiambu",
-    phone_number: "0700111222",
-    cost: 100,
-    is_doorstep: false,
-    delivery_method: "Pickup",
-    contact_person: "Mock Alex"
-  },
-  {
-    id: 102,
-    name: "Mock Thika Express",
-    location_details: "Mock Thika Rd, Near Mock Mall",
-    county: "Kiambu",
-    phone_number: "0700333444",
-    cost: 180,
-    is_doorstep: true,
-    delivery_method: "Home Delivery",
-    contact_person: "Mock Brenda"
-  },
-  {
-    id: 103,
-    name: "Mock Nairobi CBD",
-    location_details: "Mock Kenyatta Ave, Next to Mock Tower",
-    county: "Nairobi",
-    phone_number: "0700555666",
-    cost: 250,
-    is_doorstep: false,
-    delivery_method: "Pickup",
-    contact_person: "Mock Charles"
-  }
-];
 
 const CustomerProfile = () => {
   const { user, refreshUser } = useAuth();
@@ -127,6 +91,7 @@ const CustomerProfile = () => {
 
   const [availablePickupPoints, setAvailablePickupPoints] = useState<PickupPoint[]>([]);
   const [fetchingPickupPoints, setFetchingPickupPoints] = useState(false);
+  const [pickupPointsError, setPickupPointsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -141,6 +106,7 @@ const CustomerProfile = () => {
       fetchPickupPoints(userDetails.county);
     } else {
       setAvailablePickupPoints([]);
+      setPickupPointsError(null);
     }
   }, [userDetails.county]);
 
@@ -162,7 +128,7 @@ const CustomerProfile = () => {
         setUserDetails(mockUser);
         toast({
           title: "Info",
-          description: "Couldn't load your profile from the server. Showing mock data.",
+          description: "Couldn't load your profile from the server. Using demo data.",
           variant: "default",
         });
       }
@@ -171,7 +137,7 @@ const CustomerProfile = () => {
       setUserDetails(mockUser);
       toast({
         title: "Error",
-        description: "Failed to load profile details from the server. Showing mock data.",
+        description: "Failed to load profile details from the server.",
         variant: "destructive",
       });
     } finally {
@@ -181,29 +147,46 @@ const CustomerProfile = () => {
 
   const fetchPickupPoints = async (county: string) => {
     setFetchingPickupPoints(true);
+    setPickupPointsError(null);
+    
     try {
       const response = await axios.get<PickupPointsResponse>(
-        `${import.meta.env.VITE_API_URL}/pickup-points/city/${county}`,
+        `${import.meta.env.VITE_API_URL}/pickup-points/city/${encodeURIComponent(county)}`,
         { withCredentials: true }
       );
-      if (response.data && response.data.pickup_points && response.data.pickup_points.length > 0) {
-        setAvailablePickupPoints(response.data.pickup_points);
+      
+      if (response.data && response.data.pickup_points) {
+        if (response.data.pickup_points.length > 0) {
+          setAvailablePickupPoints(response.data.pickup_points);
+          setPickupPointsError(null);
+        } else {
+          setAvailablePickupPoints([]);
+          setPickupPointsError(`No pickup points found for ${county}`);
+        }
       } else {
-        const filteredMockPoints = mockPickupPoints.filter(p => p.county.toLowerCase() === county.toLowerCase());
-        setAvailablePickupPoints(filteredMockPoints.length > 0 ? filteredMockPoints : mockPickupPoints);
-        toast({
-          title: "Info",
-          description: `No live pickup points for ${county}. Showing mock data.`,
-          variant: "default",
-        });
+        setAvailablePickupPoints([]);
+        setPickupPointsError(`No pickup points available for ${county}`);
       }
     } catch (error) {
       console.error(`Failed to fetch pickup points for county ${county}:`, error);
-      const filteredMockPoints = mockPickupPoints.filter(p => p.county.toLowerCase() === county.toLowerCase());
-      setAvailablePickupPoints(filteredMockPoints.length > 0 ? filteredMockPoints : mockPickupPoints);
+      setAvailablePickupPoints([]);
+      
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as any;
+        if (axiosError.response?.status === 404) {
+          setPickupPointsError(`No pickup points found for ${county}`);
+        } else if (axiosError.response?.status === 500) {
+          setPickupPointsError("Server error while fetching pickup points");
+        } else {
+          setPickupPointsError("Failed to load pickup points");
+        }
+      } else {
+        setPickupPointsError("Network error while fetching pickup points");
+      }
+      
       toast({
         title: "Error",
-        description: `Failed to load pickup points for ${county}. Showing mock data.`,
+        description: `Failed to load pickup points for ${county}`,
         variant: "destructive",
       });
     } finally {
@@ -453,12 +436,34 @@ const CustomerProfile = () => {
               <div className="pt-6 border-t border-gray-200 dark:border-gray-600">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center mb-4">
                   <Truck className="w-5 h-5 mr-2 text-blue-500" />
-                  Available Pickup Points in {userDetails.county || 'your selected county'}
+                  Available Pickup Points {userDetails.county && `in ${userDetails.county}`}
                 </h3>
-                {fetchingPickupPoints ? (
+                {!userDetails.county ? (
+                  <div className="text-center py-8">
+                    <MapPin className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-400">
+                      Please set your county to view available pickup points.
+                    </p>
+                  </div>
+                ) : fetchingPickupPoints ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-8 w-8 animate-spin mr-3 text-blue-500" />
                     <span className="text-gray-700 dark:text-gray-300 font-medium">Loading pickup points...</span>
+                  </div>
+                ) : pickupPointsError ? (
+                  <div className="text-center py-8">
+                    <MapPin className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                    <p className="text-gray-600 dark:text-gray-400 mb-2">
+                      {pickupPointsError}
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fetchPickupPoints(userDetails.county)}
+                      className="text-sm"
+                    >
+                      Try Again
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -523,7 +528,7 @@ const CustomerProfile = () => {
                       <div className="text-center py-8">
                         <MapPin className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
                         <p className="text-gray-600 dark:text-gray-400">
-                          No pickup points found for this county or county not set.
+                          No pickup points available for {userDetails.county}.
                         </p>
                       </div>
                     )}
