@@ -50,8 +50,8 @@ interface PickupPoint {
 
 interface PickupPointsResponse {
   pickup_points: PickupPoint[];
-  county: string;
-  total: number;
+  success?: boolean;
+  message?: string;
 }
 
 interface ApiResponse<T> {
@@ -151,13 +151,23 @@ const CustomerProfile = () => {
     
     try {
       const response = await axios.get<PickupPointsResponse>(
-        `${import.meta.env.VITE_API_URL}/pickup-points/city/${encodeURIComponent(county)}`,
+        `${import.meta.env.VITE_API_URL}/pickup-points?city=${encodeURIComponent(county)}`,
         { withCredentials: true }
       );
       
-      if (response.data && response.data.pickup_points) {
+      
+      if (response.data && Array.isArray(response.data.pickup_points)) {
         if (response.data.pickup_points.length > 0) {
           setAvailablePickupPoints(response.data.pickup_points);
+          setPickupPointsError(null);
+        } else {
+          setAvailablePickupPoints([]);
+          setPickupPointsError(`No pickup points found for ${county}`);
+        }
+      } else if (response.data && Array.isArray(response.data)) {
+        // Handle case where API returns array directly
+        if (response.data.length > 0) {
+          setAvailablePickupPoints(response.data);
           setPickupPointsError(null);
         } else {
           setAvailablePickupPoints([]);
