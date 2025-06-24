@@ -15,7 +15,7 @@ export interface Order {
   total: number;
   status: string;
   date: string;
-  paymentMethod: string; // Changed to required
+  paymentMethod: string;
   trackingNumber?: string;
   estimatedDelivery?: string;
   paymentStatus?: string;
@@ -235,10 +235,9 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
                         {order.items}
                       </TableCell>
                       <TableCell className="font-medium text-green-600 dark:text-green-400">
-                        
                         {order.total
-                        ? `Ksh ${order.total.toLocaleString()}`
-                       : <span className="text-gray-500 dark:text-gray-400">N/A</span>}
+                          ? `Ksh ${order.total.toLocaleString()}`
+                          : <span className="text-gray-500 dark:text-gray-400">N/A</span>}
                       </TableCell>
                       <TableCell>
                         <Badge className={getStatusColor(order.status)}>

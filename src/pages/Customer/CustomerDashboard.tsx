@@ -6,8 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCart } from '@/contexts/CartContext';
 import { ShoppingBag, Star, Package, User, Heart, Gift, RefreshCw } from 'lucide-react';
-import { Provider } from '@radix-ui/react-toast';
-import { spawn } from 'child_process';
 
 interface Order {
   id: string;
@@ -22,7 +20,7 @@ interface Order {
 
 interface CustomerDashboardProps {
   orders: Order[];
-  onRefresh: () => Promise<void>; // Added onRefresh prop
+  onRefresh: () => Promise<void>;
 }
 
 const CustomerDashboard = ({ orders, onRefresh }: CustomerDashboardProps) => {
@@ -32,10 +30,10 @@ const CustomerDashboard = ({ orders, onRefresh }: CustomerDashboardProps) => {
 
   const totalItemsInCart = cartItems?.reduce((total, item) => total + item.quantity, 0) ?? 0;
   const totalSpent = orders.reduce((sum, order) => sum + order.total, 0);
-  const recentOrders = orders.slice(0, 3); // Show only 3 recent orders
+  const recentOrders = orders.slice(0, 3);
 
   const handleRefresh = async () => {
-    await onRefresh(); // Call the onRefresh function
+    await onRefresh();
   };
 
   const getStatusColor = (status: string) => {
@@ -50,18 +48,16 @@ const CustomerDashboard = ({ orders, onRefresh }: CustomerDashboardProps) => {
       case 'cancelled':
         return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
       default:
-        return 'text-gray-600 bg-gray-100 dark:text-gray-100';
+        return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700';
     }
   };
 
-  // Format the member since date
   const memberSinceDate = user?.created_at
     ? new Date(user.created_at).toLocaleDateString()
     : 'N/A';
 
   return (
     <div className="space-y-8">
-      {/* Overview Cards */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card className="hover:shadow-lg transition-shadow bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -122,7 +118,6 @@ const CustomerDashboard = ({ orders, onRefresh }: CustomerDashboardProps) => {
         </Card>
       </div>
 
-      {/* Refresh Button */}
       <div className="flex justify-end">
         <Button
           onClick={handleRefresh}
@@ -134,7 +129,6 @@ const CustomerDashboard = ({ orders, onRefresh }: CustomerDashboardProps) => {
         </Button>
       </div>
 
-      {/* Recent Orders Preview */}
       {recentOrders.length > 0 && (
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardHeader>
@@ -157,10 +151,9 @@ const CustomerDashboard = ({ orders, onRefresh }: CustomerDashboardProps) => {
                   </div>
                   <div className="text-right">
                     <p className="font-medium text-lg text-gray-900 dark:text-gray-100">
-                      {/* KSh {order.total.toLocaleString()} */}
-                      {order.total  
-                      ? `KSh ${order.total.toLocaleString()}`
-                    : <span className="text-grey-500 dark:text-gray-400">N/A</span>}
+                      {order.total
+                        ? `KSh ${order.total.toLocaleString()}`
+                        : <span className="text-gray-500 dark:text-gray-400">N/A</span>}
                     </p>
                     <Badge className={getStatusColor(order.status)}>
                       {order.status}
@@ -168,19 +161,18 @@ const CustomerDashboard = ({ orders, onRefresh }: CustomerDashboardProps) => {
                   </div>
                 </div>
               ))}
+              <Button
+                onClick={() => navigate('/dashboard?tab=orders')}
+                variant="link"
+                className="mt-4 text-blue-600 dark:text-blue-400 hover:underline px-0"
+              >
+                View All Orders &rarr;
+              </Button>
             </div>
-            <Button
-              onClick={() => navigate('/dashboard?tab=orders')}
-              variant="link"
-              className="mt-4 text-blue-600 dark:text-blue-400 hover:underline px-0"
-            >
-              View All Orders &rarr;
-            </Button>
           </CardContent>
         </Card>
       )}
 
-      {/* Quick Actions */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardHeader>
           <CardTitle className="text-gray-900 dark:text-gray-100">Quick Actions</CardTitle>

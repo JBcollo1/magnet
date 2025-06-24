@@ -374,7 +374,7 @@ const CustomerSettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6 transition-all duration-500 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 dark:from-[#121212] dark:to-[#2D2D2D] p-6 transition-all duration-500 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-radial from-blue-500/20 via-purple-500/10 to-transparent rounded-full blur-3xl animate-pulse" />
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-radial from-emerald-500/20 via-teal-500/10 to-transparent rounded-full blur-3xl animate-pulse delay-1000" />
@@ -406,14 +406,14 @@ const CustomerSettings = () => {
             </div>
           </h1>
 
-          <p className="text-slate-300 text-xl font-light leading-relaxed max-w-2xl mx-auto">
+          <p className="text-gray-600 dark:text-gray-400 text-xl font-light leading-relaxed max-w-2xl mx-auto">
             Manage your account preferences and security settings with
             <span className="text-emerald-400 font-medium"> enhanced controls</span>
           </p>
         </div>
 
         <div className="grid lg:grid-cols-1 gap-8">
-          <Card className="relative overflow-hidden backdrop-blur-xl bg-slate-800/40 border-2 border-slate-700/60
+          <Card className="relative overflow-hidden backdrop-blur-xl bg-white dark:bg-[#2D2D2D] border-2 border-gray-200 dark:border-[#303030]
             shadow-2xl rounded-3xl transition-all duration-500 hover:shadow-slate-500/30
             hover:border-slate-600/80 hover:bg-slate-800/60 group">
 
@@ -423,22 +423,21 @@ const CustomerSettings = () => {
               opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
             <CardHeader className="pb-6 relative z-10">
-              <CardTitle className="text-slate-100 flex items-center text-2xl font-bold">
+              <CardTitle className="text-gray-900 dark:text-gray-100 flex items-center text-2xl font-bold">
                 <div className="relative">
-                  <Lock className="w-7 h-7 mr-4 text-slate-400 transition-all duration-300 group-hover:text-emerald-400" />
+                  <Lock className="w-7 h-7 mr-4 text-gray-400 dark:text-gray-300 transition-all duration-300 group-hover:text-emerald-400" />
                   <div className="absolute inset-0 w-7 h-7 mr-4 bg-emerald-400/20 rounded-full blur-lg opacity-0
                     group-hover:opacity-100 transition-opacity duration-300" />
                 </div>
                 Account Security & Data
               </CardTitle>
-              <CardDescription className="text-slate-300 text-lg font-light leading-relaxed mt-2">
+              <CardDescription className="text-gray-600 dark:text-gray-400 text-lg font-light leading-relaxed mt-2">
                 Secure your account and manage your personal information with
                 <span className="text-blue-400 font-medium"> advanced controls</span>
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6 relative z-10 pb-8">
-              {/* Toggle Password Change Fields */}
               <ActionButton
                 onClick={() => setShowPasswordFields(!showPasswordFields)}
                 icon={showPasswordFields ? EyeOff : Lock}
@@ -606,7 +605,7 @@ const CustomerSettings = () => {
         </div>
       </div>
 
-       <style>{`
+      <style>{`
         @keyframes gradient {
           0%, 100% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }

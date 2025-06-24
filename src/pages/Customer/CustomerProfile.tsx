@@ -163,7 +163,6 @@ const CustomerProfile = () => {
           setPickupPointsError(`No pickup points found for ${city}`);
         }
       } else if (response.data && Array.isArray(response.data)) {
-        // Handle case where API returns array directly
         if (response.data.length > 0) {
           setAvailablePickupPoints(response.data);
           setPickupPointsError(null);
@@ -253,16 +252,14 @@ const CustomerProfile = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 dark:from-[#121212] dark:to-[#2D2D2D] p-6">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
             My Profile
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">Manage your personal information and delivery preferences</p>
+          <p className="text-gray-600 dark:text-gray-400">Manage your personal information and delivery preferences</p>
         </div>
-        {/* Success Banner */}
         {showSuccess && (
           <div className="mb-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg flex items-center animate-in slide-in-from-top-2">
             <Check className="w-5 h-5 text-green-600 dark:text-green-400 mr-3" />
@@ -272,7 +269,6 @@ const CustomerProfile = () => {
           </div>
         )}
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Personal Information Card */}
           <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-t-lg">
               <div className="flex justify-between items-center">
@@ -391,7 +387,6 @@ const CustomerProfile = () => {
               </div>
             </CardContent>
           </Card>
-          {/* Delivery Address Card */}
           <Card className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-0 shadow-xl hover:shadow-2xl transition-all duration-300">
             <CardHeader className="bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-t-lg">
               <CardTitle className="flex items-center text-xl font-semibold">
@@ -436,7 +431,6 @@ const CustomerProfile = () => {
                   </div>
                 )}
               </div>
-              {/* Pickup Points Section */}
               <div className="pt-6 border-t border-gray-200 dark:border-gray-600">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center mb-4">
                   <Truck className="w-5 h-5 mr-2 text-blue-500" />
@@ -499,28 +493,30 @@ const CustomerProfile = () => {
                                   <Truck className="w-3 h-3 mr-1" />
                                   <span>{point.delivery_method}</span>
                                   {point.is_doorstep && (
-                                    <span className="ml-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
-                                      Doorstep
-                                    </span>
+                                    <>
+                                      <span className="ml-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">
+                                        Doorstep
+                                      </span>
+                                    </>
                                   )}
                                 </div>
                               </div>
-                              {(point.phone_number || point.contact_person) && (
-                                <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
-                                  {point.contact_person && (
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                      <span className="font-medium">Contact:</span> {point.contact_person}
-                                    </p>
-                                  )}
-                                  {point.phone_number && (
-                                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                                      <Phone className="w-3 h-3 inline mr-1" />
-                                      {point.phone_number}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
                             </div>
+                            {(point.phone_number || point.contact_person) && (
+                              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                                {point.contact_person && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    <span className="font-medium">Contact:</span> {point.contact_person}
+                                  </p>
+                                )}
+                                {point.phone_number && (
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    <Phone className="w-3 h-3 inline mr-1" />
+                                    {point.phone_number}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))
