@@ -5,7 +5,7 @@ import { Award, Users, Clock, Globe } from 'lucide-react';
 
 const About = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 dark:from-[#121212] dark:to-[#121212] dark:bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 dark:from-[#121212] dark:to-[#121212] dark:bg-background">
       <Header />
       
       <div className="container mx-auto px-4 py-16">
