@@ -30,7 +30,7 @@ interface UserDetails {
   email: string;
   phone: string;
   address: string;
-  county: string;
+  city: string;
   dateJoined?: string;
   lastUpdated?: string;
 }
@@ -40,7 +40,6 @@ interface PickupPoint {
   name: string;
   location_details: string;
   city?: string;
-  county: string;
   phone_number?: string;
   cost: number;
   is_doorstep: boolean;
@@ -66,7 +65,7 @@ const mockUser: UserDetails = {
   email: "demo@example.com",
   phone: "+254700000000",
   address: "Demo Address",
-  county: "Nairobi",
+  city: "Nairobi",
   dateJoined: "01/15/2023",
   lastUpdated: "12/01/2024"
 };
@@ -84,7 +83,7 @@ const CustomerProfile = () => {
     email: user?.email || mockUser.email,
     phone: '',
     address: '',
-    county: '',
+    city: '',
     dateJoined: user?.created_at ? new Date(user.created_at).toLocaleDateString() : mockUser.dateJoined,
     lastUpdated: user?.updated_at ? new Date(user.updated_at).toLocaleDateString() : mockUser.lastUpdated
   });
@@ -102,13 +101,13 @@ const CustomerProfile = () => {
   }, [user]);
 
   useEffect(() => {
-    if (userDetails.county && userDetails.county.trim() !== '') {
-      fetchPickupPoints(userDetails.county);
+    if (userDetails.city && userDetails.city.trim() !== '') {
+      fetchPickupPoints(userDetails.city);
     } else {
       setAvailablePickupPoints([]);
       setPickupPointsError(null);
     }
-  }, [userDetails.county]);
+  }, [userDetails.city]);
 
   const fetchUserProfile = async () => {
     setLoading(true);
@@ -145,24 +144,23 @@ const CustomerProfile = () => {
     }
   };
 
-  const fetchPickupPoints = async (county: string) => {
+  const fetchPickupPoints = async (city: string) => {
     setFetchingPickupPoints(true);
     setPickupPointsError(null);
-    
+
     try {
       const response = await axios.get<PickupPointsResponse>(
-        `${import.meta.env.VITE_API_URL}/pickup-points?city=${encodeURIComponent(county)}`,
+        `${import.meta.env.VITE_API_URL}/pickup-points?city=${encodeURIComponent(city)}`,
         { withCredentials: true }
       );
-      
-      
+
       if (response.data && Array.isArray(response.data.pickup_points)) {
         if (response.data.pickup_points.length > 0) {
           setAvailablePickupPoints(response.data.pickup_points);
           setPickupPointsError(null);
         } else {
           setAvailablePickupPoints([]);
-          setPickupPointsError(`No pickup points found for ${county}`);
+          setPickupPointsError(`No pickup points found for ${city}`);
         }
       } else if (response.data && Array.isArray(response.data)) {
         // Handle case where API returns array directly
@@ -171,20 +169,20 @@ const CustomerProfile = () => {
           setPickupPointsError(null);
         } else {
           setAvailablePickupPoints([]);
-          setPickupPointsError(`No pickup points found for ${county}`);
+          setPickupPointsError(`No pickup points found for ${city}`);
         }
       } else {
         setAvailablePickupPoints([]);
-        setPickupPointsError(`No pickup points available for ${county}`);
+        setPickupPointsError(`No pickup points available for ${city}`);
       }
     } catch (error) {
-      console.error(`Failed to fetch pickup points for county ${county}:`, error);
+      console.error(`Failed to fetch pickup points for city ${city}:`, error);
       setAvailablePickupPoints([]);
-      
+
       if (error && typeof error === 'object' && 'response' in error) {
         const axiosError = error as any;
         if (axiosError.response?.status === 404) {
-          setPickupPointsError(`No pickup points found for ${county}`);
+          setPickupPointsError(`No pickup points found for ${city}`);
         } else if (axiosError.response?.status === 500) {
           setPickupPointsError("Server error while fetching pickup points");
         } else {
@@ -193,10 +191,10 @@ const CustomerProfile = () => {
       } else {
         setPickupPointsError("Network error while fetching pickup points");
       }
-      
+
       toast({
         title: "Error",
-        description: `Failed to load pickup points for ${county}`,
+        description: `Failed to load pickup points for ${city}`,
         variant: "destructive",
       });
     } finally {
@@ -212,7 +210,7 @@ const CustomerProfile = () => {
         email: userDetails.email,
         phone: userDetails.phone,
         address: userDetails.address,
-        county: userDetails.county,
+        city: userDetails.city,
       };
       const response = await axios.put<ApiResponse<UserDetails>>(
         `${import.meta.env.VITE_API_URL}/auth/profile`,
@@ -260,9 +258,7 @@ const CustomerProfile = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
             My Profile
           </h1>
-          <p className="text-gray-600 dark:text-gray-300">
-            Manage your personal information and delivery preferences
-          </p>
+          <p className="text-gray-600 dark:text-gray-300">Manage your personal information and delivery preferences</p>
         </div>
         {/* Success Banner */}
         {showSuccess && (
@@ -283,9 +279,7 @@ const CustomerProfile = () => {
                     <User className="w-6 h-6 mr-2" />
                     Personal Information
                   </CardTitle>
-                  <CardDescription className="text-blue-100">
-                    Your account details and contact information
-                  </CardDescription>
+                  <CardDescription className="text-blue-100">Your account details and contact information</CardDescription>
                 </div>
                 <div className="flex gap-2">
                   {isEditing && (
@@ -402,9 +396,7 @@ const CustomerProfile = () => {
                 <MapPin className="w-6 h-6 mr-2" />
                 Delivery Address
               </CardTitle>
-              <CardDescription className="text-green-100">
-                Your default delivery address for orders
-              </CardDescription>
+              <CardDescription className="text-green-100">Your default delivery address for orders</CardDescription>
             </CardHeader>
             <CardContent className="p-6 space-y-6">
               <div className="space-y-2">
@@ -427,18 +419,18 @@ const CustomerProfile = () => {
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                  County
+                  City
                 </Label>
                 {isEditing ? (
                   <Input
-                    value={userDetails.county}
-                    onChange={(e) => setUserDetails({ ...userDetails, county: e.target.value })}
-                    placeholder="Kiambu"
+                    value={userDetails.city}
+                    onChange={(e) => setUserDetails({ ...userDetails, city: e.target.value })}
+                    placeholder="Nairobi"
                     className="border-2 focus:border-green-500 transition-colors bg-white dark:bg-gray-800"
                   />
                 ) : (
                   <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <p className="font-medium text-gray-900 dark:text-gray-100">{userDetails.county || 'Not provided'}</p>
+                    <p className="font-medium text-gray-900 dark:text-gray-100">{userDetails.city || 'Not provided'}</p>
                   </div>
                 )}
               </div>
@@ -446,14 +438,12 @@ const CustomerProfile = () => {
               <div className="pt-6 border-t border-gray-200 dark:border-gray-600">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-gray-100 flex items-center mb-4">
                   <Truck className="w-5 h-5 mr-2 text-blue-500" />
-                  Available Pickup Points {userDetails.county && `in ${userDetails.county}`}
+                  Available Pickup Points {userDetails.city && `in ${userDetails.city}`}
                 </h3>
-                {!userDetails.county ? (
+                {!userDetails.city ? (
                   <div className="text-center py-8">
                     <MapPin className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-400">
-                      Please set your county to view available pickup points.
-                    </p>
+                    <p className="text-gray-600 dark:text-gray-400">Please set your city to view available pickup points.</p>
                   </div>
                 ) : fetchingPickupPoints ? (
                   <div className="flex items-center justify-center py-8">
@@ -463,13 +453,11 @@ const CustomerProfile = () => {
                 ) : pickupPointsError ? (
                   <div className="text-center py-8">
                     <MapPin className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                    <p className="text-gray-600 dark:text-gray-400 mb-2">
-                      {pickupPointsError}
-                    </p>
+                    <p className="text-gray-600 dark:text-gray-400 mb-2">{pickupPointsError}</p>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => fetchPickupPoints(userDetails.county)}
+                      onClick={() => fetchPickupPoints(userDetails.city)}
                       className="text-sm"
                     >
                       Try Again
@@ -537,9 +525,7 @@ const CustomerProfile = () => {
                     ) : (
                       <div className="text-center py-8">
                         <MapPin className="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
-                        <p className="text-gray-600 dark:text-gray-400">
-                          No pickup points available for {userDetails.county}.
-                        </p>
+                        <p className="text-gray-600 dark:text-gray-400">No pickup points available for {userDetails.city}.</p>
                       </div>
                     )}
                   </div>
