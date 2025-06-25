@@ -1,7 +1,35 @@
 import React, { useState } from 'react';
-// import axios from 'axios'; // Mock for demo
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Edit,
+  User,
+  Package,
+  ShieldAlert,
+  Download,
+  Trash2,
+  Shield,
+  Settings,
+  Bell,
+  Moon,
+  Sun,
+  Globe,
+  CreditCard,
+  Mail,
+  Smartphone,
+  Lock,
+  Eye,
+  EyeOff,
+  ChevronRight,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  ArrowRight,
+  Sparkles,
+  Zap,
+  Loader2
+} from 'lucide-react';
+
 // Mock axios for demo
 const axios = {
   get: async (url: string, options?: any) => {
@@ -39,34 +67,6 @@ const useAuth = () => ({
     return Promise.resolve();
   }
 });
-import {
-  Edit,
-  User,
-  Package,
-  ShieldAlert,
-  Download,
-  Trash2,
-  Shield,
-  Settings,
-  Bell,
-  Moon,
-  Sun,
-  Globe,
-  CreditCard,
-  Mail,
-  Smartphone,
-  Lock,
-  Eye,
-  EyeOff,
-  ChevronRight,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  ArrowRight,
-  Sparkles,
-  Zap,
-  Loader2
-} from 'lucide-react';
 
 interface ApiResponse {
   success?: boolean;
@@ -219,6 +219,29 @@ const CustomerSettings = () => {
     }
   };
 
+  const handleLogoutDevices = async () => {
+    setActionStates(prev => ({ ...prev, logout: 'processing' }));
+    try {
+      await axios.post(
+        `${import.meta.env.VITE_API_URL}/auth/logout-all`,
+        {},
+        { withCredentials: true }
+      );
+
+      setActionStates(prev => ({ ...prev, logout: 'success' }));
+      toast.success('Successfully logged out from all devices!');
+      logout();
+    } catch (error) {
+      console.error('Failed to log out from all devices:', error);
+      setActionStates(prev => ({ ...prev, logout: 'error' }));
+      toast.error('Failed to log out from all devices.');
+    } finally {
+      setTimeout(() => {
+        setActionStates(prev => ({ ...prev, logout: 'idle' }));
+      }, 3000);
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (!showDeleteConfirm) {
       setShowDeleteConfirm(true);
@@ -248,29 +271,6 @@ const CustomerSettings = () => {
       setShowDeleteConfirm(false);
       setTimeout(() => {
         setActionStates(prev => ({ ...prev, deleteAccount: 'idle' }));
-      }, 3000);
-    }
-  };
-
-  const handleLogoutDevices = async () => {
-    setActionStates(prev => ({ ...prev, logout: 'processing' }));
-    try {
-      await axios.post(
-        `${import.meta.env.VITE_API_URL}/auth/logout-all`,
-        {},
-        { withCredentials: true }
-      );
-
-      setActionStates(prev => ({ ...prev, logout: 'success' }));
-      toast.success('Successfully logged out from all devices!');
-      logout();
-    } catch (error) {
-      console.error('Failed to log out from all devices:', error);
-      setActionStates(prev => ({ ...prev, logout: 'error' }));
-      toast.error('Failed to log out from all devices.');
-    } finally {
-      setTimeout(() => {
-        setActionStates(prev => ({ ...prev, logout: 'idle' }));
       }, 3000);
     }
   };

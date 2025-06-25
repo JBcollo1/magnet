@@ -280,7 +280,6 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
                           </Button>
                         </TableCell>
                       </TableRow>
-
                       {expandedOrders[order.id] && (
                         <TableRow>
                           <TableCell colSpan={7} className="bg-[#1A1A1A] border-b border-[#303030]">
@@ -299,7 +298,6 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
                                     </p>
                                   </div>
                                 )}
-
                                 {order.paymentMethod && (
                                   <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
                                     <span className="font-medium text-gray-300 block mb-1">
@@ -310,7 +308,6 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
                                     </p>
                                   </div>
                                 )}
-
                                 {order.estimatedDelivery && (
                                   <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
                                     <span className="font-medium text-gray-300 block mb-1">
@@ -321,7 +318,6 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
                                     </p>
                                   </div>
                                 )}
-
                                 {order.paymentId && (
                                   <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
                                     <span className="font-medium text-gray-300 block mb-1">
@@ -332,7 +328,6 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
                                     </p>
                                   </div>
                                 )}
-
                                 {order.paymentAmount && (
                                   <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
                                     <span className="font-medium text-gray-300 block mb-1">
@@ -343,7 +338,6 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
                                     </p>
                                   </div>
                                 )}
-
                                 {order.paymentDate && (
                                   <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
                                     <span className="font-medium text-gray-300 block mb-1">
@@ -355,7 +349,6 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
                                   </div>
                                 )}
                               </div>
-
                               {order.verifiedBy && (
                                 <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
                                   <h5 className="font-medium text-emerald-300 mb-2 flex items-center gap-2">

@@ -464,22 +464,22 @@ const CustomerProfile = () => {
                                   </span>
                                 )}
                               </div>
-                              {(point.phone_number || point.contact_person) && (
-                                <div className="mt-3 pt-2 border-t border-[#303030]">
-                                  {point.contact_person && (
-                                    <p className="text-xs text-gray-400">
-                                      <span className="font-medium">Contact:</span> {point.contact_person}
-                                    </p>
-                                  )}
-                                  {point.phone_number && (
-                                    <p className="text-xs text-gray-400 flex items-center mt-1">
-                                      <Phone className="w-3 h-3 mr-1" />
-                                      {point.phone_number}
-                                    </p>
-                                  )}
-                                </div>
-                              )}
                             </div>
+                            {(point.phone_number || point.contact_person) && (
+                              <div className="mt-3 pt-2 border-t border-[#303030]">
+                                {point.contact_person && (
+                                  <p className="text-xs text-gray-400">
+                                    <span className="font-medium">Contact:</span> {point.contact_person}
+                                  </p>
+                                )}
+                                {point.phone_number && (
+                                  <p className="text-xs text-gray-400 flex items-center mt-1">
+                                    <Phone className="w-3 h-3 mr-1" />
+                                    {point.phone_number}
+                                  </p>
+                                )}
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))

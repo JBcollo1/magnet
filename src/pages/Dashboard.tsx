@@ -1,4 +1,3 @@
-// Dashboard.tsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
@@ -11,8 +10,29 @@ import CustomerProfile from './Customer/CustomerProfile';
 import CustomerOrders from './Customer/CustomerOrders';
 import CustomerSettings from './Customer/CustomerSettings';
 
-// Import the unified Order interface from CustomerOrders
-import { Order } from './Customer/CustomerOrders';
+// Define the Order interface
+interface Order {
+  id: string;
+  order_number: string;
+  date: string;
+  items: string;
+  total: number;
+  status: string;
+  paymentMethod: string;
+  trackingNumber: string;
+  estimatedDelivery: string;
+  paymentStatus: string;
+  paymentId?: string;
+  paymentAmount?: number;
+  paymentDate?: string;
+  verificationDate?: string;
+  isCompleted?: boolean;
+  isPending?: boolean;
+  verifiedBy?: {
+    admin_name: string;
+    verification_date: string;
+  };
+}
 
 interface AppUser {
   id: string;
@@ -21,7 +41,7 @@ interface AppUser {
   role: 'ADMIN' | 'CUSTOMER' | 'STAFF';
 }
 
-// Updated mock orders to match the unified Order interface
+// Mock orders data
 const mockOrders: Order[] = [
   {
     id: 'ORD-001',
@@ -132,8 +152,8 @@ const Dashboard = () => {
       const ordersData = Array.isArray(response.data.orders)
         ? response.data.orders
         : Array.isArray(response.data)
-          ? response.data
-          : [];
+        ? response.data
+        : [];
 
       if (ordersData.length === 0) {
         console.log('No orders found, using mock data');
