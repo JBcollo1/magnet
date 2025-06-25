@@ -215,7 +215,7 @@ const Index = () => {
       </section>
 
       {/* Enhanced Footer */}
-      <footer className="bg-gray-100 border-t border-gray-200 dark:bg-[#2D2D2D] dark:border-t dark:border-[#303030]">
+      {/* <footer className="bg-gray-100 border-t border-gray-200 dark:bg-[#2D2D2D] dark:border-t dark:border-[#303030]">
         <div className="container mx-auto px-4 py-16">
           <div className="grid md:grid-cols-4 gap-8 mb-8">
             <div>
@@ -264,7 +264,7 @@ const Index = () => {
             <p>&copy; 2024 MagnetCraft Kenya. All rights reserved. | Crafted with ❤️ in Nairobi</p>
           </div>
         </div>
-      </footer>
+      </footer> */}
     </div>
   );
 };

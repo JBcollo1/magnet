@@ -23,6 +23,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import Footer from "./pages/footer";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +75,7 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
+             
               <Routes>
                 {/* Public Routes */}
                 <Route path="/" element={<Index />} />
@@ -111,7 +113,10 @@ const App = () => (
 
                 {/* Fallback Not Found */}
                 <Route path="*" element={<NotFound />} />
+                {/* Footer Route */}
+                
               </Routes>
+              <Footer />
             </BrowserRouter>
           </CartProvider>
         </AuthProvider>
