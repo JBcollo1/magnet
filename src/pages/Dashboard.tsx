@@ -180,10 +180,10 @@ const Dashboard = () => {
 
   if (authLoading || dataLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 dark:from-[#121212] dark:to-[#2D2D2D] flex items-center justify-center">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-gray-900 dark:text-gray-100" />
-          <p className="text-gray-700 dark:text-gray-300">Loading your dashboard...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[#00C896]" />
+          <p className="text-[#E0E0E0]">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -191,29 +191,29 @@ const Dashboard = () => {
 
   if (!user || user.role !== 'CUSTOMER') {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 dark:from-[#121212] dark:to-[#2D2D2D] flex items-center justify-center">
+      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-700 dark:text-gray-300">Access denied. Customer account required.</p>
+          <p className="text-[#E0E0E0]">Access denied. Customer account required.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white to-gray-50 dark:from-[#121212] dark:to-[#2D2D2D]">
+    <div className="min-h-screen bg-[#121212]">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-gray-900 dark:text-gray-100">
+          <h1 className="text-3xl font-bold mb-2 text-[#E0E0E0]">
             Welcome back, {user.name}! 👋
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-gray-400">
             Manage your account, track your magnet orders, and view payment status verified by our admin team.
           </p>
           {error && (
-            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-md">
-              <p className="text-yellow-800 dark:text-yellow-300 text-sm">
+            <div className="mt-4 p-3 bg-[#2D2D2D] border border-[#303030] rounded-md">
+              <p className="text-[#00C896] text-sm">
                 ⚠️ {error} - Showing cached data
               </p>
             </div>
@@ -221,46 +221,46 @@ const Dashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-white dark:bg-[#2D2D2D] border border-gray-200 dark:border-[#303030]">
+          <TabsList className="grid w-full grid-cols-4 bg-[#2D2D2D] border border-[#303030] p-1 rounded-lg">
             <TabsTrigger
               value="overview"
-              className="data-[state=active]:bg-[#00C896] data-[state=active]:text-white dark:data-[state=active]:bg-[#00C896]"
+              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20"
             >
               Overview
             </TabsTrigger>
             <TabsTrigger
               value="profile"
-              className="data-[state=active]:bg-[#00C896] data-[state=active]:text-white dark:data-[state=active]:bg-[#00C896]"
+              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20"
             >
               My Profile
             </TabsTrigger>
             <TabsTrigger
               value="orders"
-              className="data-[state=active]:bg-[#00C896] data-[state=active]:text-white dark:data-[state=active]:bg-[#00C896]"
+              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20"
             >
               Order History
             </TabsTrigger>
             <TabsTrigger
               value="settings"
-              className="data-[state=active]:bg-[#00C896] data-[state=active]:text-white dark:data-[state=active]:bg-[#00C896]"
+              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20"
             >
               Settings
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="overview">
+          <TabsContent value="overview" className="mt-6">
             <CustomerDashboard orders={orders} onRefresh={refreshData} />
           </TabsContent>
 
-          <TabsContent value="profile">
+          <TabsContent value="profile" className="mt-6">
             <CustomerProfile />
           </TabsContent>
 
-          <TabsContent value="orders">
+          <TabsContent value="orders" className="mt-6">
             <CustomerOrders orders={orders} onOrdersUpdate={handleOrdersUpdate} />
           </TabsContent>
 
-          <TabsContent value="settings">
+          <TabsContent value="settings" className="mt-6">
             <CustomerSettings />
           </TabsContent>
         </Tabs>

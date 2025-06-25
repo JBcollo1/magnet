@@ -145,33 +145,33 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case 'delivered':
-        return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30';
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
       case 'shipped':
-        return 'text-blue-600 bg-blue-100 dark:text-blue-400 dark:bg-blue-900/30';
+        return 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30';
       case 'processing':
       case 'pending':
-        return 'text-orange-600 bg-orange-100 dark:text-orange-400 dark:bg-orange-900/30';
+        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
       case 'cancelled':
-        return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
+        return 'bg-red-500/20 text-red-300 border-red-500/30';
       default:
-        return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700';
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
     }
   };
 
   const getPaymentStatusColor = (status?: string) => {
     switch (status?.toLowerCase()) {
       case 'completed':
-        return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30';
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
       case 'pending':
-        return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30';
+        return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30';
       case 'failed':
-        return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
+        return 'bg-red-500/20 text-red-300 border-red-500/30';
       case 'no_payment':
-        return 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-900/30';
+        return 'bg-purple-500/20 text-purple-300 border-purple-500/30';
       case 'unknown':
-        return 'text-gray-600 bg-gray-100 dark:text-gray-400 dark:bg-gray-700';
+        return 'bg-gray-500/20 text-gray-300 border-gray-500/30';
       default:
-        return 'text-gray-500 bg-gray-50 dark:text-gray-400 dark:bg-gray-800';
+        return 'bg-gray-500/20 text-gray-400 border-gray-500/30';
     }
   };
 
@@ -188,12 +188,12 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
   };
 
   return (
-    <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+    <Card className="bg-[#2D2D2D] border-[#303030] shadow-lg transition-all duration-300 hover:border-[#00C896]/50">
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle className="text-gray-900 dark:text-gray-100">Your Order History</CardTitle>
-            <CardDescription className="text-gray-600 dark:text-gray-300">
+            <CardTitle className="text-[#E0E0E0] text-xl font-semibold">Your Order History</CardTitle>
+            <CardDescription className="text-gray-400 mt-1">
               Track your magnet orders and payment status verified by admin
             </CardDescription>
           </div>
@@ -201,7 +201,7 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
             onClick={refreshAllPaymentStatuses}
             variant="outline"
             size="sm"
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-transparent border-[#303030] text-[#00C896] hover:bg-[#00C896]/10 hover:border-[#00C896] transition-all duration-300"
             disabled={Object.values(paymentStatusLoading).some(loading => loading)}
           >
             <RefreshCw className={`h-4 w-4 ${Object.values(paymentStatusLoading).some(loading => loading) ? 'animate-spin' : ''}`} />
@@ -212,184 +212,195 @@ const CustomerOrders = ({ orders: initialOrders, onOrdersUpdate }: CustomerOrder
       <CardContent>
         {orders.length > 0 ? (
           <div className="space-y-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="text-gray-900 dark:text-gray-100">Order</TableHead>
-                  <TableHead className="text-gray-900 dark:text-gray-100">Items</TableHead>
-                  <TableHead className="text-gray-900 dark:text-gray-100">Total</TableHead>
-                  <TableHead className="text-gray-900 dark:text-gray-100">Status</TableHead>
-                  <TableHead className="text-gray-900 dark:text-gray-100">Date</TableHead>
-                  <TableHead className="text-gray-900 dark:text-gray-100">Payment</TableHead>
-                  <TableHead className="text-gray-900 dark:text-gray-100">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.map((order) => (
-                  <React.Fragment key={order.id}>
-                    <TableRow className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <TableCell className="font-medium text-gray-900 dark:text-gray-100">
-                        {order.order_number}
-                      </TableCell>
-                      <TableCell className="text-gray-700 dark:text-gray-300">
-                        {order.items}
-                      </TableCell>
-                      <TableCell className="font-medium text-green-600 dark:text-green-400">
-                        {order.total
-                          ? `Ksh ${order.total.toLocaleString()}`
-                          : <span className="text-gray-500 dark:text-gray-400">N/A</span>}
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(order.status)}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-gray-700 dark:text-gray-300">
-                        {new Date(order.date).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {paymentStatusLoading[order.id] ? (
-                            <Loader2 className="h-4 w-4 animate-spin text-gray-500" />
-                          ) : (
-                            <Badge className={getPaymentStatusColor(order.paymentStatus)}>
-                              {formatPaymentStatus(order)}
-                            </Badge>
-                          )}
+            <div className="overflow-x-auto rounded-lg border border-[#303030]">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-[#1A1A1A] hover:bg-[#1A1A1A] border-b border-[#303030]">
+                    <TableHead className="text-[#E0E0E0] font-medium">Order</TableHead>
+                    <TableHead className="text-[#E0E0E0] font-medium">Items</TableHead>
+                    <TableHead className="text-[#E0E0E0] font-medium">Total</TableHead>
+                    <TableHead className="text-[#E0E0E0] font-medium">Status</TableHead>
+                    <TableHead className="text-[#E0E0E0] font-medium">Date</TableHead>
+                    <TableHead className="text-[#E0E0E0] font-medium">Payment</TableHead>
+                    <TableHead className="text-[#E0E0E0] font-medium">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <React.Fragment key={order.id}>
+                      <TableRow className="bg-[#2D2D2D] hover:bg-[#1A1A1A] border-b border-[#303030] transition-colors duration-200">
+                        <TableCell className="font-medium text-[#E0E0E0]">
+                          {order.order_number}
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {order.items}
+                        </TableCell>
+                        <TableCell className="font-medium text-[#00C896]">
+                          {order.total
+                            ? `Ksh ${order.total.toLocaleString()}`
+                            : <span className="text-gray-500">N/A</span>}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${getStatusColor(order.status)} font-medium`}>
+                            {order.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-gray-300">
+                          {new Date(order.date).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {paymentStatusLoading[order.id] ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-[#00C896]" />
+                            ) : (
+                              <Badge className={`${getPaymentStatusColor(order.paymentStatus)} font-medium`}>
+                                {formatPaymentStatus(order)}
+                              </Badge>
+                            )}
+                            <Button
+                              onClick={() => refreshPaymentStatus(order.id)}
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-gray-400 hover:text-[#00C896] hover:bg-[#00C896]/10 transition-colors duration-200"
+                              disabled={paymentStatusLoading[order.id]}
+                            >
+                              <RefreshCw className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                        <TableCell>
                           <Button
-                            onClick={() => refreshPaymentStatus(order.id)}
+                            onClick={() => toggleOrderExpansion(order.id)}
                             variant="ghost"
                             size="sm"
-                            className="h-6 w-6 p-0"
-                            disabled={paymentStatusLoading[order.id]}
+                            className="flex items-center gap-1 text-gray-400 hover:text-[#00C896] hover:bg-[#00C896]/10 transition-colors duration-200"
                           >
-                            <RefreshCw className="h-3 w-3" />
+                            <Eye className="h-4 w-4" />
+                            {expandedOrders[order.id] ? 'Hide' : 'Details'}
                           </Button>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          onClick={() => toggleOrderExpansion(order.id)}
-                          variant="ghost"
-                          size="sm"
-                          className="flex items-center gap-1"
-                        >
-                          <Eye className="h-4 w-4" />
-                          {expandedOrders[order.id] ? 'Hide' : 'Details'}
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+                        </TableCell>
+                      </TableRow>
 
-                    {expandedOrders[order.id] && (
-                      <TableRow>
-                        <TableCell colSpan={7} className="bg-gray-50 dark:bg-gray-700/50">
-                          <div className="p-4 space-y-3">
-                            <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                              Order Details
-                            </h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                              {order.trackingNumber && (
-                                <div>
-                                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                                    Tracking Number:
-                                  </span>
-                                  <p className="text-gray-600 dark:text-gray-400">
-                                    {order.trackingNumber}
-                                  </p>
-                                </div>
-                              )}
+                      {expandedOrders[order.id] && (
+                        <TableRow>
+                          <TableCell colSpan={7} className="bg-[#1A1A1A] border-b border-[#303030]">
+                            <div className="p-4 space-y-3">
+                              <h4 className="font-semibold text-[#E0E0E0] text-lg">
+                                Order Details
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+                                {order.trackingNumber && (
+                                  <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
+                                    <span className="font-medium text-gray-300 block mb-1">
+                                      Tracking Number:
+                                    </span>
+                                    <p className="text-[#00C896] font-mono">
+                                      {order.trackingNumber}
+                                    </p>
+                                  </div>
+                                )}
 
-                              {order.paymentMethod && (
-                                <div>
-                                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                                    Payment Method:
-                                  </span>
-                                  <p className="text-gray-600 dark:text-gray-400">
-                                    {order.paymentMethod}
-                                  </p>
-                                </div>
-                              )}
+                                {order.paymentMethod && (
+                                  <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
+                                    <span className="font-medium text-gray-300 block mb-1">
+                                      Payment Method:
+                                    </span>
+                                    <p className="text-gray-400">
+                                      {order.paymentMethod}
+                                    </p>
+                                  </div>
+                                )}
 
-                              {order.estimatedDelivery && (
-                                <div>
-                                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                                    Estimated Delivery:
-                                  </span>
-                                  <p className="text-gray-600 dark:text-gray-400">
-                                    {new Date(order.estimatedDelivery).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              )}
+                                {order.estimatedDelivery && (
+                                  <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
+                                    <span className="font-medium text-gray-300 block mb-1">
+                                      Estimated Delivery:
+                                    </span>
+                                    <p className="text-gray-400">
+                                      {new Date(order.estimatedDelivery).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                )}
 
-                              {order.paymentId && (
-                                <div>
-                                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                                    Payment ID:
-                                  </span>
-                                  <p className="text-gray-600 dark:text-gray-400 font-mono text-xs">
-                                    {order.paymentId}
-                                  </p>
-                                </div>
-                              )}
+                                {order.paymentId && (
+                                  <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
+                                    <span className="font-medium text-gray-300 block mb-1">
+                                      Payment ID:
+                                    </span>
+                                    <p className="text-[#00C896] font-mono text-xs break-all">
+                                      {order.paymentId}
+                                    </p>
+                                  </div>
+                                )}
 
-                              {order.paymentAmount && (
-                                <div>
-                                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                                    Payment Amount:
-                                  </span>
-                                  <p className="text-gray-600 dark:text-gray-400">
-                                    KSh {order.paymentAmount.toLocaleString()}
-                                  </p>
-                                </div>
-                              )}
+                                {order.paymentAmount && (
+                                  <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
+                                    <span className="font-medium text-gray-300 block mb-1">
+                                      Payment Amount:
+                                    </span>
+                                    <p className="text-[#00C896] font-semibold">
+                                      KSh {order.paymentAmount.toLocaleString()}
+                                    </p>
+                                  </div>
+                                )}
 
-                              {order.paymentDate && (
-                                <div>
-                                  <span className="font-medium text-gray-700 dark:text-gray-300">
-                                    Payment Date:
-                                  </span>
-                                  <p className="text-gray-600 dark:text-gray-400">
-                                    {new Date(order.paymentDate).toLocaleDateString()}
-                                  </p>
+                                {order.paymentDate && (
+                                  <div className="bg-[#2D2D2D] p-3 rounded-lg border border-[#303030]">
+                                    <span className="font-medium text-gray-300 block mb-1">
+                                      Payment Date:
+                                    </span>
+                                    <p className="text-gray-400">
+                                      {new Date(order.paymentDate).toLocaleDateString()}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {order.verifiedBy && (
+                                <div className="mt-4 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+                                  <h5 className="font-medium text-emerald-300 mb-2 flex items-center gap-2">
+                                    <span className="text-emerald-400">✅</span>
+                                    Payment Verified by Admin
+                                  </h5>
+                                  <div className="text-sm text-emerald-200 space-y-1">
+                                    <p>
+                                      <span className="text-gray-400">Verified by:</span>{' '}
+                                      <span className="font-medium text-emerald-300">{order.verifiedBy.admin_name}</span>
+                                    </p>
+                                    <p>
+                                      <span className="text-gray-400">Verification Date:</span>{' '}
+                                      <span className="text-emerald-300">{new Date(order.verifiedBy.verification_date).toLocaleDateString()}</span>
+                                    </p>
+                                  </div>
                                 </div>
                               )}
                             </div>
-
-                            {order.verifiedBy && (
-                              <div className="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                                <h5 className="font-medium text-green-800 dark:text-green-300 mb-2">
-                                  ✅ Payment Verified by Admin
-                                </h5>
-                                <div className="text-sm text-green-700 dark:text-green-400">
-                                  <p>Verified by: <span className="font-medium">{order.verifiedBy.admin_name}</span></p>
-                                  <p>Verification Date: {new Date(order.verifiedBy.verification_date).toLocaleDateString()}</p>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </React.Fragment>
-                ))}
-              </TableBody>
-            </Table>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           </div>
         ) : (
           <div className="text-center py-12">
-            <Package className="h-16 w-16 text-gray-400 dark:text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-              No orders yet
-            </h3>
-            <p className="text-gray-500 dark:text-gray-300 mb-6">
-              Start shopping to see your order history and track payments!
-            </p>
-            <Button
-              onClick={() => window.location.href = '/'}
-              className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
-            >
-              Browse Magnets
-            </Button>
+            <div className="bg-[#1A1A1A] p-8 rounded-2xl border border-[#303030] max-w-md mx-auto">
+              <Package className="h-16 w-16 text-[#00C896] mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-[#E0E0E0] mb-2">
+                No orders yet
+              </h3>
+              <p className="text-gray-400 mb-6">
+                Start shopping to see your order history and track payments!
+              </p>
+              <Button
+                onClick={() => window.location.href = '/'}
+                className="bg-[#00BFA6] hover:bg-[#1DB954] text-white px-6 py-2 rounded-lg font-medium transition-all duration-300 transform hover:scale-105"
+              >
+                Browse Magnets
+              </Button>
+            </div>
           </div>
         )}
       </CardContent>
