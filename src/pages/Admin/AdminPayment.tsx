@@ -14,7 +14,6 @@ import {
   Users
 } from 'lucide-react';
 
-// Define the interfaces
 interface Order {
   id: string;
   // Add other properties of Order as needed
