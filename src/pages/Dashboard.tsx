@@ -200,10 +200,10 @@ const Dashboard = () => {
 
   if (authLoading || dataLoading) {
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+      <div className="min-h-screen bg-[#121212] dark:bg-[#121212] flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[#00C896]" />
-          <p className="text-[#E0E0E0]">Loading your dashboard...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-[#00C896] dark:text-[#00C896] text-gray-700" />
+          <p className="text-[#E0E0E0] dark:text-[#E0E0E0] text-gray-700">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -211,29 +211,31 @@ const Dashboard = () => {
 
   if (!user || user.role !== 'CUSTOMER') {
     return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+      <div className="min-h-screen bg-[#121212] dark:bg-[#121212] flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <p className="text-[#E0E0E0]">Access denied. Customer account required.</p>
+          <p className="text-[#E0E0E0] dark:text-[#E0E0E0] text-gray-700">Access denied. Customer account required.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#121212]">
+    <div className="min-h-screen bg-[#121212] dark:bg-[#121212] bg-gray-50">
       <Header />
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2 text-[#E0E0E0]">
+          <h1 className="text-3xl font-bold mb-2 text-[#E0E0E0] dark:text-[#E0E0E0] text-gray-900">
             Welcome back, {user.name}! 👋
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 dark:text-gray-400 text-gray-600">
             Manage your account, track your magnet orders, and view payment status verified by our admin team.
           </p>
           {error && (
-            <div className="mt-4 p-3 bg-[#2D2D2D] border border-[#303030] rounded-md">
-              <p className="text-[#00C896] text-sm">
+            <div className="mt-4 p-3 bg-[#2D2D2D] border border-[#303030] rounded-md
+              dark:bg-[#2D2D2D] dark:border-[#303030]
+              bg-red-50 border-red-200">
+              <p className="text-[#00C896] text-sm dark:text-[#00C896] text-red-700">
                 ⚠️ {error} - Showing cached data
               </p>
             </div>
@@ -241,28 +243,38 @@ const Dashboard = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 bg-[#2D2D2D] border border-[#303030] p-1 rounded-lg">
+          <TabsList className="grid w-full grid-cols-4 bg-[#2D2D2D] border border-[#303030] p-1 rounded-lg
+            dark:bg-[#2D2D2D] dark:border-[#303030]
+            bg-gray-100 border-gray-200">
             <TabsTrigger
               value="overview"
-              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20"
+              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20
+                dark:text-[#E0E0E0] dark:data-[state=active]:bg-[#00C896] dark:data-[state=active]:text-white dark:border-r dark:border-[#303030] dark:hover:bg-[#00C896]/20
+                text-gray-700 data-[state=active]:bg-emerald-500 data-[state=active]:text-white border-r border-gray-300 hover:bg-emerald-100"
             >
               Overview
             </TabsTrigger>
             <TabsTrigger
               value="profile"
-              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20"
+              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20
+                dark:text-[#E0E0E0] dark:data-[state=active]:bg-[#00C896] dark:data-[state=active]:text-white dark:border-r dark:border-[#303030] dark:hover:bg-[#00C896]/20
+                text-gray-700 data-[state=active]:bg-emerald-500 data-[state=active]:text-white border-r border-gray-300 hover:bg-emerald-100"
             >
               My Profile
             </TabsTrigger>
             <TabsTrigger
               value="orders"
-              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20"
+              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20
+                dark:text-[#E0E0E0] dark:data-[state=active]:bg-[#00C896] dark:data-[state=active]:text-white dark:border-r dark:border-[#303030] dark:hover:bg-[#00C896]/20
+                text-gray-700 data-[state=active]:bg-emerald-500 data-[state=active]:text-white border-r border-gray-300 hover:bg-emerald-100"
             >
               Order History
             </TabsTrigger>
             <TabsTrigger
               value="settings"
-              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20"
+              className="text-[#E0E0E0] data-[state=active]:bg-[#00C896] data-[state=active]:text-white border-r border-[#303030] last:border-r-0 rounded-md mr-0.5 last:mr-0 transition-all duration-200 hover:bg-[#00C896]/20
+                dark:text-[#E0E0E0] dark:data-[state=active]:bg-[#00C896] dark:data-[state=active]:text-white dark:border-r dark:border-[#303030] dark:hover:bg-[#00C896]/20
+                text-gray-700 data-[state=active]:bg-emerald-500 data-[state=active]:text-white border-r border-gray-300 hover:bg-emerald-100"
             >
               Settings
             </TabsTrigger>

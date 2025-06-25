@@ -312,30 +312,34 @@ const CustomerSettings = () => {
           ${
             destructive
               ? `
-                bg-red-900/50 hover:bg-red-800/60
-                border-red-600/50 hover:border-red-500/80
-                text-red-100 hover:text-white
-                hover:shadow-xl hover:shadow-red-500/20
+                bg-red-900/50 hover:bg-red-800/60 dark:bg-red-900/50 dark:hover:bg-red-800/60
+                border-red-600/50 hover:border-red-500/80 dark:border-red-600/50 dark:hover:border-red-500/80
+                text-red-100 hover:text-white dark:text-red-100 dark:hover:text-white
+                hover:shadow-xl hover:shadow-red-500/20 dark:hover:shadow-xl dark:hover:shadow-red-500/20
+                bg-red-100/50 hover:bg-red-200/60 border-red-300/50 hover:border-red-400/80 text-red-800 hover:text-red-900 shadow-lg shadow-red-200/50
               `
               : state === 'success'
               ? `
-                bg-emerald-900/50 hover:bg-emerald-800/60
-                border-emerald-500/50 hover:border-emerald-400/80
-                text-emerald-100 hover:text-white
-                hover:shadow-xl hover:shadow-emerald-500/20
+                bg-emerald-900/50 hover:bg-emerald-800/60 dark:bg-emerald-900/50 dark:hover:bg-emerald-800/60
+                border-emerald-500/50 hover:border-emerald-400/80 dark:border-emerald-500/50 dark:hover:border-emerald-400/80
+                text-emerald-100 hover:text-white dark:text-emerald-100 dark:hover:text-white
+                hover:shadow-xl hover:shadow-emerald-500/20 dark:hover:shadow-xl dark:hover:shadow-emerald-500/20
+                bg-emerald-100/50 hover:bg-emerald-200/60 border-emerald-300/50 hover:border-emerald-400/80 text-emerald-800 hover:text-emerald-900 shadow-lg shadow-emerald-200/50
               `
               : state === 'error'
               ? `
-                bg-orange-900/50 hover:bg-orange-800/60
-                border-orange-500/50 hover:border-orange-400/80
-                text-orange-100 hover:text-white
-                hover:shadow-xl hover:shadow-orange-500/20
+                bg-orange-900/50 hover:bg-orange-800/60 dark:bg-orange-900/50 dark:hover:bg-orange-800/60
+                border-orange-500/50 hover:border-orange-400/80 dark:border-orange-500/50 dark:hover:border-orange-400/80
+                text-orange-100 hover:text-white dark:text-orange-100 dark:hover:text-white
+                hover:shadow-xl hover:shadow-orange-500/20 dark:hover:shadow-xl dark:hover:shadow-orange-500/20
+                bg-orange-100/50 hover:bg-orange-200/60 border-orange-300/50 hover:border-orange-400/80 text-orange-800 hover:text-orange-900 shadow-lg shadow-orange-200/50
               `
               : `
-                bg-[#2D2D2D] hover:bg-[#1A1A1A]
-                border-[#303030] hover:border-[#00C896]/50
-                text-[#E0E0E0] hover:text-white
-                hover:shadow-xl hover:shadow-gray-500/20
+                bg-[#2D2D2D] hover:bg-[#1A1A1A] dark:bg-[#2D2D2D] dark:hover:bg-[#1A1A1A]
+                border-[#303030] hover:border-[#00C896]/50 dark:border-[#303030] dark:hover:border-[#00C896]/50
+                text-[#E0E0E0] hover:text-white dark:text-[#E0E0E0] dark:hover:text-white
+                hover:shadow-xl hover:shadow-gray-500/20 dark:hover:shadow-xl dark:hover:shadow-gray-500/20
+                bg-gray-100 hover:bg-gray-200 border-gray-300 hover:border-gray-400 text-gray-800 hover:text-gray-900 shadow-lg shadow-gray-200/50
               `
           }
           ${state === 'processing' ? 'animate-pulse shadow-lg' : ''}
@@ -347,21 +351,21 @@ const CustomerSettings = () => {
         <div className="flex items-center relative z-10">
           {state === 'processing' ? (
             <div className="relative">
-              <Loader2 className="w-5 h-5 mr-3 animate-spin text-[#00C896]" />
+              <Loader2 className="w-5 h-5 mr-3 animate-spin text-[#00C896] dark:text-[#00C896] text-gray-600" />
             </div>
           ) : (
             <div className="relative">
               <StateIcon className={`w-5 h-5 mr-3 transition-all duration-300 ${
                 state === 'success'
-                  ? 'text-emerald-400'
+                  ? 'text-emerald-400 dark:text-emerald-400 text-emerald-600'
                   : state === 'error'
-                  ? 'text-orange-400'
+                  ? 'text-orange-400 dark:text-orange-400 text-orange-600'
                   : destructive
-                  ? 'text-red-400'
-                  : 'text-[#00C896] group-hover:text-white'
+                  ? 'text-red-400 dark:text-red-400 text-red-600'
+                  : 'text-[#00C896] group-hover:text-white dark:text-[#00C896] dark:group-hover:text-white text-gray-600 group-hover:text-gray-800'
               }`} />
               {state === 'success' && (
-                <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-emerald-400 animate-pulse" />
+                <Sparkles className="absolute -top-1 -right-1 w-3 h-3 text-emerald-400 dark:text-emerald-400 text-emerald-600 animate-pulse" />
               )}
             </div>
           )}
@@ -371,12 +375,12 @@ const CustomerSettings = () => {
         <div className="relative z-10">
           <ArrowRight className={`w-5 h-5 transition-all duration-300 ${
             state === 'success'
-              ? 'text-emerald-400'
+              ? 'text-emerald-400 dark:text-emerald-400 text-emerald-600'
               : state === 'error'
-              ? 'text-orange-400'
+              ? 'text-orange-400 dark:text-orange-400 text-orange-600'
               : destructive
-              ? 'text-red-400 group-hover:translate-x-2'
-              : 'text-[#00C896] group-hover:translate-x-2 group-hover:text-white'
+              ? 'text-red-400 group-hover:translate-x-2 dark:text-red-400 dark:group-hover:translate-x-2 text-red-600 group-hover:translate-x-2'
+              : 'text-[#00C896] group-hover:translate-x-2 group-hover:text-white dark:text-[#00C896] dark:group-hover:translate-x-2 dark:group-hover:text-white text-gray-600 group-hover:translate-x-2 group-hover:text-gray-800'
           }`} />
         </div>
       </Button>
@@ -384,40 +388,46 @@ const CustomerSettings = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#121212] p-6 transition-all duration-300">
+    <div className="min-h-screen bg-[#121212] dark:bg-[#121212] bg-white p-6 transition-all duration-300">
       <div className="max-w-4xl mx-auto">
         <div className="mb-12 text-center">
           <div className="relative inline-flex items-center justify-center mb-6">
-            <div className="w-24 h-24 bg-[#2D2D2D] rounded-3xl shadow-2xl
+            <div className="w-24 h-24 bg-[#2D2D2D] dark:bg-[#2D2D2D] bg-gray-100 rounded-3xl shadow-2xl
               flex items-center justify-center transform hover:scale-110 transition-all duration-300
-              border-2 border-[#303030] hover:border-[#00C896]/50 group">
-              <Settings className="w-12 h-12 text-[#00C896] group-hover:text-white transition-all duration-300" />
+              border-2 border-[#303030] hover:border-[#00C896]/50 dark:border-[#303030] dark:hover:border-[#00C896]/50
+              border-gray-200 hover:border-gray-400 group">
+              <Settings className="w-12 h-12 text-[#00C896] group-hover:text-white dark:text-[#00C896] dark:group-hover:text-white text-gray-700 group-hover:text-gray-900 transition-all duration-300" />
             </div>
           </div>
 
-          <h1 className="text-5xl font-bold mb-4 text-[#E0E0E0]">
+          <h1 className="text-5xl font-bold mb-4 text-[#E0E0E0] dark:text-[#E0E0E0] text-gray-900">
             Account Settings
           </h1>
 
-          <p className="text-gray-400 text-xl font-light leading-relaxed max-w-2xl mx-auto">
+          <p className="text-gray-400 dark:text-gray-400 text-gray-600 text-xl font-light leading-relaxed max-w-2xl mx-auto">
             Manage your account preferences and security settings with
-            <span className="text-[#00C896] font-medium"> enhanced controls</span>
+            <span className="text-[#00C896] dark:text-[#00C896] text-emerald-600 font-medium"> enhanced controls</span>
           </p>
         </div>
 
         <div className="grid lg:grid-cols-1 gap-8">
           <Card className="relative overflow-hidden bg-[#2D2D2D] border-2 border-[#303030]
             shadow-2xl rounded-3xl transition-all duration-300 hover:shadow-xl
-            hover:border-[#00C896]/50 group">
+            hover:border-[#00C896]/50 group
+            dark:bg-[#2D2D2D] dark:border-[#303030] dark:hover:border-[#00C896]/50
+            bg-white border-gray-200 hover:border-gray-400 shadow-md">
 
             <CardHeader className="pb-6">
-              <CardTitle className="text-[#E0E0E0] flex items-center text-2xl font-bold">
-                <Lock className="w-7 h-7 mr-4 text-[#00C896] group-hover:text-white transition-all duration-300" />
+              <CardTitle className="text-[#E0E0E0] flex items-center text-2xl font-bold
+                dark:text-[#E0E0E0] text-gray-900">
+                <Lock className="w-7 h-7 mr-4 text-[#00C896] group-hover:text-white transition-all duration-300
+                  dark:text-[#00C896] dark:group-hover:text-white text-gray-700 group-hover:text-gray-900" />
                 Account Security & Data
               </CardTitle>
-              <CardDescription className="text-gray-400 text-lg font-light leading-relaxed mt-2">
+              <CardDescription className="text-gray-400 text-lg font-light leading-relaxed mt-2
+                dark:text-gray-400 text-gray-600">
                 Secure your account and manage your personal information with
-                <span className="text-[#00C896] font-medium"> advanced controls</span>
+                <span className="text-[#00C896] font-medium dark:text-[#00C896] text-emerald-600"> advanced controls</span>
               </CardDescription>
             </CardHeader>
 
@@ -432,10 +442,14 @@ const CustomerSettings = () => {
               </ActionButton>
 
               {showPasswordFields && (
-                <div className="space-y-4 p-4 rounded-xl bg-[#1A1A1A] border border-[#303030] animate-fadeIn">
-                  <div className="mb-4 p-3 bg-[#00C896]/10 border border-[#00C896]/30 rounded-lg">
-                    <h4 className="text-[#00C896] font-medium mb-2">Password Requirements:</h4>
-                    <ul className="text-sm text-gray-300 space-y-1">
+                <div className="space-y-4 p-4 rounded-xl bg-[#1A1A1A] border border-[#303030] animate-fadeIn
+                  dark:bg-[#1A1A1A] dark:border-[#303030]
+                  bg-gray-50 border-gray-200">
+                  <div className="mb-4 p-3 bg-[#00C896]/10 border border-[#00C896]/30 rounded-lg
+                    dark:bg-[#00C896]/10 dark:border-[#00C896]/30
+                    bg-emerald-50 border-emerald-200">
+                    <h4 className="text-[#00C896] font-medium mb-2 dark:text-[#00C896] text-emerald-700">Password Requirements:</h4>
+                    <ul className="text-sm text-gray-300 space-y-1 dark:text-gray-300 text-gray-700">
                       <li>• At least 8 characters long</li>
                       <li>• Contains uppercase and lowercase letters</li>
                       <li>• Contains at least one number</li>
@@ -451,13 +465,16 @@ const CustomerSettings = () => {
                       onChange={(e) => setCurrentPassword(e.target.value)}
                       className="w-full p-3 pr-10 rounded-md bg-[#1A1A1A] border border-[#303030] text-[#E0E0E0]
                         placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00C896] focus:border-[#00C896]
-                        hover:border-[#00C896]/50 transition-all duration-300"
+                        hover:border-[#00C896]/50 transition-all duration-300
+                        dark:bg-[#1A1A1A] dark:border-[#303030] dark:text-[#E0E0E0] dark:placeholder-gray-500 dark:focus:ring-[#00C896] dark:focus:border-[#00C896] dark:hover:border-[#00C896]/50
+                        bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-emerald-500 focus:border-emerald-500 hover:border-emerald-400"
                       disabled={actionStates.password === 'processing'}
                     />
                     <button
                       type="button"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#00C896] transition-colors duration-300"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#00C896] transition-colors duration-300
+                        dark:text-gray-400 dark:hover:text-[#00C896] text-gray-500 hover:text-emerald-600"
                       aria-label={showCurrentPassword ? "Hide password" : "Show password"}
                       disabled={actionStates.password === 'processing'}
                     >
@@ -473,13 +490,16 @@ const CustomerSettings = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       className="w-full p-3 pr-10 rounded-md bg-[#1A1A1A] border border-[#303030] text-[#E0E0E0]
                         placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00C896] focus:border-[#00C896]
-                        hover:border-[#00C896]/50 transition-all duration-300"
+                        hover:border-[#00C896]/50 transition-all duration-300
+                        dark:bg-[#1A1A1A] dark:border-[#303030] dark:text-[#E0E0E0] dark:placeholder-gray-500 dark:focus:ring-[#00C896] dark:focus:border-[#00C896] dark:hover:border-[#00C896]/50
+                        bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-emerald-500 focus:border-emerald-500 hover:border-emerald-400"
                       disabled={actionStates.password === 'processing'}
                     />
                     <button
                       type="button"
                       onClick={() => setShowNewPassword(!showNewPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#00C896] transition-colors duration-300"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#00C896] transition-colors duration-300
+                        dark:text-gray-400 dark:hover:text-[#00C896] text-gray-500 hover:text-emerald-600"
                       aria-label={showNewPassword ? "Hide password" : "Show password"}
                       disabled={actionStates.password === 'processing'}
                     >
@@ -495,13 +515,16 @@ const CustomerSettings = () => {
                       onChange={(e) => setConfirmNewPassword(e.target.value)}
                       className="w-full p-3 pr-10 rounded-md bg-[#1A1A1A] border border-[#303030] text-[#E0E0E0]
                         placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00C896] focus:border-[#00C896]
-                        hover:border-[#00C896]/50 transition-all duration-300"
+                        hover:border-[#00C896]/50 transition-all duration-300
+                        dark:bg-[#1A1A1A] dark:border-[#303030] dark:text-[#E0E0E0] dark:placeholder-gray-500 dark:focus:ring-[#00C896] dark:focus:border-[#00C896] dark:hover:border-[#00C896]/50
+                        bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-emerald-500 focus:border-emerald-500 hover:border-emerald-400"
                       disabled={actionStates.password === 'processing'}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmNewPassword(!showConfirmNewPassword)}
-                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#00C896] transition-colors duration-300"
+                      className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-[#00C896] transition-colors duration-300
+                        dark:text-gray-400 dark:hover:text-[#00C896] text-gray-500 hover:text-emerald-600"
                       aria-label={showConfirmNewPassword ? "Hide password" : "Show password"}
                       disabled={actionStates.password === 'processing'}
                     >
@@ -548,19 +571,24 @@ const CustomerSettings = () => {
               </ActionButton>
 
               {showDeleteConfirm && (
-                <div className="relative overflow-hidden p-6 bg-red-950/80 border-2 border-red-700/60 rounded-2xl shadow-2xl animate-fadeIn">
+                <div className="relative overflow-hidden p-6 bg-red-950/80 border-2 border-red-700/60 rounded-2xl shadow-2xl animate-fadeIn
+                  dark:bg-red-950/80 dark:border-red-700/60
+                  bg-red-50 border-red-200">
                   <div className="flex items-center mb-4">
-                    <AlertTriangle className="w-7 h-7 text-red-400 mr-4 animate-bounce" />
-                    <span className="text-red-100 font-bold text-xl">
+                    <AlertTriangle className="w-7 h-7 text-red-400 mr-4 animate-bounce
+                      dark:text-red-400 text-red-600" />
+                    <span className="text-red-100 font-bold text-xl dark:text-red-100 text-red-800">
                       ⚠️ CRITICAL ACTION REQUIRED
                     </span>
                   </div>
-                  <p className="text-red-200 mb-5 font-medium text-lg leading-relaxed">
-                    This action is <strong className="text-red-100">irreversible</strong>. All your data, order history,
+                  <p className="text-red-200 mb-5 font-medium text-lg leading-relaxed dark:text-red-200 text-red-700">
+                    This action is <strong className="text-red-100 dark:text-red-100 text-red-900">irreversible</strong>. All your data, order history,
                     saved preferences, and account information will be permanently deleted.
                   </p>
-                  <div className="bg-red-800/50 p-4 rounded-xl border border-red-600/30">
-                    <p className="text-red-100 text-base font-medium">
+                  <div className="bg-red-800/50 p-4 rounded-xl border border-red-600/30
+                    dark:bg-red-800/50 dark:border-red-600/30
+                    bg-red-100 border-red-300">
+                    <p className="text-red-100 text-base font-medium dark:text-red-100 text-red-800">
                       🔒 Once confirmed, you will have 24 hours to cancel this request via email.
                     </p>
                   </div>
